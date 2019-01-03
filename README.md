@@ -26,9 +26,8 @@ A lot, I know. But most of them are tiny (1-2 source files), and they just do th
 
 ### Getting started
 This library is best suited for projects based on cmake and make or ninja build systems, defaults are fine-tuned for these tools. The CMakeLists.txt will add `set(CMAKE_EXPORT_COMPILE_COMMANDS ON)` option for `compile_commands.json` and alter compiler (adding `-MD`) and linker (adding `-rdynamic` for linux and `-Wl,-export_dynamic` for macos) flags. This is important and not aviodable.
-1. `add_subdirectory` to the root of the library in your project CMakeLists.txt file.
-1.1. (??? DIY) If you use make, add `-MD` compiler flag globally (to all of your sources), this is needed to track dependencies between source and header files
-1.2. If you use ninja, add `-d keepdepfile` ninja flag, this is needed to track dependencies between source and header files
+1. `add_subdirectory` to the root of the library in your project CMakeLists.txt file.\
+1.1. If you use ninja, add `-d keepdepfile` ninja flag, this is needed to track dependencies between source and header files
 2. Create an instance of `jet::Live` class
 3. In your app runloop call `liveInstance->update()`
 4. When you need to reload code, call `liveInstance->tryReload()`
