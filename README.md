@@ -1,9 +1,13 @@
 # jet-live
+
 **jet-live** is a library for c++ "hot code reloading". It works on linux on 64 bit systems powered by cpu with x86-64 instruction set. Apart from reloading of functions it is able to transfer static state (please refer to "How it works" for what is it and why it is important).
 Tested on Ubuntu 18.04 with clang 6.0.1/7.0.1, cmake 3.10.2, ninja 1.8.2/make 4.1.
+
 **Important:** this library doesn't force you to organize your code in some special way (like in RCCPP or cr), you don't need to separate reloadable code into some shared library, **jet-live** should work with any** project in the least intrusive way.
+
 If you need something similar for windows, please try [blink](https://github.com/crosire/blink), I have no plans to support windows.
-\* macos port is not completed yet, but will be ready in a couple of weeks or so.
+
+\* macos port is not completed yet, but will be ready in a couple of weeks or so.\
 \** if your main executable links against shared libraries and you want to reload code from these libraries, **jet-live** will probably not work correctly, so if it is the case for you, please open an issue, its easy to implement it.
 
 ### Prerequisites
@@ -30,7 +34,9 @@ This library is best suited for projects based on cmake and make or ninja build 
 4. When you need to reload code, call `liveInstance->tryReload()`
 
 **Important:** This library is not thread safe. It uses threads under the hood to run compiler, but you should call all library methods from the same thread.
+
 Also I use this library only with debug builds (`-O0`, not stripped, without `-fvisibility=hidden` and things like that) to not deal with optimized and inlined functions and variables. I don't know how it works on highly optimized release builds, but you can try, probably it will fit your needs.
+
 Personally I use it like this. I have a `Ctrl+r` shortcut to which `tryReload` is assigned in my application. Also app calls `udpate` in the main runloop and listens for `onCodePreLoad` and `onCodePostLoad` events to recreate some objects or re-evaluate some functions:
 1. I start my application
 2. I edit some files, save it, and now I know that I'm ready to reload new code (here previously I recompiled application)
@@ -54,6 +60,7 @@ Will be ready soon (in the importance order):
 
 ### Customizations
 **jet-live** is fine-tuned to work with cmake and make/ninja tools, but if you want to adopt it to another build tool, or to receive logs from it, there's a way to customize its' behaviour in some aspects. Please refer to documentation of `LiveDelegate`, `ICompilationUnitsParser` and `IDependenciesHandler` for more info and examples.
+
 **Important:** it is highly recommended to log all messages from the library to see if something went wrong. Please see `LiveDelegate::onLog` method.
 
 ### How it works (for curious ones)
@@ -83,7 +90,9 @@ or
 /home/coolhazker/projects/some_project/build/main.cpp.d
 ```
 It will pick up all dependencies which are under the watching directories, so things like `/usr/include/elf.h` will not be treated as dependency even if this file really use it cause most likely you'll not touch any system headers and libraries your project depends on.
+
 You can alter this behaviour and provide your own implementation of dependencies handler.
+
 Now the library is initialized
 
 Next, when you edit some source file and save it, **jet-live** immediately starts compilation of all dependent files in the background. By default the number of simultaneous compilation processes is 4, but you can configure it. It will write to log about successes and errors using `LiveDelegate::onLog` method of delegate. If you trigger compilation of some file when it is already compiling (or waiting in the queue), old compilation process will be killed and new one will be added to the queue, so its kinda safe to not wait for compilation to finish and make new changes of the code. Also after each file was compiled, it will update dependencies for compiled file since compiler can recreate depfile for it if new version of compilation unit has new dependencies.
@@ -134,6 +143,7 @@ int veryUsefulFunction(int value)
 Great, it will now multiplies argument by 3. But since whole `Singleton.cpp` will be reloaded and `Singleton::instance` function will be hooked to call new version, `lib_reloadXXX.so` will contain new static variable `static Singleton ins`, which is not initialized, and if you call `Singleton::instance()` after code was reloaded, it will initialize this variable again which is not good cause we don't want to call its constructor again. Thats why we need to transfer statics as well as their [guard variables](https://monoinfinito.wordpress.com/2013/12/03/static-initialization-in-c/).
 
 Also your app will probably crash if you try to change memory layout of your data types in reloadable code.
+
 Suppose you have an instance of this class allocated somewhere in the heap or on the stack:
 ```cpp
 class SomeClass
@@ -164,4 +174,5 @@ After code is reloaded, you'll probably observe a crash because already allocate
 
 ### Licence
 MIT
+
 For licences of used libraries please refer to their directories and source code.
