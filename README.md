@@ -14,17 +14,14 @@ If you need something similar for windows, please try [blink](https://github.com
 
 ### Prerequisites
 You need `c++11` compilant compiler. Also there're several dependencies which are bundled in:
-- `nlohmann json`: needed to parse `compile_commands.json` file
-- `argh`: needed to parse compilation options
-- `fmtlib`: needed to format log messages and other things
-- `teenypath`: needed to deal with filesystem
-- `tiny-process-library`: needed to run compilation processes
-- `efsw`: needed to watch for source file changes
-- `whereami`: needed to find path to this executable
-- `subhook`: needed for function hooking
-- `ELFIO` (linux only): needed to parse elf headers and sections data
-
-A lot, I know. But most of them are tiny (1-2 source files), and they just do their job really good. If you have ideas of how to reduce the amount of dependencies, please let me know.
+- `nlohmann json` (header only): needed to parse `compile_commands.json` file
+- `argh` (header only): needed to parse compilation options
+- `teenypath` (1 .h/1 .cpp): needed to deal with filesystem
+- `tiny-process-library` (1 .h/2 .cpp): needed to run compilation processes
+- `efsw` (the only big dependency): needed to watch for source file changes
+- `whereami` (1 .h/1 .cpp): needed to find path to this executable
+- `subhook` (1 .h/2 .c): needed for function hooking
+- `ELFIO` (header only, for linux): needed to parse elf headers and sections data
 
 ### Getting started
 This library is best suited for projects based on cmake and make or ninja build systems, defaults are fine-tuned for these tools. The CMakeLists.txt will add `set(CMAKE_EXPORT_COMPILE_COMMANDS ON)` option for `compile_commands.json` and alter compiler (adding `-MD`) and linker (adding `-rdynamic` for linux and `-Wl,-export_dynamic` for macos) flags. This is important and not aviodable.
