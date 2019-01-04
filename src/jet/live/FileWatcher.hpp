@@ -56,7 +56,7 @@ namespace jet
         using time_point_t = std::chrono::time_point<std::chrono::steady_clock>;
 
         std::function<void(const Event&)> m_callback;
-        std::unordered_map<Action, std::unordered_map<std::string, time_point_t>> m_actionTimePoints;
+        std::unordered_map<int, std::unordered_map<std::string, time_point_t>> m_actionTimePoints;
         std::unique_ptr<efsw::FileWatcher> m_fileWatcher;
         std::unique_ptr<EfswListener> m_efswListener;
         std::mutex m_fileEventsMutex;

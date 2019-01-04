@@ -65,20 +65,21 @@ namespace jet
             for (const auto& el : m_actionTimePoints) {
                 for (const auto& tp : el.second) {
                     if (now - tp.second > milliseconds(100)) {
-                        timePointsToRemove.push_back({el.first, tp.first});
+                        timePointsToRemove.push_back({static_cast<Action>(el.first), tp.first});
                     }
                 }
             }
             for (const auto& el : timePointsToRemove) {
-                m_actionTimePoints[el.action].erase(el.filepath);
-                if (m_actionTimePoints[el.action].empty()) {
-                    m_actionTimePoints.erase(el.action);
+                auto intAction = static_cast<int>(el.action);
+                m_actionTimePoints[intAction].erase(el.filepath);
+                if (m_actionTimePoints[intAction].empty()) {
+                    m_actionTimePoints.erase(intAction);
                 }
             }
 
             // Checking if new action is "fake" action
             auto fullFilepath = dir + filename;
-            auto found1 = m_actionTimePoints.find(foundAction->second);
+            auto found1 = m_actionTimePoints.find(static_cast<int>(foundAction->second));
             if (found1 != m_actionTimePoints.end()) {
                 auto found2 = found1->second.find(fullFilepath);
                 if (found2 != found1->second.end()) {
@@ -87,7 +88,7 @@ namespace jet
                 }
             }
 
-            m_actionTimePoints[foundAction->second][fullFilepath] = now;
+            m_actionTimePoints[static_cast<int>(foundAction->second)][fullFilepath] = now;
 
             std::lock_guard<std::mutex> lock(m_fileEventsMutex);
             m_fileEvents.push_back({foundAction->second, dir, filename, oldFilename});
