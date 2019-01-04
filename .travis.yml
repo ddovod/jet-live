@@ -20,6 +20,7 @@ addons:
       - g++-6
 
 script:
+  - cmake --version
   - mkdir build
   - cd build
   - cmake ..

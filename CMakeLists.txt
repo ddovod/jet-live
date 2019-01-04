@@ -100,6 +100,9 @@ target_include_directories(lib_tiny-process-library
 
 ########## lib_json
 add_library(lib_json STATIC "")
+target_sources(lib_json
+  PRIVATE
+  )
 target_include_directories(lib_json
   PUBLIC
   libs/json
@@ -108,6 +111,9 @@ set_target_properties(lib_json PROPERTIES LINKER_LANGUAGE CXX)
 
 ########## lib_argh
 add_library(lib_argh STATIC "")
+target_sources(lib_argh
+  PRIVATE
+  )
 target_include_directories(lib_argh
   PUBLIC
   libs/argh
@@ -128,6 +134,9 @@ target_include_directories(lib_teenypath
 if (UNIX AND NOT APPLE)
   ########## lib_elfio
   add_library(lib_elfio STATIC "")
+  target_sources(lib_elfio
+    PRIVATE
+    )
   target_include_directories(lib_elfio
     PUBLIC
     libs/ELFIO
