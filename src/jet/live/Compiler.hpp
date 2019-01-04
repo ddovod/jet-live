@@ -11,13 +11,36 @@
 
 namespace jet
 {
+    /**
+     * Incapsulates compiler-related tasks like compilation and linkage.
+     */
     class Compiler
     {
     public:
         explicit Compiler(const LiveContext* context);
+
+        /**
+         * Runloop method, should be periodically called by the application.
+         */
         void update();
+
+        /**
+         * Adds new compilation task into the queue.
+         * If there's any running compilation process of this cu, or this cu is
+         * already in the compilation queue, it will be stopped/removed and
+         * new task will be created.
+         * \param cu Compilation unit.
+         * \param finishCallback Callback which will be called after compilation process finish.
+         */
         void compile(const CompilationUnit& cu,
             std::function<void(int, const std::string&, const std::string&)>&& finishCallback);
+
+        /**
+         * Performs linkage of compiled compilation units.
+         * It will wait for all pending and running compilation processes to finish
+         * and then link newly compiled object files into shared library.
+         * \param finishCallback Callback which will be called after linkage process finish.
+         */
         void link(std::function<void(int, const std::string&, const std::string&)>&& finishCallback);
 
     private:

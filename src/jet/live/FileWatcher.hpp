@@ -12,6 +12,9 @@
 
 namespace jet
 {
+    /**
+     * Monitors directories and listens filesystem events.
+     */
     class FileWatcher
     {
     public:

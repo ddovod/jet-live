@@ -16,7 +16,17 @@ namespace jet
     public:
         explicit Live(std::unique_ptr<LiveDelegate>&& delegate = {});
 
+        /**
+         * Tries to reload changed code.
+         * It will wait for all pending compilation processes to finish.
+         * Does nothing if there's no changes.
+         * Call it only when you're done editing your code.
+         */
         void tryReload();
+
+        /**
+         * Runloop method, should be periodically called by the application.
+         */
         void update();
 
     private:

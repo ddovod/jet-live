@@ -7,38 +7,51 @@
 
 namespace jet
 {
+    /**
+     * Represents compilation unit.
+     */
     struct CompilationUnit
     {
-        std::string compilerPath;
-        std::string compilationCommandStr;
-        std::string compilationDirStr;
-        std::string sourceFilePath;
-        std::string objFilePath;
-        std::string depFilePath;
-        bool hasColorDiagnosticsFlag = false;
+        std::string compilerPath;             /** Path to the compiler. */
+        std::string compilationCommandStr;    /** Full compilation command. */
+        std::string compilationDirStr;        /** Working directory from which this cu was compiled. */
+        std::string sourceFilePath;           /** Path to the source file. */
+        std::string objFilePath;              /** Path to the object file. */
+        std::string depFilePath;              /** Path to the `.d` depfile. */
+        bool hasColorDiagnosticsFlag = false; /** If `-fcolor-diagnostics` flag is used. */
     };
 
+    /**
+     * Represents common symbol.
+     */
     struct Symbol
     {
-        std::string name;
-        size_t size = 0;
-        intptr_t runtimeAddress = 0;
+        std::string name;            /** Mangled name of the symbol. */
+        size_t size = 0;             /** Size of the symbol. */
+        intptr_t runtimeAddress = 0; /** A pointer to the symbol. */
     };
 
+    /**
+     * Represents a set of symbols by types.
+     */
     struct Symbols
     {
-        std::unordered_map<std::string, Symbol> functions;
-        std::unordered_map<std::string, Symbol> variables;
+        std::unordered_map<std::string, Symbol> functions; /** Hookable function symbols. */
+        std::unordered_map<std::string, Symbol> variables; /** Transferrable variable symbols. */
     };
 
+    /**
+     * Represents an executable or a shared library info.
+     */
     struct Program
     {
-        std::string path;
-        void* handle = nullptr;
-        Symbols symbols;
+        std::string path;       /** Program filepath. */
+        void* handle = nullptr; /** Pointer obtained with `dlopen`. */
+        Symbols symbols;        /** Sybmols of this program. */
     };
 
     // Mach-O specific structures
+    // For more info please refer to `mach-o/loader.h` and `mach-o/nlist.h`
     enum class MachoSymbolType : uint8_t
     {
         kUndefined,          // undefined, no section
@@ -79,6 +92,7 @@ namespace jet
     };
 
     // Elf specific structures
+    // For more info please refer to `link.h` and `elf.h`
     enum class ElfSymbolType : uint8_t
     {
         kNo,
