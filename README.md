@@ -1,5 +1,7 @@
 [Demo](https://youtu.be/2MsxAMS_z18)
 
+[![Build Status](https://travis-ci.com/ddovod/jet-live.svg?branch=master)](https://travis-ci.com/ddovod/jet-live)
+
 # jet-live
 
 **jet-live** is a library for c++ "hot code reloading". It works on linux on 64 bit systems powered by cpu with x86-64 instruction set. Apart from reloading of functions it is able to transfer static state (please refer to "How it works" for what is it and why it is important).
