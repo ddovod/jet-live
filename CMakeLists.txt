@@ -98,28 +98,6 @@ target_include_directories(lib_tiny-process-library
   libs/tiny-process-library
   )
 
-########## lib_json
-add_library(lib_json STATIC "")
-target_sources(lib_json
-  PRIVATE
-  )
-target_include_directories(lib_json
-  PUBLIC
-  libs/json
-  )
-set_target_properties(lib_json PROPERTIES LINKER_LANGUAGE CXX)
-
-########## lib_argh
-add_library(lib_argh STATIC "")
-target_sources(lib_argh
-  PRIVATE
-  )
-target_include_directories(lib_argh
-  PUBLIC
-  libs/argh
-  )
-set_target_properties(lib_argh PROPERTIES LINKER_LANGUAGE CXX)
-
 ########## lib_teenypath
 add_library(lib_teenypath STATIC "")
 target_sources(lib_teenypath
@@ -131,17 +109,27 @@ target_include_directories(lib_teenypath
   libs/teenypath/include
   )
 
+########## lib_json
+add_library(lib_json INTERFACE)
+target_include_directories(lib_json
+  INTERFACE
+  libs/json
+  )
+
+########## lib_argh
+add_library(lib_argh INTERFACE)
+target_include_directories(lib_argh
+  INTERFACE
+  libs/argh
+  )
+
 if (UNIX AND NOT APPLE)
   ########## lib_elfio
-  add_library(lib_elfio STATIC "")
-  target_sources(lib_elfio
-    PRIVATE
-    )
+  add_library(lib_elfio INTERFACE)
   target_include_directories(lib_elfio
-    PUBLIC
+    INTERFACE
     libs/ELFIO
     )
-  set_target_properties(lib_elfio PROPERTIES LINKER_LANGUAGE CXX)
 endif()
 
 ########## jet-live
