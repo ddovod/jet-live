@@ -1,4 +1,6 @@
 language: cpp
+dist: xenial
+
 matrix:
   include:
     - compiler: clang
@@ -13,7 +15,7 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
     packages:
-      - clang
+      - clang-6.0
       - gcc-6
       - g++-6
 

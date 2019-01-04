@@ -197,3 +197,4 @@ if (UNIX AND NOT APPLE)
 endif()
 
 set_property(TARGET jet-live PROPERTY CXX_STANDARD 11)
+set_property(TARGET lib_teenypath  PROPERTY CXX_STANDARD 11)
