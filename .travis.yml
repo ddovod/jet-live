@@ -5,24 +5,14 @@ matrix:
   include:
     - compiler: clang
       os: linux
-    - compiler: gcc
-      os: linux
-    # - compiler: clang
-    #   os: osx
 
 addons:
   apt:
-    sources:
-      - ubuntu-toolchain-r-test
     packages:
       - clang-6.0
-      - gcc-6
-      - g++-6
 
 script:
-  - cmake --version
-  - mkdir build
-  - cd build
+  - mkdir build && cd build
   - cmake ..
   - make
 
