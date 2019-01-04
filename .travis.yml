@@ -1,0 +1,25 @@
+language: cpp
+matrix:
+  include:
+    - compiler: clang
+      os: linux
+    - compiler: gcc
+      os: linux
+    - compiler: clang
+      os: osx
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - clang
+      - gcc-6
+      - g++-6
+
+script:
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make
+
