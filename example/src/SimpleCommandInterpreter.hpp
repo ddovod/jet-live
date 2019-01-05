@@ -11,6 +11,5 @@ public:
     std::string runCommand(const std::string& command);
 
 private:
-    double someStuff;
     int m_currentCommandsCounter = 0;
 };
