@@ -4,7 +4,6 @@
 #include <dlfcn.h>
 #include <subhook.h>
 #include <teenypath.h>
-#include "jet/live/Symbols.hpp"
 #include "jet/live/Utility.hpp"
 
 namespace jet
@@ -20,21 +19,21 @@ namespace jet
         m_context->thisExecutablePath = getExecutablePath();
         m_context->compilationUnitsParser = m_context->delegate->createCompilationUnitsParser();
         m_context->dependenciesHandler = m_context->delegate->createDependenciesHandler();
+        m_context->programInfoLoader = m_context->delegate->createProgramInfoLoader();
 
-        if (auto myHandle = dlopen(nullptr, RTLD_NOW | RTLD_GLOBAL)) {  // NOLINT
-            m_context->delegate->onLog(LogSeverity::kInfo, "Loading symbols of this process...");
+        for (const auto& el : m_context->programInfoLoader->getAllLoadedProgramsPaths(m_context.get())) {
+            if (el.empty()) {
+                m_context->delegate->onLog(LogSeverity::kInfo, "Loading symbols of this process...");
+            } else {
+                m_context->delegate->onLog(LogSeverity::kInfo, "Loading symbols of " + el + "...");
+            }
             Program program;
-            program.path = m_context->thisExecutablePath;
-            program.handle = myHandle;
-            program.symbols = getSymbols(m_context.get(), program.path);
+            program.path = el;
+            program.symbols = m_context->programInfoLoader->getProgramSymbols(m_context.get(), program.path);
             m_context->delegate->onLog(LogSeverity::kInfo,
                 "Symbols loaded successfully, total symbols: funcs " + std::to_string(program.symbols.functions.size())
                     + ", vars " + std::to_string(program.symbols.variables.size()));
             m_context->programs.push_back(std::move(program));
-        } else {
-            m_context->delegate->onLog(
-                LogSeverity::kError, "Cannot open process with dlopen: " + std::string(dlerror()));
-            return;
         }
 
         m_context->delegate->onLog(LogSeverity::kInfo, "Parsing compilation commands...");
@@ -169,7 +168,7 @@ namespace jet
             m_context->delegate->onLog(LogSeverity::kInfo, "Library opene successfully");
 
             m_context->delegate->onLog(LogSeverity::kInfo, "Loading symbols from " + libPath + "...");
-            auto libSymbols = getSymbols(m_context.get(), libPath);
+            auto libSymbols = m_context->programInfoLoader->getProgramSymbols(m_context.get(), libPath);
             m_context->delegate->onLog(LogSeverity::kInfo,
                 "Symbols loaded successfully, total symbols: funcs " + std::to_string(libSymbols.functions.size())
                     + ", vars " + std::to_string(libSymbols.variables.size()));
@@ -233,7 +232,6 @@ namespace jet
 
             Program libProgram;
             libProgram.path = libPath;
-            libProgram.handle = libHandle;
             libProgram.symbols = libSymbols;
             m_context->programs.push_back(std::move(libProgram));
 

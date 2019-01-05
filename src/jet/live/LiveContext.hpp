@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include "jet/live/ICompilationUnitsParser.hpp"
 #include "jet/live/IDependenciesHandler.hpp"
+#include "jet/live/IProgramInfoLoader.hpp"
 #include "jet/live/LiveDelegate.hpp"
 
 namespace jet
@@ -23,6 +24,9 @@ namespace jet
 
         /** Current dependencies handler. */
         std::unique_ptr<IDependenciesHandler> dependenciesHandler;
+
+        /** Current program info loader. */
+        std::unique_ptr<IProgramInfoLoader> programInfoLoader;
 
         /**
          * All programs which are living in the address space if this process (executables

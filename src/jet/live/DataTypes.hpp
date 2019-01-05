@@ -45,9 +45,8 @@ namespace jet
      */
     struct Program
     {
-        std::string path;       /** Program filepath. */
-        void* handle = nullptr; /** Pointer obtained with `dlopen`. */
-        Symbols symbols;        /** Sybmols of this program. */
+        std::string path; /** Program filepath. */
+        Symbols symbols;  /** Sybmols of the program. */
     };
 
     // Mach-O specific structures

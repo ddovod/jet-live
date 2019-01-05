@@ -1,6 +1,7 @@
 
 #include "LiveDelegate.hpp"
 #include "jet/live/CompileCommandsCompilationUnitsParser.hpp"
+#include "jet/live/DefaultProgramInfoLoader.hpp"
 #include "jet/live/DepfileDependenciesHandler.hpp"
 #include "jet/live/Utility.hpp"
 
@@ -46,5 +47,10 @@ namespace jet
     std::unique_ptr<IDependenciesHandler> LiveDelegate::createDependenciesHandler()
     {
         return jet::make_unique<DepfileDependenciesHandler>();
+    }
+
+    std::unique_ptr<IProgramInfoLoader> LiveDelegate::createProgramInfoLoader()
+    {
+        return jet::make_unique<DefaultProgramInfoLoader>();
     }
 }

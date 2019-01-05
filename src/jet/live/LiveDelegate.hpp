@@ -10,6 +10,7 @@ namespace jet
 {
     class ICompilationUnitsParser;
     class IDependenciesHandler;
+    class IProgramInfoLoader;
 
     enum class LogSeverity
     {
@@ -94,5 +95,12 @@ namespace jet
          * By default it is \ref jet::DepfileDependencyHandler .
          */
         virtual std::unique_ptr<IDependenciesHandler> createDependenciesHandler();
+
+        /**
+         * Created a program info loader instance.
+         * By default it is \ref jet::ElfProgramInfoLoader for linux and
+         * \ref jet::MachoProgramInfoLoader for macos.
+         */
+        virtual std::unique_ptr<IProgramInfoLoader> createProgramInfoLoader();
     };
 }

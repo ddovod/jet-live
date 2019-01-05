@@ -1,5 +1,6 @@
 
-#include "jet/live/Symbols.hpp"
+#include "ElfProgramInfoLoader.hpp"
+#include "jet/live/LiveContext.hpp"
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wconversion"
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
@@ -11,7 +12,31 @@
 
 namespace jet
 {
-    Symbols getSymbols(const LiveContext* context, const std::string& libPath)
+    std::vector<std::string> ElfProgramInfoLoader::getAllLoadedProgramsPaths(const LiveContext*) const
+    {
+        struct DlArgument
+        {
+            std::vector<std::string> filepaths;
+        };
+        DlArgument dlArgument;
+        dl_iterate_phdr(
+            [](struct dl_phdr_info* info, size_t, void* data) {
+                auto arg = reinterpret_cast<DlArgument*>(data);
+                const char* libPath = nullptr;
+                if (info->dlpi_name && (info->dlpi_name[0] != 0)) {
+                    libPath = info->dlpi_name;
+                } else {
+                    libPath = "";
+                }
+                arg->filepaths.emplace_back(libPath);
+                return 0;
+            },
+            &dlArgument);
+
+        return dlArgument.filepaths;
+    }
+
+    Symbols ElfProgramInfoLoader::getProgramSymbols(const LiveContext* context, const std::string& filepath) const
     {
         Symbols res;
         ElfContext elfContext;
@@ -22,8 +47,7 @@ namespace jet
             std::string libPath;
         };
         DlArgument dlArgument;
-        // This executable has empty string name on linux
-        dlArgument.libPath = context->thisExecutablePath == libPath ? "" : libPath;
+        dlArgument.libPath = filepath;
         dl_iterate_phdr(
             [](struct dl_phdr_info* info, size_t, void* data) {
                 auto arg = reinterpret_cast<DlArgument*>(data);
@@ -31,7 +55,6 @@ namespace jet
                 if (info->dlpi_name && (info->dlpi_name[0] != 0)) {
                     libPath = info->dlpi_name;
                 } else {
-                    // Assuming this executable
                     libPath = "";
                 }
                 if (libPath == arg->libPath) {
@@ -44,9 +67,11 @@ namespace jet
 
         const auto baseAddress = dlArgument.baseAddress;
 
+        // This executable has empty string name on linux
         ELFIO::elfio elfFile;
-        if (!elfFile.load(libPath)) {
-            context->delegate->onLog(LogSeverity::kError, "Cannot load " + libPath + " file");
+        std::string realFilepath = filepath.empty() ? context->thisExecutablePath : filepath;
+        if (!elfFile.load(realFilepath)) {
+            context->delegate->onLog(LogSeverity::kError, "Cannot load " + realFilepath + " file");
             return res;
         }
 
