@@ -7,12 +7,11 @@
 **jet-live** is a library for c++ "hot code reloading". It works on linux on 64 bit systems powered by cpu with x86-64 instruction set. Apart from reloading of functions it is able to transfer static state (please refer to "How it works" for what is it and why it is important).
 Tested on Ubuntu 18.04 with clang 6.0.1/7.0.1, cmake 3.10.2, ninja 1.8.2/make 4.1.
 
-**Important:** this library doesn't force you to organize your code in some special way (like in RCCPP or cr), you don't need to separate reloadable code into some shared library, **jet-live** should work with any** project in the least intrusive way.
+**Important:** this library doesn't force you to organize your code in some special way (like in RCCPP or cr), you don't need to separate reloadable code into some shared library, **jet-live** should work with any project in the least intrusive way.
 
 If you need something similar for windows, please try [blink](https://github.com/crosire/blink), I have no plans to support windows.
 
-\* macos port is not completed yet, but will be ready in a couple of weeks or so.\
-\** if your main executable links against shared libraries and you want to reload code from these libraries, **jet-live** will probably not work correctly, so if it is the case for you, please open an issue, its easy to implement it.
+\* macos port is not completed yet, but will be ready in a couple of weeks or so.
 
 ### Prerequisites
 You need `c++11` compilant compiler. Also there're several dependencies which are bundled in:
@@ -56,10 +55,10 @@ Implemented:
 - Reloading of functions
 - Transfering of static variables
 - Tracking of dependencies
+- Working with code from this executable and loaded shared libraries
 
 Will be ready soon (in the importance order):
 - macos implementation
-- Reloading of code from the shared libraries
 - Ability to add new compilations units on the fly (see "How it works")
 - Unit tests
 
