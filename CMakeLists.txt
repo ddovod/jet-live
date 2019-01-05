@@ -2,6 +2,9 @@
 cmake_minimum_required(VERSION 3.6)
 project(jet-live)
 
+option(JET_LIVE_SHARED "Compile as shared library. ON - shared, OFF - static." OFF)
+option(JET_LIVE_BUILD_EXAMPLE "Compile example application." ON)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -MD")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -MD")
@@ -97,6 +100,10 @@ target_include_directories(lib_tiny-process-library
   PUBLIC
   libs/tiny-process-library
   )
+set_target_properties(lib_tiny-process-library
+  PROPERTIES
+  CXX_STANDARD 11
+  )
 
 ########## lib_teenypath
 add_library(lib_teenypath STATIC "")
@@ -107,6 +114,10 @@ target_sources(lib_teenypath
 target_include_directories(lib_teenypath
   PUBLIC
   libs/teenypath/include
+  )
+set_target_properties(lib_teenypath
+  PROPERTIES
+  CXX_STANDARD 11
   )
 
 ########## lib_json
@@ -140,12 +151,7 @@ if (JET_LIVE_SHARED)
   target_compile_options(lib_whereami PRIVATE $<$<COMPILE_LANGUAGE:C>:-fPIC> $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
   target_compile_options(lib_efsw PRIVATE $<$<COMPILE_LANGUAGE:C>:-fPIC> $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
   target_compile_options(lib_tiny-process-library PRIVATE $<$<COMPILE_LANGUAGE:C>:-fPIC> $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
-  target_compile_options(lib_json PRIVATE $<$<COMPILE_LANGUAGE:C>:-fPIC> $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
-  target_compile_options(lib_argh PRIVATE $<$<COMPILE_LANGUAGE:C>:-fPIC> $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
   target_compile_options(lib_teenypath PRIVATE $<$<COMPILE_LANGUAGE:C>:-fPIC> $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
-  if (UNIX AND NOT APPLE)
-    target_compile_options(lib_elfio PRIVATE $<$<COMPILE_LANGUAGE:C>:-fPIC> $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
-  endif()
 else()
   add_library(jet-live STATIC "")
 endif()
@@ -180,11 +186,16 @@ target_link_libraries(jet-live
   PRIVATE
   lib_subhook
   lib_whereami
-  lib_efsw
-  lib_tiny-process-library
   lib_teenypath
   lib_json
   lib_argh
+  pthread
+  dl
+  )
+target_link_libraries(jet-live
+  PUBLIC
+  lib_efsw
+  lib_tiny-process-library
   )
 if (UNIX AND NOT APPLE)
   target_link_libraries(jet-live
@@ -192,7 +203,11 @@ if (UNIX AND NOT APPLE)
     lib_elfio
     )
 endif()
+set_target_properties(jet-live
+  PROPERTIES
+  CXX_STANDARD 11
+  )
 
-set_property(TARGET jet-live PROPERTY CXX_STANDARD 11)
-set_property(TARGET lib_teenypath PROPERTY CXX_STANDARD 11)
-set_property(TARGET lib_tiny-process-library PROPERTY CXX_STANDARD 11)
+if (JET_LIVE_BUILD_EXAMPLE)
+  add_subdirectory(example)
+endif()
