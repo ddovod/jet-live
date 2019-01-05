@@ -68,7 +68,7 @@ Will be ready soon (in the importance order):
 **Important:** it is highly recommended to log all messages from the library to see if something went wrong. Please see `LiveDelegate::onLog` method.
 
 ### How it works (for curious ones)
-The library reads elf headers and sections of this executable, finds all symbols and tries to find out which of them can either be hooked (functions) or should be transferred (static variables). Also it finds symbols size and "real" address. You can configure the behaviour of filtering, but defaults should work fine.
+The library reads elf headers and sections of this executable and all loaded shared libraries, finds all symbols and tries to find out which of them can either be hooked (functions) or should be transferred (static variables). Also it finds symbols size and "real" address. You can configure the behaviour of filtering, but defaults should work fine.
 
 Apart from that **jet-live** tries to find `compile_commands.json` near your executable or in its' parent directories recursively. You can configure this behaviour. Using this file it distinguishes:
 - compilation command
