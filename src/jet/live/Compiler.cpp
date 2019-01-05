@@ -149,7 +149,12 @@ namespace jet
 
     void Compiler::doLink(std::function<void(int, const std::string&, const std::string&)>&& finishCallback)
     {
-        m_context->delegate->onLog(LogSeverity::kInfo, "Linking...");
+        if (m_readyCompilationUnits.empty()) {
+            m_context->delegate->onLog(LogSeverity::kInfo, "Nothing to reload.");
+            return;
+        } else {
+            m_context->delegate->onLog(LogSeverity::kInfo, "Linking...");
+        }
 
         std::string libName = "lib_reload" + std::to_string(m_currentLibIndex++) + ".so";
         std::vector<std::string> objectFilePaths;
