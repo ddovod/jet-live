@@ -22,3 +22,20 @@ set_target_properties(example
   PROPERTIES
   CXX_STANDARD 11
   )
+target_compile_options(example
+  PRIVATE
+  $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
+  $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>
+  $<$<COMPILE_LANGUAGE:C>:-Wall>
+  $<$<COMPILE_LANGUAGE:CXX>:-Wall>
+  $<$<COMPILE_LANGUAGE:C>:-Wextra>
+  $<$<COMPILE_LANGUAGE:CXX>:-Wextra>
+  $<$<COMPILE_LANGUAGE:C>:-Wpedantic>
+  $<$<COMPILE_LANGUAGE:CXX>:-Wpedantic>
+  $<$<COMPILE_LANGUAGE:C>:-Wshadow>
+  $<$<COMPILE_LANGUAGE:CXX>:-Wshadow>
+  $<$<COMPILE_LANGUAGE:C>:-Wconversion>
+  $<$<COMPILE_LANGUAGE:CXX>:-Wconversion>
+  $<$<COMPILE_LANGUAGE:C>:-Wvexing-parse>
+  $<$<COMPILE_LANGUAGE:CXX>:-Wvexing-parse>
+  )
