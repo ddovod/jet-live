@@ -26,9 +26,14 @@ You need `c++11` compilant compiler. Also there're several dependencies which ar
 - `ELFIO` (header only, for linux): needed to parse elf headers and sections data
 
 ### Getting started
-This library is best suited for projects based on cmake and make or ninja build systems, defaults are fine-tuned for these tools. The CMakeLists.txt will add `set(CMAKE_EXPORT_COMPILE_COMMANDS ON)` option for `compile_commands.json` and alter compiler (adding `-MD`) and linker (adding `-rdynamic` for linux and `-Wl,-export_dynamic` for macos) flags. This is important and not aviodable.
-1. `add_subdirectory` to the root of the library in your project CMakeLists.txt file.\
-1.1. If you use ninja, add `-d keepdepfile` ninja flag, this is needed to track dependencies between source and header files
+This library is best suited for projects based on cmake and make or ninja build systems, defaults are fine-tuned for these tools. The CMakeLists.txt will add `set(CMAKE_EXPORT_COMPILE_COMMANDS ON)` option for `compile_commands.json` and alter compiler (adding `-MD`) and linker (adding `-rdynamic` for linux and `-Wl,-export_dynamic` for macos) flags. This is important and not aviodable. if you use ninja, add `-d keepdepfile` ninja flag when running ninja, this is needed to track dependencies between source and header files
+1. In your project CMakeLists.txt file:
+```
+set(JET_LIVE_BUILD_EXAMPLE OFF)
+set(JET_LIVE_SHARED ON) # if you want to
+add_subdirectory(path/to/jet-live)
+target_link_libraries(your-app-target jet-live)
+```
 2. Create an instance of `jet::Live` class
 3. In your app runloop call `liveInstance->update()`
 4. When you need to reload code, call `liveInstance->tryReload()`
