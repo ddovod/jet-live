@@ -14,7 +14,7 @@ If you need something similar for windows, please try [blink](https://github.com
 \* macos port is not completed yet, but will be ready in a couple of weeks or so.
 
 ### Prerequisites
-You need `c++11` compilant compiler. Also there're several dependencies which are bundled in:
+You need `c++11` compliant compiler. Also there're several dependencies which are bundled in:
 - `nlohmann json` (header only): needed to parse `compile_commands.json` file
 - `argh` (header only): needed to parse compilation options
 - `teenypath` (1 .h/1 .cpp): needed to deal with filesystem
@@ -25,7 +25,7 @@ You need `c++11` compilant compiler. Also there're several dependencies which ar
 - `ELFIO` (header only, for linux): needed to parse elf headers and sections data
 
 ### Getting started
-This library is best suited for projects based on cmake and make or ninja build systems, defaults are fine-tuned for these tools. The CMakeLists.txt will add `set(CMAKE_EXPORT_COMPILE_COMMANDS ON)` option for `compile_commands.json` and alter compiler (adding `-MD`) and linker (adding `-rdynamic` for linux and `-Wl,-export_dynamic` for macos) flags. This is important and not aviodable. if you use ninja, add `-d keepdepfile` ninja flag when running ninja, this is needed to track dependencies between source and header files
+This library is best suited for projects based on cmake and make or ninja build systems, defaults are fine-tuned for these tools. The CMakeLists.txt will add `set(CMAKE_EXPORT_COMPILE_COMMANDS ON)` option for `compile_commands.json` and alter compiler (adding `-MD`) and linker (adding `-rdynamic` for linux and `-Wl,-export_dynamic` for macos) flags. This is important and not avoidable. if you use ninja, add `-d keepdepfile` ninja flag when running ninja, this is needed to track dependencies between source and header files
 1. In your project CMakeLists.txt file:
 ```
 set(JET_LIVE_BUILD_EXAMPLE OFF)
@@ -41,7 +41,7 @@ target_link_libraries(your-app-target jet-live)
 
 Also I use this library only with debug builds (`-O0`, not stripped, without `-fvisibility=hidden` and things like that) to not deal with optimized and inlined functions and variables. I don't know how it works on highly optimized release builds, but you can try, probably it will fit your needs.
 
-Personally I use it like this. I have a `Ctrl+r` shortcut to which `tryReload` is assigned in my application. Also app calls `udpate` in the main runloop and listens for `onCodePreLoad` and `onCodePostLoad` events to recreate some objects or re-evaluate some functions:
+Personally I use it like this. I have a `Ctrl+r` shortcut to which `tryReload` is assigned in my application. Also app calls `update` in the main runloop and listens for `onCodePreLoad` and `onCodePostLoad` events to recreate some objects or re-evaluate some functions:
 1. I start my application
 2. I edit some files, save it, and now I know that I'm ready to reload new code (here previously I recompiled application)
 3. I press `Ctrl+r`
@@ -53,7 +53,7 @@ Personally I use it like this. I have a `Ctrl+r` shortcut to which `tryReload` i
 ### Features
 Implemented:
 - Reloading of functions
-- Transfering of static variables
+- Transferring of static variables
 - Tracking of dependencies
 - Working with code from this executable and loaded shared libraries
 
@@ -81,7 +81,7 @@ Apart from that **jet-live** tries to find `compile_commands.json` near your exe
 
 Right now if you create new `.cpp` file and even recreate `compile_commands.json` (i.e. by running cmake after that), library will not find it. This feature is in my TODO list.
 
-When all compilation units are parsed, it distinguishes the most common directory for all source files and starts watching it recursively using filesystem watcher. This path can, and probably should, be configured cause if you don't want to touch your project dependencies, you should avoid watching excess files to reduce your system load. So please point this directiry explicitly to your projects source root without libraries you use. Or just do nothing if you don't care, default behaviour is fine.
+When all compilation units are parsed, it distinguishes the most common directory for all source files and starts watching it recursively using filesystem watcher. This path can, and probably should, be configured cause if you don't want to touch your project dependencies, you should avoid watching excess files to reduce your system load. So please point this directory explicitly to your projects source root without libraries you use. Or just do nothing if you don't care, default behaviour is fine.
 
 After that the library tries to find all dependencies for each compilation unit. By default it will read depfiles near the object files (see `-MD` compiler option). Suppose the object file is located at:
 ```
@@ -174,7 +174,7 @@ private:
     int m_someVar2 = 0;
 }
 ```
-After code is reloaded, you'll probably observe a crash because already allocated object has different data **layout**, it has no `m_someVar2` instance variable, but new version of `calledEachUpdate` will try to modify it acually modifying random data. In such cases you should delete this instance in `onCodePreLoad` callback and recreate it in `onCodePostLoad` callback. Correct transfer of its state is up to you. The same effect will take place if you'll try to change static data structures **layout**. The same also correct for polymorphic classes.
+After code is reloaded, you'll probably observe a crash because already allocated object has different data **layout**, it has no `m_someVar2` instance variable, but new version of `calledEachUpdate` will try to modify it actually modifying random data. In such cases you should delete this instance in `onCodePreLoad` callback and recreate it in `onCodePostLoad` callback. Correct transfer of its state is up to you. The same effect will take place if you'll try to change static data structures **layout**. The same also correct for polymorphic classes.
 
 ### Licence
 MIT
