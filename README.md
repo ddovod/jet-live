@@ -63,7 +63,7 @@ Will be ready soon (in the importance order):
 - Unit tests
 
 ### Customizations
-**jet-live** is fine-tuned to work with cmake and make/ninja tools, but if you want to adopt it to another build tool, or to receive logs from it, there's a way to customize its' behaviour in some aspects. Please refer to documentation of `LiveDelegate`, `ICompilationUnitsParser` and `IDependenciesHandler` for more info and examples.
+**jet-live** is fine-tuned to work with cmake and make/ninja tools, but if you want to adopt it to another build tool, or to receive logs from it, there's a way to customize its' behaviour in some aspects. Please refer to documentation of `LiveDelegate`, `ICompilationUnitsParser`, `IDependenciesHandler` and `IProgramInfoLoader` for more info and examples.
 
 **Important:** it is highly recommended to log all messages from the library to see if something went wrong. Please see `LiveDelegate::onLog` method.
 
