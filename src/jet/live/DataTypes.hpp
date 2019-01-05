@@ -26,9 +26,9 @@ namespace jet
      */
     struct Symbol
     {
-        std::string name;            /** Mangled name of the symbol. */
-        size_t size = 0;             /** Size of the symbol. */
-        intptr_t runtimeAddress = 0; /** A pointer to the symbol. */
+        std::string name;             /** Mangled name of the symbol. */
+        size_t size = 0;              /** Size of the symbol. */
+        uintptr_t runtimeAddress = 0; /** A pointer to the symbol. */
     };
 
     /**
@@ -127,7 +127,7 @@ namespace jet
         ElfSymbolVisibility visibility;
         uint16_t sectionIndex = 0;
         uint64_t size = 0;
-        intptr_t virtualAddress = 0;
+        uintptr_t virtualAddress = 0;
     };
 
     struct ElfContext

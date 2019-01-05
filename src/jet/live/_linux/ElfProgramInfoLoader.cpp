@@ -43,7 +43,7 @@ namespace jet
 
         struct DlArgument
         {
-            intptr_t baseAddress = 0;
+            uintptr_t baseAddress = 0;
             std::string libPath;
         };
         DlArgument dlArgument;

@@ -1,6 +1,9 @@
 
 #include "CompileCommandsCompilationUnitsParser.hpp"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wsign-conversion"
 #include <argh.h>
+#pragma clang diagnostic pop
 #include <fstream>
 #include <json.hpp>
 #include <teenypath.h>
