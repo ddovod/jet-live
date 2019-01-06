@@ -36,7 +36,8 @@ namespace jet
     bool LiveDelegate::shouldTransferElfSymbol(const ElfContext& context, const ElfSymbol& symbol)
     {
         static const std::string bssSectionName = ".bss";
-        return (symbol.type == ElfSymbolType::kObject && context.sectionNames[symbol.sectionIndex] == bssSectionName);
+        return (symbol.type == ElfSymbolType::kObject && symbol.sectionIndex < context.sectionNames.size()
+                && context.sectionNames[symbol.sectionIndex] == bssSectionName);
     }
 
     std::unique_ptr<ICompilationUnitsParser> LiveDelegate::createCompilationUnitsParser()
