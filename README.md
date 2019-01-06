@@ -50,6 +50,16 @@ Personally I use it like this. I have a `Ctrl+r` shortcut to which `tryReload` i
 
 **jet-live** will monitor for file changes, recompile changed files and only when `tryReload` is called it will wait for all current compilation processes to finish and reload new code. Please don't call `tryReload` on each update, it will not work, call it only when your source code is ready to be reloaded.
 
+### Example
+There's a simple example app, just run:
+```
+git clone https://github.com/ddovod/jet-live.git && cd jet-live
+mkdir build && cd build
+cmake .. && make
+./example/example
+```
+and follow instructions. Don't forget to run `reload` command after fixing the function.
+
 ### Features
 Implemented:
 - Reloading of functions
