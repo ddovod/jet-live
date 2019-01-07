@@ -22,17 +22,17 @@ namespace jet
         m_context->programInfoLoader = m_context->delegate->createProgramInfoLoader();
 
         for (const auto& el : m_context->programInfoLoader->getAllLoadedProgramsPaths(m_context.get())) {
-            if (el.empty()) {
-                m_context->delegate->onLog(LogSeverity::kInfo, "Loading symbols of this process...");
-            } else {
-                m_context->delegate->onLog(LogSeverity::kInfo, "Loading symbols of " + el + "...");
-            }
             Program program;
             program.path = el;
             program.symbols = m_context->programInfoLoader->getProgramSymbols(m_context.get(), program.path);
+            if (program.symbols.functions.empty() && program.symbols.variables.empty()) {
+                // Program has no symbols, skipping
+                continue;
+            }
             m_context->delegate->onLog(LogSeverity::kInfo,
-                "Symbols loaded successfully, total symbols: funcs " + std::to_string(program.symbols.functions.size())
-                    + ", vars " + std::to_string(program.symbols.variables.size()));
+                "Symbols loaded: funcs " + std::to_string(program.symbols.functions.size()) + ", vars "
+                    + std::to_string(program.symbols.variables.size()) + ", "
+                    + (el.empty() ? std::string("Self") : el));
             m_context->programs.push_back(std::move(program));
         }
 
@@ -170,8 +170,8 @@ namespace jet
             m_context->delegate->onLog(LogSeverity::kInfo, "Loading symbols from " + libPath + "...");
             auto libSymbols = m_context->programInfoLoader->getProgramSymbols(m_context.get(), libPath);
             m_context->delegate->onLog(LogSeverity::kInfo,
-                "Symbols loaded successfully, total symbols: funcs " + std::to_string(libSymbols.functions.size())
-                    + ", vars " + std::to_string(libSymbols.variables.size()));
+                "Symbols loaded: funcs " + std::to_string(libSymbols.functions.size()) + ", vars "
+                    + std::to_string(libSymbols.variables.size()) + ", " + libPath);
 
             m_context->delegate->onLog(LogSeverity::kInfo, "Reloading old code with new one...");
             int functionsReloaded = 0;
