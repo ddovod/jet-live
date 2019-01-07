@@ -45,7 +45,7 @@ namespace jet
      */
     struct Program
     {
-        std::string path; /** Program filepath. */
+        std::string path; /** Program filepath. Empty for this executable. */
         Symbols symbols;  /** Sybmols of the program. */
     };
 
@@ -83,11 +83,13 @@ namespace jet
         uint8_t sectionIndex = 0;      // 0 if NO_SECT
         bool privateExternal = false;  // N_PEXT
         bool external = false;         // N_EXT
+        uint64_t size = 0;
+        uintptr_t virtualAddress = 0;  // n_value
     };
 
     struct MachoContext
     {
-        uint32_t textSectionIndex = 0;  // index of '__text' section inside '__TEXT' segment
+        std::vector<std::string> sectionNames;
     };
 
     // Elf specific structures

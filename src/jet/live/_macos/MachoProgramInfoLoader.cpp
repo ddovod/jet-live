@@ -1,35 +1,70 @@
-#include "jet/live/Symbols.hpp"
-#include <memory>
-#include <stdio.h>
-#include <string.h>
-#include <mach-o/loader.h>
+
+#include "MachoProgramInfoLoader.hpp"
+#include <dlfcn.h>
+#include <teenypath.h>
+#include <mach-o/dyld.h>
+#include <mach-o/dyld_images.h>
 #include <mach-o/nlist.h>
-#include "jet/live/DataTypes.hpp"
+#include "jet/live/LiveContext.hpp"
 
 namespace jet
 {
-    std::vector<std::string> getSymbols(const LiveContext* context, const std::string& libPath)
+    std::vector<std::string> MachoProgramInfoLoader::getAllLoadedProgramsPaths(const LiveContext* context) const
     {
-        std::vector<std::string> res;
+        std::vector<std::string> filepaths;
 
-        // Loading mach-o binary
-        auto f = fopen(libPath.c_str(), "r");
+        for (uint32_t i = 0; i < _dyld_image_count(); i++) {
+            auto imagePath = TeenyPath::path{_dyld_get_image_name(i)}.resolve_absolute();
+            if (imagePath.string() == context->thisExecutablePath) {
+                filepaths.emplace_back("");
+            } else {
+                filepaths.emplace_back(imagePath.string());
+            }
+        }
+
+        return filepaths;
+    }
+
+    Symbols MachoProgramInfoLoader::getProgramSymbols(const LiveContext* context, const std::string& filepath) const
+    {
+        Symbols res;
+        MachoContext machoContext;
+
+        intptr_t imageAddressSlide = 0;
+        bool found = false;
+        std::string realFilepath = filepath.empty() ? context->thisExecutablePath : filepath;
+        for (uint32_t i = 0; i < _dyld_image_count(); i++) {
+            auto imagePath = TeenyPath::path{_dyld_get_image_name(i)}.resolve_absolute();
+            if (imagePath.string() == realFilepath) {
+                imageAddressSlide = _dyld_get_image_vmaddr_slide(i);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            context->delegate->onLog(LogSeverity::kError, "Cannot find address slide of image " + realFilepath);
+            return res;
+        }
+
+        const auto baseAddress = static_cast<uintptr_t>(imageAddressSlide);
+
+        // Parsing mach-o binary
+        auto f = fopen(realFilepath.c_str(), "r");
         fseek(f, 0, SEEK_END);
-        auto length = ftell(f);
+        auto length = static_cast<size_t>(ftell(f));
         fseek(f, 0, SEEK_SET);
         auto content = std::unique_ptr<char[]>(new char[length]);
         fread(content.get(), 1, length, f);
         fclose(f);
 
-        //
         auto header = reinterpret_cast<mach_header_64*>(content.get());
         if (header->magic != MH_MAGIC_64) {
-            context->delegate->onLog(LogSeverity::kError, "Cannot read symbols, not a Mach-O 64 binary");
+            // Probably it is some system "fat" library, we're not interested in it
+            // context->delegate->onLog(LogSeverity::kError, "Cannot read symbols, not a Mach-O 64 binary");
             return res;
         }
 
         uint32_t sectionIndex = 0;
-        MachoContext machoContext;
         auto machoPtr = content.get();
         auto commandOffset = sizeof(mach_header_64);
         for (uint32_t iCmd = 0; iCmd < header->ncmds; iCmd++) {
@@ -37,21 +72,15 @@ namespace jet
             switch (command->cmd) {
                 case LC_SEGMENT_64: {
                     auto segmentCommand = reinterpret_cast<segment_command_64*>(machoPtr + commandOffset);
-                    if (strcmp(segmentCommand->segname, "__TEXT") == 0) {
-                        // Found __TEXT segment
-                        auto sectionsPtr =
-                            reinterpret_cast<struct section_64*>(machoPtr + commandOffset + sizeof(*segmentCommand));
-                        for (uint32_t i = 0; i < segmentCommand->nsects; i++) {
-                            auto& section = sectionsPtr[i];
-                            sectionIndex++;
-                            if (strcmp(section.sectname, "__text") == 0) {
-                                // Found __text section in __TEXT segment
-                                machoContext.textSectionIndex = sectionIndex;
-                            }
+                    auto sectionsPtr =
+                        reinterpret_cast<struct section_64*>(machoPtr + commandOffset + sizeof(*segmentCommand));
+                    for (uint32_t i = 0; i < segmentCommand->nsects; i++) {
+                        auto& section = sectionsPtr[i];
+                        sectionIndex++;
+                        if (machoContext.sectionNames.size() <= sectionIndex) {
+                            machoContext.sectionNames.resize(sectionIndex + 1);
                         }
-                    } else {
-                        // Skipping whole segment
-                        sectionIndex += segmentCommand->nsects;
+                        machoContext.sectionNames[sectionIndex] = std::string(section.sectname);
                     }
                     break;
                 }
@@ -104,10 +133,21 @@ namespace jet
                         machoSymbol.privateExternal = symbol.n_type & N_PEXT;
                         machoSymbol.external = symbol.n_type & N_EXT;
                         machoSymbol.sectionIndex = symbol.n_sect;
-                        machoSymbol.name = stringTable + symbol.n_un.n_strx + 1;  // All symbols starts with '_', so
-                                                                                  // just skipping 1 char
+                        machoSymbol.virtualAddress = symbol.n_value;
+                        // All symbol names starts with '_', so just skipping 1 char
+                        machoSymbol.name = stringTable + symbol.n_un.n_strx + 1;
+
+                        Symbol sym;
+                        sym.name = machoSymbol.name;
+                        sym.runtimeAddress = baseAddress + machoSymbol.virtualAddress;
+                        // sym.size = ...;
+
                         if (context->delegate->shouldReloadMachoSymbol(machoContext, machoSymbol)) {
-                            res.push_back(machoSymbol.name);
+                            res.functions[sym.name] = sym;
+                        }
+
+                        if (context->delegate->shouldTransferMachoSymbol(machoContext, machoSymbol)) {
+                            res.variables[sym.name] = sym;
                         }
                     }
                     break;

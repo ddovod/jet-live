@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <string>
+#include "jet/live/DataTypes.hpp"
 
 namespace jet
 {
@@ -19,4 +20,16 @@ namespace jet
     {
         return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
     }
+
+    /**
+     * Gives string representation of the elf symbol.
+     * Used for debugging.
+     */
+    std::string toString(const ElfContext& context, const ElfSymbol& elfSymbol);
+
+    /**
+     * Gives string representation of the macho symbol.
+     * Used for debugging.
+     */
+    std::string toString(const MachoContext& context, const MachoSymbol& machoSymbol);
 }
