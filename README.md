@@ -11,8 +11,6 @@ Tested on Ubuntu 18.04 with clang 6.0.1/7.0.1, cmake 3.10.2, ninja 1.8.2/make 4.
 
 If you need something similar for windows, please try [blink](https://github.com/crosire/blink), I have no plans to support windows.
 
-\* macos port is not completed yet, but will be ready in a couple of weeks or so.
-
 ### Prerequisites
 You need `c++11` compliant compiler. Also there're several dependencies which are bundled in:
 - `nlohmann json` (header only): needed to parse `compile_commands.json` file
@@ -66,9 +64,9 @@ Implemented:
 - Transferring of static variables
 - Tracking of dependencies
 - Working with code from this executable and loaded shared libraries
+- linux and macos implementation
 
 Will be ready soon (in the importance order):
-- macos implementation
 - code reload in multithreaded app (right now reloading of code in multithreaded app is not reliable)
 - dealing with global variables in reloadable code (if you try to reload code wich has globals definitions, it will most likely not work fine)
 - Ability to add new compilations units on the fly (see "How it works")
