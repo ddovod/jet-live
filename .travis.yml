@@ -3,8 +3,10 @@ dist: xenial
 
 matrix:
   include:
-    - compiler: clang
-      os: linux
+    - os: linux
+      compiler: clang
+    - os: osx
+      compiler: clang
 
 addons:
   apt:
