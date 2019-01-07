@@ -69,6 +69,8 @@ Implemented:
 
 Will be ready soon (in the importance order):
 - macos implementation
+- code reload in multithreaded app (right now reloading of code in multithreaded app is not reliable)
+- dealing with global variables in reloadable code (if you try to reload code wich has globals definitions, it will most likely not work fine)
 - Ability to add new compilations units on the fly (see "How it works")
 - Unit tests
 
