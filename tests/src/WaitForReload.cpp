@@ -10,7 +10,7 @@ void waitForReload()
         cont = false;
     });
     while (cont) {
-        if (updatesCount == 2) {
+        if (updatesCount == 10) {
             g_live->tryReload();
         }
         g_live->update();
