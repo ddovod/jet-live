@@ -7,6 +7,7 @@
 class TestDelegate : public jet::LiveDelegate
 {
 public:
+    void onLog(jet::LogSeverity severity, const std::string& message) override;
     void onCodePreLoad() override;
     void onCodePostLoad() override;
 

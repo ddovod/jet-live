@@ -55,6 +55,7 @@ def processCommand(cmdStr):
                 else:
                     newFileLines.append(uncommentedLine)
             if fileWasModified:
+                print("RUNNER: Patching source file: " + filepath)
                 with open(filepath, "w") as f:
                     for line in newFileLines:
                         f.write(line)
@@ -72,7 +73,7 @@ sourceDir = os.path.realpath(os.path.expanduser(args.source_directory))
 
 testCmd = [os.path.join(args.build_directory, "tests/tests"),
            "--use-colour=yes"]
-print("Running '" + " ".join(testCmd) + "'")
+print("RUNNER: Running '" + " ".join(testCmd) + "'")
 proc = subprocess.Popen(testCmd,
                         stdout=subprocess.PIPE)
 
