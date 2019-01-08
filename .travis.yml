@@ -15,6 +15,7 @@ addons:
 
 script:
   - mkdir build && cd build
-  - cmake ..
+  - cmake -DCMAKE_BUILD_TYPE=Debug -DJET_LIVE_BUILD_TESTS=ON ..
   - make
+  - ../tools/tests/test_runner.py -b . -s ../tests/src/
 
