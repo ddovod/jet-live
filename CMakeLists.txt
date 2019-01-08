@@ -4,6 +4,7 @@ project(jet-live)
 
 option(JET_LIVE_SHARED "Compile as shared library. ON - shared, OFF - static." OFF)
 option(JET_LIVE_BUILD_EXAMPLE "Compile example application." ON)
+option(JET_LIVE_BUILD_TESTS "Compile test applications." OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -MD")
@@ -228,3 +229,8 @@ target_compile_options(jet-live
 if (JET_LIVE_BUILD_EXAMPLE)
   add_subdirectory(example)
 endif()
+
+if (JET_LIVE_BUILD_TESTS)
+  add_subdirectory(tests)
+endif()
+
