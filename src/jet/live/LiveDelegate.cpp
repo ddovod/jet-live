@@ -29,7 +29,7 @@ namespace jet
     {
         static const std::string textSectionName = "__text";
         const auto& sectionName = getStringOr(context.sectionNames, symbol.sectionIndex, "?");
-        return (symbol.type == MachoSymbolType::kSection && symbol.weakDef == false && sectionName == textSectionName);
+        return (symbol.type == MachoSymbolType::kSection && !symbol.weakDef && sectionName == textSectionName);
     }
 
     bool LiveDelegate::shouldReloadElfSymbol(const ElfContext& context, const ElfSymbol& symbol)

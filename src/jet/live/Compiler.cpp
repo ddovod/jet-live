@@ -152,9 +152,8 @@ namespace jet
         if (m_readyCompilationUnits.empty()) {
             m_context->delegate->onLog(LogSeverity::kInfo, "Nothing to reload.");
             return;
-        } else {
-            m_context->delegate->onLog(LogSeverity::kInfo, "Linking...");
         }
+        m_context->delegate->onLog(LogSeverity::kInfo, "Linking...");
 
         std::string libName = "lib_reload" + std::to_string(m_currentLibIndex++) + ".so";
         std::vector<std::string> objectFilePaths;

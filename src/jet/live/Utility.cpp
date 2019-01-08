@@ -72,12 +72,12 @@ namespace jet
         };
 
         s += "| ";
-        s += "RD " + std::to_string(machoSymbol.referencedDynamically) + "\t| ";
-        s += "DD " + std::to_string(machoSymbol.descDiscarded) + "\t| ";
-        s += "WR " + std::to_string(machoSymbol.weakRef) + "\t| ";
-        s += "WD " + std::to_string(machoSymbol.weakDef) + "\t| ";
-        s += "PE " + std::to_string(machoSymbol.privateExternal) + "\t| ";
-        s += "E " + std::to_string(machoSymbol.external) + "\t| ";
+        s += "RD " + std::to_string(static_cast<int>(machoSymbol.referencedDynamically)) + "\t| ";
+        s += "DD " + std::to_string(static_cast<int>(machoSymbol.descDiscarded)) + "\t| ";
+        s += "WR " + std::to_string(static_cast<int>(machoSymbol.weakRef)) + "\t| ";
+        s += "WD " + std::to_string(static_cast<int>(machoSymbol.weakDef)) + "\t| ";
+        s += "PE " + std::to_string(static_cast<int>(machoSymbol.privateExternal)) + "\t| ";
+        s += "E " + std::to_string(static_cast<int>(machoSymbol.external)) + "\t| ";
         const auto& sectionName1 = context.sectionNames.size() <= machoSymbol.sectionIndex ?
                                        std::string("?") :
                                        context.sectionNames[machoSymbol.sectionIndex];
