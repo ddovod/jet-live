@@ -18,6 +18,7 @@ namespace jet
     {
     public:
         explicit Compiler(const LiveContext* context);
+        ~Compiler();
 
         /**
          * Runloop method, should be periodically called by the application.

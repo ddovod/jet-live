@@ -95,10 +95,17 @@ namespace jet
         });
 
         for (const auto& el : directoriesToWatch) {
-            m_fileWatcher->addWatch(el, m_efswListener.get(), true);
+            m_watchIds.push_back(m_fileWatcher->addWatch(el, m_efswListener.get(), true));
         }
 
         m_fileWatcher->watch();
+    }
+
+    FileWatcher::~FileWatcher()
+    {
+        for (auto watchId : m_watchIds) {
+            m_fileWatcher->removeWatch(watchId);
+        }
     }
 
     void FileWatcher::update()

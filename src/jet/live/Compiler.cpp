@@ -13,6 +13,17 @@ namespace jet
     {
     }
 
+    Compiler::~Compiler()
+    {
+        for (auto& el : m_runningCompilationTasks) {
+            el.second.process->kill();
+        }
+
+        if (m_runningLinkTask) {
+            m_runningLinkTask->process->kill();
+        }
+    }
+
     void Compiler::update()
     {
         std::vector<std::string> tasksToRemove;

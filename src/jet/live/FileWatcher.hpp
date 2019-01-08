@@ -36,6 +36,7 @@ namespace jet
 
         explicit FileWatcher(const std::vector<std::string>& directoriesToWatch,
             std::function<void(const Event&)>&& callback);
+        ~FileWatcher();
 
         void update();
 
@@ -64,5 +65,6 @@ namespace jet
         std::unique_ptr<EfswListener> m_efswListener;
         std::mutex m_fileEventsMutex;
         std::vector<FileWatcher::Event> m_fileEvents;
+        std::vector<efsw::WatchID> m_watchIds;
     };
 }
