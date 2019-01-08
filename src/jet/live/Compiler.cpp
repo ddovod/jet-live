@@ -82,6 +82,10 @@ namespace jet
                 m_runningLinkTask->finishCallback(
                     status, m_runningLinkTask->cuOrLibFilepath, m_runningLinkTask->errMessage);
                 m_runningLinkTask.reset();
+
+                if (status == 0) {
+                    m_readyCompilationUnits.clear();
+                }
             }
         }
     }
