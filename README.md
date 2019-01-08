@@ -67,10 +67,13 @@ Implemented:
 - linux and macos implementation
 
 Will be ready soon (in the importance order):
-- code reload in multithreaded app (right now reloading of code in multithreaded app is not reliable)
-- dealing with global variables in reloadable code (if you try to reload code wich has globals definitions, it will most likely not work fine)
+- Code reload in multithreaded app (right now reloading of code in multithreaded app is not reliable)
+- Dealing with global variables in reloadable code (if you try to reload code wich has globals definitions, it will most likely not work fine)
 - Ability to add new compilations units on the fly (see "How it works")
 - Unit tests
+
+Will not be implemented at all:
+- Reload of lambda functions with non-empty captures. Lambdas with empty capture list are ok since they are just a plain functions under the hood (at least they are implemented this way). There's only 1 case where we can handle lambdas with non-empty capture list properly - if old and new code has lambda with exactly same capture list, signature and exactly same lambdas **before this lambda** within this file, in other cases the reload of lambdas is not reliable. The reason for this is mangled name of lambda type depends on the captures list, arguments and position of this lambda relative to another lambdas in this compilation unit. Please refer to tests to see good and bad cases.
 
 ### Customizations
 **jet-live** is fine-tuned to work with cmake and make/ninja tools, but if you want to adopt it to another build tool, or to receive logs from it, there's a way to customize its' behaviour in some aspects. Please refer to documentation of `LiveDelegate`, `ICompilationUnitsParser`, `IDependenciesHandler` and `IProgramInfoLoader` for more info and examples.
