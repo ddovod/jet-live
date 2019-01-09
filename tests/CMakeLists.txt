@@ -2,12 +2,46 @@
 cmake_minimum_required(VERSION 3.6)
 project(tests)
 
-file(GLOB TEST_SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 add_executable(tests "")
 target_sources(tests
   PRIVATE
-  ${TEST_SOURCES}
+  src/ClassInstanceMethod.cpp
+  src/ClassStaticMethod.cpp
+  src/ClassVirtualMethod.cpp
+  src/GlobalFreeFunction.cpp
+  src/InternalLinkageFunction.cpp
+  src/LambdaFunction.cpp
+  src/LambdaFunctionWithCapturesBadCase2.cpp
+  src/LambdaFunctionWithCapturesBadCase.cpp
+  src/LambdaFunctionWithCaptures.cpp
+  src/LambdaFunctionWithCapturesGoodCase.cpp
+  src/main.cpp
+  src/StaticVariable.cpp
+  src/StaticInternalVariable.cpp
+  src/StaticFunctionLocalVariable.cpp
+  src/TestDelegate.cpp
+  src/WaitForReload.cpp
+
+  src/ClassInstanceMethod_test.cpp
+  src/ClassStaticMethod_test.cpp
+  src/ClassVirtualMethod_test.cpp
+  src/GlobalFreeFunction_test.cpp
+  src/InternalLinkageFunction_test.cpp
+  src/LambdaFunction_test.cpp
+  src/LambdaFunctionWithCapturesBadCase2_test.cpp
+  src/LambdaFunctionWithCapturesBadCase_test.cpp
+  src/LambdaFunctionWithCapturesGoodCase_test.cpp
+  src/LambdaFunctionWithCaptures_test.cpp
   )
+if (UNIX AND NOT APPLE)
+  # Macos implementation is not finished yet
+  target_sources(tests
+    PRIVATE
+    src/StaticVariable_test.cpp
+    src/StaticInternalVariable_test.cpp
+    src/StaticFunctionLocalVariable_test.cpp
+    )
+endif()
 target_include_directories(tests
   PRIVATE
   src
