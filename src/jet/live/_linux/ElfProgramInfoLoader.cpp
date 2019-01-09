@@ -1,14 +1,10 @@
 
 #include "ElfProgramInfoLoader.hpp"
 #include "jet/live/LiveContext.hpp"
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wconversion"
-#pragma clang diagnostic ignored "-Wshorten-64-to-32"
 // clang-format off
 #include <elfio/elfio.hpp>
 #include <link.h>
 // clang-format on
-#pragma clang diagnostic pop
 
 namespace jet
 {

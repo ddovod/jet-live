@@ -30,6 +30,15 @@ THE SOFTWARE.
 #pragma warning(disable:4244)
 #endif
 
+#if defined(__clang__)
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wconversion"
+#   pragma clang diagnostic ignored "-Wshorten-64-to-32"
+#elif defined(__GNUC__)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Wconversion"
+#endif
+
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -942,6 +951,12 @@ class elfio
 
 #ifdef _MSC_VER
 #pragma warning ( pop )
+#endif
+
+#if defined(__clang__)
+#   pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#   pragma GCC diagnostic pop
 #endif
 
 #endif // ELFIO_HPP

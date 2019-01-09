@@ -13,10 +13,11 @@ target_include_directories(example
   PRIVATE
   src
   )
+find_package(Threads REQUIRED)
 target_link_libraries(example
   PRIVATE
   jet-live
-  pthread
+  Threads::Threads
   )
 set_target_properties(example
   PROPERTIES
@@ -36,6 +37,11 @@ target_compile_options(example
   $<$<COMPILE_LANGUAGE:CXX>:-Wshadow>
   $<$<COMPILE_LANGUAGE:C>:-Wconversion>
   $<$<COMPILE_LANGUAGE:CXX>:-Wconversion>
-  $<$<COMPILE_LANGUAGE:C>:-Wvexing-parse>
-  $<$<COMPILE_LANGUAGE:CXX>:-Wvexing-parse>
   )
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  target_compile_options(example
+    PRIVATE
+    $<$<COMPILE_LANGUAGE:C>:-Wvexing-parse>
+    $<$<COMPILE_LANGUAGE:CXX>:-Wvexing-parse>
+    )
+endif()

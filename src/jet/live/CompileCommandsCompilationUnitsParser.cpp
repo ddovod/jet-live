@@ -1,9 +1,6 @@
 
 #include "CompileCommandsCompilationUnitsParser.hpp"
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wsign-conversion"
 #include <argh.h>
-#pragma clang diagnostic pop
 #include <fstream>
 #include <json.hpp>
 #include <teenypath.h>
@@ -50,7 +47,7 @@ namespace jet
             wordexp_t result;
             switch (wordexp(cu.compilationCommandStr.c_str(), &result, 0)) {
                 case 0: break;
-                case WRDE_NOSPACE: wordfree(&result);
+                case WRDE_NOSPACE: wordfree(&result); continue;
                 default: continue;
             }
 
