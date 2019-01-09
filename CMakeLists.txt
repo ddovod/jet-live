@@ -6,11 +6,14 @@ option(JET_LIVE_SHARED "Compile as shared library. ON - shared, OFF - static." O
 option(JET_LIVE_BUILD_EXAMPLE "Compile example application." ON)
 option(JET_LIVE_BUILD_TESTS "Compile test applications." OFF)
 
+# -MD - is needed to track dependencies between files
+# -falign-functions=16 - needed to keep enough space between functions to make each function "patchable", so
+#                        with this flag each function size will be not less than 16 bytes
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -MD -falign-functions=16 ")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -MD -falign-functions=16 ")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -MD -falign-functions=16 ")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -MD -falign-functions=16 ")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -MD")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -MD")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -MD")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -MD")
 
 if (UNIX AND NOT APPLE)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
