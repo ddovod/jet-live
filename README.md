@@ -5,7 +5,7 @@
 # jet-live
 
 **jet-live** is a library for c++ "hot code reloading". It works on linux and modern macOS (10.12+ I guess) on 64 bit systems powered by cpu with x86-64 instruction set. Apart from reloading of functions it is able to transfer static state (please refer to "How it works" for what is it and why it is important).
-Tested on Ubuntu 18.04 with clang 6.0.1/7.0.1, cmake 3.10.2, ninja 1.8.2/make 4.1 and macOS 10.13.6 with Xcode 8.3.3, cmake 3.8.2, make 3.81.
+Tested on Ubuntu 18.04 with clang 6.0.1/7.0.1 / gcc 6.4.0/7.3.0, cmake 3.10.2, ninja 1.8.2/make 4.1 and macOS 10.13.6 with Xcode 8.3.3, cmake 3.8.2, make 3.81.
 
 **Important:** this library doesn't force you to organize your code in some special way (like in RCCPP or cr), you don't need to separate reloadable code into some shared library, **jet-live** should work with any project in the least intrusive way.
 
