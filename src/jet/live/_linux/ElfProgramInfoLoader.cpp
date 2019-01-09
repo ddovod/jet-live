@@ -94,7 +94,7 @@ namespace jet
                     elfSymbol.size = size;
                     elfSymbol.virtualAddress = value;
 
-                    switch (ELF64_ST_TYPE(type)) {  // NOLINT
+                    switch (type) {
                         case STT_NOTYPE: elfSymbol.type = ElfSymbolType::kNo; break;
                         case STT_OBJECT: elfSymbol.type = ElfSymbolType::kObject; break;
                         case STT_FUNC: elfSymbol.type = ElfSymbolType::kFunction; break;
@@ -103,6 +103,14 @@ namespace jet
                         case STT_COMMON: elfSymbol.type = ElfSymbolType::kCommonObject; break;
                         case STT_TLS: elfSymbol.type = ElfSymbolType::kThreadLocalObject; break;
                         case STT_GNU_IFUNC: elfSymbol.type = ElfSymbolType::kIndirect; break;
+                        default: break;
+                    }
+
+                    switch (bind) {
+                        case STB_LOCAL: elfSymbol.binding = ElfSymbolBinding::kLocal; break;
+                        case STB_GLOBAL: elfSymbol.binding = ElfSymbolBinding::kGlobal; break;
+                        case STB_WEAK: elfSymbol.binding = ElfSymbolBinding::kWeak; break;
+                        case STB_GNU_UNIQUE: elfSymbol.binding = ElfSymbolBinding::kUnique; break;
                         default: break;
                     }
 

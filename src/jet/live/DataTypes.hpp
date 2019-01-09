@@ -126,6 +126,7 @@ namespace jet
     {
         std::string name;
         ElfSymbolType type;
+        ElfSymbolBinding binding;
         ElfSymbolVisibility visibility;
         uint16_t sectionIndex = 0;
         uint64_t size = 0;

@@ -49,10 +49,12 @@ namespace jet
 
     bool LiveDelegate::shouldTransferElfSymbol(const ElfContext& context, const ElfSymbol& symbol)
     {
-        // TODO(ddovod): think about '.data' section
         static const std::string bssSectionName = ".bss";
+        static const std::string dataSectionName = ".data";
         const auto& sectionName = getStringOr(context.sectionNames, symbol.sectionIndex, "?");
-        return (symbol.type == ElfSymbolType::kObject && sectionName == bssSectionName);
+        return (symbol.type == ElfSymbolType::kObject && symbol.binding == ElfSymbolBinding::kLocal
+                && symbol.visibility == ElfSymbolVisibility::kDefault
+                && (sectionName == bssSectionName || sectionName == dataSectionName));
     }
 
     std::unique_ptr<ICompilationUnitsParser> LiveDelegate::createCompilationUnitsParser()

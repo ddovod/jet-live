@@ -29,6 +29,14 @@ namespace jet
         }
 
         s += "| ";
+        switch (elfSymbol.binding) {
+            case ElfSymbolBinding::kLocal: s += "Local\t"; break;
+            case ElfSymbolBinding::kGlobal: s += "Global\t"; break;
+            case ElfSymbolBinding::kWeak: s += "Weak\t"; break;
+            case ElfSymbolBinding::kUnique: s += "Unique\t"; break;
+        }
+
+        s += "| ";
         switch (elfSymbol.visibility) {
             case ElfSymbolVisibility::kDefault: s += "Default\t"; break;
             case ElfSymbolVisibility::kInternal: s += "Internal\t"; break;
