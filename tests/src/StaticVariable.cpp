@@ -3,6 +3,11 @@
 
 static int staticVariable = 10;
 
+void* getVariableAddress()
+{
+    return reinterpret_cast<void*>(&staticVariable);
+}
+
 std::pair<int, int> getNext()
 {
     // Ensuring that this file was reloaded
