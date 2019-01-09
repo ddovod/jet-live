@@ -23,7 +23,7 @@ You need `c++11` compliant compiler. Also there're several dependencies which ar
 - `ELFIO` (header only, for linux): needed to parse elf headers and sections data
 
 ### Getting started
-This library is best suited for projects based on cmake and make or ninja build systems, defaults are fine-tuned for these tools. The CMakeLists.txt will add `set(CMAKE_EXPORT_COMPILE_COMMANDS ON)` option for `compile_commands.json` and alter compiler (adding `-MD`) and linker (adding `-rdynamic` for linux and `-Wl,-export_dynamic` for macos) flags. This is important and not avoidable. if you use ninja, add `-d keepdepfile` ninja flag when running ninja, this is needed to track dependencies between source and header files
+This library is best suited for projects based on cmake and make or ninja build systems, defaults are fine-tuned for these tools. The CMakeLists.txt will add `set(CMAKE_EXPORT_COMPILE_COMMANDS ON)` option for `compile_commands.json` and alter compiler and linker flags. This is important and not avoidable. For details please see CMakeLists.txt. if you use ninja, add `-d keepdepfile` ninja flag when running ninja, this is needed to track dependencies between source and header files
 1. In your project CMakeLists.txt file:
 ```
 set(JET_LIVE_BUILD_EXAMPLE OFF)
