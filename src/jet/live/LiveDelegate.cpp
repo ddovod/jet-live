@@ -41,8 +41,6 @@ namespace jet
 
     bool LiveDelegate::shouldTransferMachoSymbol(const MachoContext& context, const MachoSymbol& symbol)
     {
-        onLog(LogSeverity::kDebug, toString(context, symbol));
-        
         static const std::string bssSectionName = "__bss";
         static const std::string dataSectionName = "__data";
         const auto& sectionName = getStringOr(context.sectionNames, symbol.sectionIndex, "?");

@@ -6,6 +6,7 @@
 #include <mach-o/dyld_images.h>
 #include <mach-o/nlist.h>
 #include "jet/live/LiveContext.hpp"
+#include <set>
 
 namespace jet
 {
@@ -67,6 +68,7 @@ namespace jet
         uint32_t sectionIndex = 0;
         auto machoPtr = content.get();
         auto commandOffset = sizeof(mach_header_64);
+        std::vector<std::set<uint64_t>> symbolsBounds;
         for (uint32_t iCmd = 0; iCmd < header->ncmds; iCmd++) {
             auto command = reinterpret_cast<load_command*>(machoPtr + commandOffset);
             switch (command->cmd) {
@@ -79,12 +81,44 @@ namespace jet
                         sectionIndex++;
                         if (machoContext.sectionNames.size() <= sectionIndex) {
                             machoContext.sectionNames.resize(sectionIndex + 1);
+                            symbolsBounds.resize(sectionIndex + 1);
                         }
                         machoContext.sectionNames[sectionIndex] = std::string(section.sectname);
+                        symbolsBounds[sectionIndex].insert(section.addr + section.size);
                     }
                     break;
                 }
 
+                default: break;
+            }
+
+            commandOffset += command->cmdsize;
+        }
+
+        commandOffset = sizeof(mach_header_64);
+        for (uint32_t iCmd = 0; iCmd < header->ncmds; iCmd++) {
+            auto command = reinterpret_cast<load_command*>(machoPtr + commandOffset);
+            switch (command->cmd) {
+                case LC_SYMTAB: {
+                    auto table = reinterpret_cast<symtab_command*>(machoPtr + commandOffset);
+                    auto symbolsPtr = reinterpret_cast<nlist_64*>(machoPtr + table->symoff);
+                    for (uint32_t i = 0; i < table->nsyms; i++) {
+                        if ((symbolsPtr[i].n_type & N_TYPE) == N_SECT) {
+                            symbolsBounds[symbolsPtr[i].n_sect].insert(symbolsPtr[i].n_value);
+                        }
+                    }
+                    break;
+                }
+
+                default: break;
+            }
+            commandOffset += command->cmdsize;
+        }
+
+        commandOffset = sizeof(mach_header_64);
+        for (uint32_t iCmd = 0; iCmd < header->ncmds; iCmd++) {
+            auto command = reinterpret_cast<load_command*>(machoPtr + commandOffset);
+            switch (command->cmd) {
                 case LC_SYMTAB: {
                     auto table = reinterpret_cast<symtab_command*>(machoPtr + commandOffset);
                     auto symbolsPtr = reinterpret_cast<nlist_64*>(machoPtr + table->symoff);
@@ -137,10 +171,21 @@ namespace jet
                         // All symbol names starts with '_', so just skipping 1 char
                         machoSymbol.name = stringTable + symbol.n_un.n_strx + 1;
 
+                        if (machoSymbol.type == MachoSymbolType::kSection) {
+                            auto addrFound = symbolsBounds[machoSymbol.sectionIndex].find(machoSymbol.virtualAddress);
+                            assert(addrFound != symbolsBounds[machoSymbol.sectionIndex].end());
+                            addrFound++;
+                            if (addrFound != symbolsBounds[machoSymbol.sectionIndex].end()) {
+                                machoSymbol.size = *addrFound - machoSymbol.virtualAddress;
+                            } else {
+                                context->delegate->onLog(LogSeverity::kDebug, "wtf?");
+                            }
+                        }
+
                         Symbol sym;
                         sym.name = machoSymbol.name;
                         sym.runtimeAddress = baseAddress + machoSymbol.virtualAddress;
-                        // sym.size = ...;
+                        sym.size = machoSymbol.size;
 
                         if (context->delegate->shouldReloadMachoSymbol(machoContext, machoSymbol)) {
                             res.functions[sym.name] = sym;
