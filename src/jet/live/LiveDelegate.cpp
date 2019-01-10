@@ -41,10 +41,11 @@ namespace jet
 
     bool LiveDelegate::shouldTransferMachoSymbol(const MachoContext& context, const MachoSymbol& symbol)
     {
-        // TODO(ddovod): think about '__data', '__const' and '__common' sections
         static const std::string bssSectionName = "__bss";
+        static const std::string dataSectionName = "__data";
         const auto& sectionName = getStringOr(context.sectionNames, symbol.sectionIndex, "?");
-        return (symbol.type == MachoSymbolType::kSection && sectionName == bssSectionName);
+        return (symbol.type == MachoSymbolType::kSection && !symbol.privateExternal && !symbol.weakDef
+                && (sectionName == bssSectionName || sectionName == dataSectionName));
     }
 
     bool LiveDelegate::shouldTransferElfSymbol(const ElfContext& context, const ElfSymbol& symbol)

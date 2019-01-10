@@ -32,16 +32,10 @@ target_sources(tests
   src/LambdaFunctionWithCapturesBadCase_test.cpp
   src/LambdaFunctionWithCapturesGoodCase_test.cpp
   src/LambdaFunctionWithCaptures_test.cpp
+  src/StaticVariable_test.cpp
+  src/StaticInternalVariable_test.cpp
+  src/StaticFunctionLocalVariable_test.cpp
   )
-if (UNIX AND NOT APPLE)
-  # Macos implementation is not finished yet
-  target_sources(tests
-    PRIVATE
-    src/StaticVariable_test.cpp
-    src/StaticInternalVariable_test.cpp
-    src/StaticFunctionLocalVariable_test.cpp
-    )
-endif()
 target_include_directories(tests
   PRIVATE
   src
