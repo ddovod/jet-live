@@ -2,7 +2,7 @@
 #include <catch.hpp>
 #include <iostream>
 #include <thread>
-#include "InternalLinkageFunction.hpp"
+#include "utility/InternalLinkageFunction.hpp"
 #include "Globals.hpp"
 #include "WaitForReload.hpp"
 

@@ -2,7 +2,7 @@
 #include <catch.hpp>
 #include <iostream>
 #include <thread>
-#include "ClassStaticMethod.hpp"
+#include "utility/ClassStaticMethod.hpp"
 #include "Globals.hpp"
 #include "WaitForReload.hpp"
 

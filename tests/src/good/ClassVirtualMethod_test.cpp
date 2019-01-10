@@ -2,7 +2,7 @@
 #include <catch.hpp>
 #include <iostream>
 #include <thread>
-#include "ClassVirtualMethod.hpp"
+#include "utility/ClassVirtualMethod.hpp"
 #include "Globals.hpp"
 #include "WaitForReload.hpp"
 #include <jet/live/Utility.hpp>

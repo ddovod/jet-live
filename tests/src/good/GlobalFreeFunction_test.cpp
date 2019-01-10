@@ -2,7 +2,7 @@
 #include <catch.hpp>
 #include <iostream>
 #include <thread>
-#include "GlobalFreeFunction.hpp"
+#include "utility/GlobalFreeFunction.hpp"
 #include "Globals.hpp"
 #include "WaitForReload.hpp"
 

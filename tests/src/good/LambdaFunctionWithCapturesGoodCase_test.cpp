@@ -2,7 +2,7 @@
 #include <catch.hpp>
 #include <iostream>
 #include <thread>
-#include "LambdaFunctionWithCapturesGoodCase.hpp"
+#include "utility/LambdaFunctionWithCapturesGoodCase.hpp"
 #include "Globals.hpp"
 #include "WaitForReload.hpp"
 
