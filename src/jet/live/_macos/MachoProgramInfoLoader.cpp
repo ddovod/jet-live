@@ -127,7 +127,40 @@ namespace jet
                         auto& symbol = symbolsPtr[i];
                         MachoSymbol machoSymbol;
                         if (symbol.n_type & N_STAB) {
-                            machoSymbol.type = MachoSymbolType::kStab;
+                            switch (symbol.n_type) {
+                                case N_GSYM: machoSymbol.type = MachoSymbolType::kGSYM; break;
+                                case N_FNAME: machoSymbol.type = MachoSymbolType::kFNAME; break;
+                                case N_FUN: machoSymbol.type = MachoSymbolType::kFUN; break;
+                                case N_STSYM: machoSymbol.type = MachoSymbolType::kSTSYM; break;
+                                case N_LCSYM: machoSymbol.type = MachoSymbolType::kLCSYM; break;
+                                case N_BNSYM: machoSymbol.type = MachoSymbolType::kBNSYM; break;
+                                case N_AST: machoSymbol.type = MachoSymbolType::kAST; break;
+                                case N_OPT: machoSymbol.type = MachoSymbolType::kOPT; break;
+                                case N_RSYM: machoSymbol.type = MachoSymbolType::kRSYM; break;
+                                case N_SLINE: machoSymbol.type = MachoSymbolType::kSLINE; break;
+                                case N_ENSYM: machoSymbol.type = MachoSymbolType::kENSYM; break;
+                                case N_SSYM: machoSymbol.type = MachoSymbolType::kSSYM; break;
+                                case N_SO: machoSymbol.type = MachoSymbolType::kSO; break;
+                                case N_OSO: machoSymbol.type = MachoSymbolType::kOSO; break;
+                                case N_LSYM: machoSymbol.type = MachoSymbolType::kLSYM; break;
+                                case N_BINCL: machoSymbol.type = MachoSymbolType::kBINCL; break;
+                                case N_SOL: machoSymbol.type = MachoSymbolType::kSOL; break;
+                                case N_PARAMS: machoSymbol.type = MachoSymbolType::kPARAMS; break;
+                                case N_VERSION: machoSymbol.type = MachoSymbolType::kVERSION; break;
+                                case N_OLEVEL: machoSymbol.type = MachoSymbolType::kOLEVEL; break;
+                                case N_PSYM: machoSymbol.type = MachoSymbolType::kPSYM; break;
+                                case N_EINCL: machoSymbol.type = MachoSymbolType::kEINCL; break;
+                                case N_ENTRY: machoSymbol.type = MachoSymbolType::kENTRY; break;
+                                case N_LBRAC: machoSymbol.type = MachoSymbolType::kLBRAC; break;
+                                case N_EXCL: machoSymbol.type = MachoSymbolType::kEXCL; break;
+                                case N_RBRAC: machoSymbol.type = MachoSymbolType::kRBRAC; break;
+                                case N_BCOMM: machoSymbol.type = MachoSymbolType::kBCOMM; break;
+                                case N_ECOMM: machoSymbol.type = MachoSymbolType::kECOMM; break;
+                                case N_ECOML: machoSymbol.type = MachoSymbolType::kECOML; break;
+                                case N_LENG: machoSymbol.type = MachoSymbolType::kLENG; break;
+                                case N_PC: machoSymbol.type = MachoSymbolType::kPC; break;
+                                default: continue;  // Some symbol we're not interested in
+                            }
                         } else {
                             switch (symbol.n_type & N_TYPE) {
                                 case N_UNDF: machoSymbol.type = MachoSymbolType::kUndefined; break;

@@ -66,7 +66,38 @@ namespace jet
             case MachoSymbolType::kSection: s += "Section\t\t"; break;
             case MachoSymbolType::kPreboundUndefined: s += "PreboundUndefined\t"; break;
             case MachoSymbolType::kIndirect: s += "Indirect\t\t"; break;
-            case MachoSymbolType::kStab: s += "Stub\t\t\t"; break;
+
+            case MachoSymbolType::kGSYM: s += "GSYM\t"; break;
+            case MachoSymbolType::kFNAME: s += "FNAME\t"; break;
+            case MachoSymbolType::kFUN: s += "FUN\t"; break;
+            case MachoSymbolType::kSTSYM: s += "STSYM\t"; break;
+            case MachoSymbolType::kLCSYM: s += "LCSYM\t"; break;
+            case MachoSymbolType::kBNSYM: s += "BNSYM\t"; break;
+            case MachoSymbolType::kAST: s += "AST\t"; break;
+            case MachoSymbolType::kOPT: s += "OPT\t"; break;
+            case MachoSymbolType::kRSYM: s += "RSYM\t"; break;
+            case MachoSymbolType::kSLINE: s += "SLINE\t"; break;
+            case MachoSymbolType::kENSYM: s += "ENSYM\t"; break;
+            case MachoSymbolType::kSSYM: s += "SSYM\t"; break;
+            case MachoSymbolType::kSO: s += "SO\t\t"; break;
+            case MachoSymbolType::kOSO: s += "OSO\t"; break;
+            case MachoSymbolType::kLSYM: s += "LSYM\t"; break;
+            case MachoSymbolType::kBINCL: s += "BINCL\t"; break;
+            case MachoSymbolType::kSOL: s += "SOL\t"; break;
+            case MachoSymbolType::kPARAMS: s += "PARAMS\t"; break;
+            case MachoSymbolType::kVERSION: s += "VERSION\t"; break;
+            case MachoSymbolType::kOLEVEL: s += "OLEVEL\t"; break;
+            case MachoSymbolType::kPSYM: s += "PSYM\t"; break;
+            case MachoSymbolType::kEINCL: s += "EINCL\t"; break;
+            case MachoSymbolType::kENTRY: s += "ENTRY\t"; break;
+            case MachoSymbolType::kLBRAC: s += "LBRAC\t"; break;
+            case MachoSymbolType::kEXCL: s += "EXCL\t"; break;
+            case MachoSymbolType::kRBRAC: s += "RBRAC\t"; break;
+            case MachoSymbolType::kBCOMM: s += "BCOMM\t"; break;
+            case MachoSymbolType::kECOMM: s += "ECOMM\t"; break;
+            case MachoSymbolType::kECOML: s += "ECOML\t"; break;
+            case MachoSymbolType::kLENG: s += "LENG\t"; break;
+            case MachoSymbolType::kPC: s += "PC\t\t"; break;
         }
 
         s += "| ";

@@ -60,7 +60,39 @@ namespace jet
         kSection,            // defined in section
         kPreboundUndefined,  // defined in a dylib
         kIndirect,           // indirect
-        kStab,               // symbolic debugging entry
+
+        // These are symbolic debugging entry types (if symbol.n_type & N_STAB != 0)
+        kGSYM,      /* global symbol: name,,NO_SECT,type,0 */               
+        kFNAME,     /* procedure name (f77 kludge): name,,NO_SECT,0,0 */    
+        kFUN,       /* procedure: name,,n_sect,linenumber,address */        
+        kSTSYM,     /* static symbol: name,,n_sect,type,address */          
+        kLCSYM,     /* .lcomm symbol: name,,n_sect,type,address */          
+        kBNSYM,     /* begin nsect sym: 0,,n_sect,0,address */              
+        kAST,       /* AST file path: name,,NO_SECT,0,0 */                  
+        kOPT,       /* emitted with gcc2_compiled and in gcc source */      
+        kRSYM,      /* register sym: name,,NO_SECT,type,register */         
+        kSLINE,     /* src line: 0,,n_sect,linenumber,address */            
+        kENSYM,     /* end nsect sym: 0,,n_sect,0,address */                
+        kSSYM,      /* structure elt: name,,NO_SECT,type,struct_offset */   
+        kSO,        /* source file name: name,,n_sect,0,address */          
+        kOSO,       /* object file name: name,,0,0,st_mtime */              
+        kLSYM,      /* local sym: name,,NO_SECT,type,offset */              
+        kBINCL,     /* include file beginning: name,,NO_SECT,0,sum */       
+        kSOL,       /* #included file name: name,,n_sect,0,address */       
+        kPARAMS,    /* compiler parameters: name,,NO_SECT,0,0 */            
+        kVERSION,   /* compiler version: name,,NO_SECT,0,0 */               
+        kOLEVEL,    /* compiler -O level: name,,NO_SECT,0,0 */              
+        kPSYM,      /* parameter: name,,NO_SECT,type,offset */              
+        kEINCL,     /* include file end: name,,NO_SECT,0,0 */               
+        kENTRY,     /* alternate entry: name,,n_sect,linenumber,address */  
+        kLBRAC,     /* left bracket: 0,,NO_SECT,nesting level,address */    
+        kEXCL,      /* deleted include file: name,,NO_SECT,0,sum */         
+        kRBRAC,     /* right bracket: 0,,NO_SECT,nesting level,address */   
+        kBCOMM,     /* begin common: name,,NO_SECT,0,0 */                   
+        kECOMM,     /* end common: name,,n_sect,0,0 */                      
+        kECOML,     /* end common (local name): 0,,n_sect,0,address */      
+        kLENG,      /* second stab entry with length information */         
+        kPC,        /* global pascal symbol: name,,NO_SECT,subtype,line */
     };
 
     enum class MachoSymbolReferenceType : uint8_t
