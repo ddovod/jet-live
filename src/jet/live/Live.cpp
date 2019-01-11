@@ -175,59 +175,71 @@ namespace jet
 
             m_context->delegate->onLog(LogSeverity::kInfo, "Reloading old code with new one...");
             int functionsReloaded = 0;
-            for (const auto& sym : libSymbols.functions) {
-                void* oldFuncPtr = nullptr;
-                for (auto it = m_context->programs.rbegin(); it != m_context->programs.rend(); it++) {
-                    auto foundSym = it->symbols.functions.find(sym.second.name);
-                    if (foundSym != it->symbols.functions.end()) {
-                        oldFuncPtr = reinterpret_cast<void*>(foundSym->second.runtimeAddress);
-                        break;
+            for (const auto& syms : libSymbols.functions) {
+                for (const auto& sym : syms.second) {
+                    void* oldFuncPtr = nullptr;
+                    bool found = false;
+                    const auto& progs = m_context->programs;
+                    for (auto it = progs.rbegin(); it != progs.rend() && !found; it++) {
+                        auto foundSyms = it->symbols.functions.find(sym.name);
+                        if (foundSyms != it->symbols.functions.end()) {
+                            for (const auto& foundSym : foundSyms->second) {
+                                if (foundSym.hash == sym.hash) {
+                                    oldFuncPtr = reinterpret_cast<void*>(foundSym.runtimeAddress);
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
                     }
-                }
 
-                if (!oldFuncPtr) {
-                    continue;
-                }
+                    if (!found) {
+                        continue;
+                    }
 
-                auto newFuncPtr = reinterpret_cast<void*>(sym.second.runtimeAddress);
-                if (!newFuncPtr) {
-                    continue;
-                }
+                    auto newFuncPtr = reinterpret_cast<void*>(sym.runtimeAddress);
 
-                auto hook = subhook_new(oldFuncPtr, newFuncPtr, SUBHOOK_64BIT_OFFSET);
-                if (auto subhookStatus = subhook_install(hook)) {
-                    m_context->delegate->onLog(LogSeverity::kError,
-                        "Cannot hook function: " + sym.second.name + ", status " + std::to_string(subhookStatus));
-                } else {
-                    functionsReloaded++;
+                    auto hook = subhook_new(oldFuncPtr, newFuncPtr, SUBHOOK_64BIT_OFFSET);
+                    if (auto subhookStatus = subhook_install(hook)) {
+                        m_context->delegate->onLog(LogSeverity::kError,
+                            "Cannot hook function: " + sym.name + ", status " + std::to_string(subhookStatus));
+                    } else {
+                        functionsReloaded++;
+                    }
                 }
             }
 
             int variablesTransferred = 0;
-            for (const auto& sym : libSymbols.variables) {
-                void* oldVarPtr = nullptr;
-                size_t oldVarSize = 0;
-                for (auto it = m_context->programs.rbegin(); it != m_context->programs.rend(); it++) {
-                    auto foundSym = it->symbols.variables.find(sym.second.name);
-                    if (foundSym != it->symbols.variables.end()) {
-                        oldVarSize = foundSym->second.size;
-                        oldVarPtr = reinterpret_cast<void*>(foundSym->second.runtimeAddress);
-                        break;
+            for (const auto& syms : libSymbols.variables) {
+                for (const auto& sym : syms.second) {
+                    void* oldVarPtr = nullptr;
+                    size_t oldVarSize = 0;
+                    bool found = false;
+                    const auto& progs = m_context->programs;
+                    for (auto it = progs.rbegin(); it != progs.rend() && !found; it++) {
+                        auto foundSyms = it->symbols.variables.find(sym.name);
+                        if (foundSyms != it->symbols.variables.end()) {
+                            for (const auto& foundSym : foundSyms->second) {
+                                if (sym.hash == foundSym.hash) {
+                                    oldVarSize = foundSym.size;
+                                    oldVarPtr = reinterpret_cast<void*>(foundSym.runtimeAddress);
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
                     }
-                }
 
-                if (!oldVarPtr) {
-                    continue;
-                }
+                    if (!found) {
+                        continue;
+                    }
 
-                auto newVarPtr = reinterpret_cast<void*>(sym.second.runtimeAddress);
-                if (!newVarPtr) {
-                    continue;
-                }
+                    auto newVarPtr = reinterpret_cast<void*>(sym.runtimeAddress);
 
-                // Trying to do our best
-                memcpy(newVarPtr, oldVarPtr, std::min(sym.second.size, oldVarSize));
-                variablesTransferred++;
+                    // Trying to do our best
+                    memcpy(newVarPtr, oldVarPtr, std::min(sym.size, oldVarSize));
+                    variablesTransferred++;
+                }
             }
 
             Program libProgram;

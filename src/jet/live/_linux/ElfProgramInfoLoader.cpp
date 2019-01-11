@@ -71,6 +71,8 @@ namespace jet
             return res;
         }
 
+        std::hash<std::string> stringHasher;
+        uint64_t currentHash = 0;
         elfContext.sectionNames.resize(elfFile.sections.size());
         for (uint32_t i = 0; i < elfFile.sections.size(); i++) {
             const auto& section = elfFile.sections[i];
@@ -122,17 +124,24 @@ namespace jet
                         default: break;
                     }
 
+                    if (elfSymbol.type == ElfSymbolType::kFile) {
+                        currentHash = stringHasher(elfSymbol.name);
+                    }
+
                     Symbol symbol;
                     symbol.name = elfSymbol.name;
                     symbol.size = elfSymbol.size;
                     symbol.runtimeAddress = baseAddress + elfSymbol.virtualAddress;
+                    if (elfSymbol.binding == ElfSymbolBinding::kLocal) {
+                        symbol.hash = currentHash;
+                    }
 
                     if (context->delegate->shouldReloadElfSymbol(elfContext, elfSymbol)) {
-                        res.functions[symbol.name] = symbol;
+                        res.functions[symbol.name].push_back(symbol);
                     }
 
                     if (context->delegate->shouldTransferElfSymbol(elfContext, elfSymbol)) {
-                        res.variables[symbol.name] = symbol;
+                        res.variables[symbol.name].push_back(symbol);
                     }
                 }
             }

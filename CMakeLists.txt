@@ -190,6 +190,7 @@ endif()
 target_include_directories(jet-live
   PUBLIC
   src/
+  libs/utils/
   )
 find_package(Threads REQUIRED)
 target_link_libraries(jet-live

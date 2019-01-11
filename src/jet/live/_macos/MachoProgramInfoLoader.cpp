@@ -1,12 +1,12 @@
 
 #include "MachoProgramInfoLoader.hpp"
 #include <dlfcn.h>
+#include <set>
 #include <teenypath.h>
 #include <mach-o/dyld.h>
 #include <mach-o/dyld_images.h>
 #include <mach-o/nlist.h>
 #include "jet/live/LiveContext.hpp"
-#include <set>
 
 namespace jet
 {

@@ -3,6 +3,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <utils.hpp>
 #include <vector>
 
 namespace jet
@@ -29,6 +30,7 @@ namespace jet
         std::string name;             /** Mangled name of the symbol. */
         size_t size = 0;              /** Size of the symbol. */
         uintptr_t runtimeAddress = 0; /** A pointer to the symbol. */
+        uint64_t hash = 0;            /** Connects local symbol to the file it belongs to, 0 for non-locals. */
     };
 
     /**
@@ -36,8 +38,8 @@ namespace jet
      */
     struct Symbols
     {
-        std::unordered_map<std::string, Symbol> functions; /** Hookable function symbols. */
-        std::unordered_map<std::string, Symbol> variables; /** Transferrable variable symbols. */
+        std::unordered_map<std::string, small_vector<Symbol, 1>> functions; /** Hookable function symbols. */
+        std::unordered_map<std::string, small_vector<Symbol, 1>> variables; /** Transferrable variable symbols. */
     };
 
     /**
