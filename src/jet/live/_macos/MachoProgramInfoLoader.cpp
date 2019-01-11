@@ -6,6 +6,7 @@
 #include <mach-o/dyld.h>
 #include <mach-o/dyld_images.h>
 #include <mach-o/nlist.h>
+#include <mach-o/stab.h>
 #include "jet/live/LiveContext.hpp"
 
 namespace jet
@@ -115,6 +116,9 @@ namespace jet
             commandOffset += command->cmdsize;
         }
 
+        std::hash<std::string> stringHasher;
+        uint64_t currentHash = 0;
+        std::unordered_map<uintptr_t, uint64_t> addressHashMap;
         commandOffset = sizeof(mach_header_64);
         for (uint32_t iCmd = 0; iCmd < header->ncmds; iCmd++) {
             auto command = reinterpret_cast<load_command*>(machoPtr + commandOffset);
@@ -204,6 +208,12 @@ namespace jet
                         // All symbol names starts with '_', so just skipping 1 char
                         machoSymbol.name = stringTable + symbol.n_un.n_strx + 1;
 
+                        if (machoSymbol.type == MachoSymbolType::kOSO) {
+                            currentHash = stringHasher(machoSymbol.name);
+                        } else if (machoSymbol.type == MachoSymbolType::kSTSYM) {
+                            addressHashMap[machoSymbol.virtualAddress] = currentHash;
+                        }
+
                         if (machoSymbol.type == MachoSymbolType::kSection) {
                             auto addrFound = symbolsBounds[machoSymbol.sectionIndex].find(machoSymbol.virtualAddress);
                             assert(addrFound != symbolsBounds[machoSymbol.sectionIndex].end());
@@ -221,11 +231,12 @@ namespace jet
                         sym.size = machoSymbol.size;
 
                         if (context->delegate->shouldReloadMachoSymbol(machoContext, machoSymbol)) {
-                            res.functions[sym.name] = sym;
+                            res.functions[sym.name].push_back(sym);
                         }
 
                         if (context->delegate->shouldTransferMachoSymbol(machoContext, machoSymbol)) {
-                            res.variables[sym.name] = sym;
+                            sym.hash = addressHashMap[machoSymbol.virtualAddress];
+                            res.variables[sym.name].push_back(sym);
                         }
                     }
                     break;
