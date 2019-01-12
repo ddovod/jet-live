@@ -6,7 +6,7 @@ add_executable(example "")
 target_sources(example
   PRIVATE
   src/main.cpp
-  src/ExampleDelegate.cpp
+  src/ExampleListener.cpp
   src/SimpleCommandInterpreter.cpp
   )
 target_include_directories(example

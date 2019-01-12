@@ -1,15 +1,15 @@
 
-#include "ExampleDelegate.hpp"
+#include "ExampleListener.hpp"
 #include <iostream>
 
-ExampleDelegate::ExampleDelegate(std::function<void()>&& codePreLoadCallback,
+ExampleListener::ExampleListener(std::function<void()>&& codePreLoadCallback,
     std::function<void()>&& codePostLoadCallback)
     : m_codePreLoadCallback(std::move(codePreLoadCallback))
     , m_codePostLoadCallback(std::move(codePostLoadCallback))
 {
 }
 
-void ExampleDelegate::onLog(jet::LogSeverity severity, const std::string& message)
+void ExampleListener::onLog(jet::LogSeverity severity, const std::string& message)
 {
     std::string severityString;
     switch (severity) {
@@ -21,17 +21,12 @@ void ExampleDelegate::onLog(jet::LogSeverity severity, const std::string& messag
     std::cout << severityString << ": " << message << std::endl;
 }
 
-void ExampleDelegate::onCodePreLoad()
+void ExampleListener::onCodePreLoad()
 {
     m_codePreLoadCallback();
 }
 
-void ExampleDelegate::onCodePostLoad()
+void ExampleListener::onCodePostLoad()
 {
     m_codePostLoadCallback();
-}
-
-size_t ExampleDelegate::getWorkerThreadsCount()
-{
-    return 2;
 }

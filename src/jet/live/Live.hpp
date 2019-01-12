@@ -5,16 +5,23 @@
 #include <unordered_map>
 #include <vector>
 #include "jet/live/Compiler.hpp"
-#include "jet/live/DataTypes.hpp"
 #include "jet/live/FileWatcher.hpp"
+#include "jet/live/ILiveListener.hpp"
+#include "jet/live/LiveConfig.hpp"
 #include "jet/live/LiveContext.hpp"
 
 namespace jet
 {
+    struct CompilationUnit;
+
+    /**
+     * Main entry point of the library.
+     * Ties together all the parts of functionality.
+     */
     class Live
     {
     public:
-        explicit Live(std::unique_ptr<LiveDelegate>&& delegate = {});
+        Live(std::unique_ptr<ILiveListener>&& listener = {}, const LiveConfig& config = {});
 
         /**
          * Tries to reload changed code.

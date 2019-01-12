@@ -6,8 +6,10 @@
 #include <unordered_set>
 #include "jet/live/ICompilationUnitsParser.hpp"
 #include "jet/live/IDependenciesHandler.hpp"
+#include "jet/live/ILiveListener.hpp"
 #include "jet/live/IProgramInfoLoader.hpp"
-#include "jet/live/LiveDelegate.hpp"
+#include "jet/live/ISymbolsFilter.hpp"
+#include "jet/live/LiveConfig.hpp"
 
 namespace jet
 {
@@ -16,8 +18,11 @@ namespace jet
      */
     struct LiveContext
     {
-        /** Current delegate. */
-        std::unique_ptr<LiveDelegate> delegate;
+        /** Current config. */
+        LiveConfig liveConfig;
+
+        /** Current events listener. */
+        std::unique_ptr<ILiveListener> listener;
 
         /** Current compilation units parser. */
         std::unique_ptr<ICompilationUnitsParser> compilationUnitsParser;
@@ -27,6 +32,9 @@ namespace jet
 
         /** Current program info loader. */
         std::unique_ptr<IProgramInfoLoader> programInfoLoader;
+
+        /** Current symbols filter. */
+        std::unique_ptr<ISymbolsFilter> symbolsFilter;
 
         /**
          * All programs which are living in the address space if this process (executables

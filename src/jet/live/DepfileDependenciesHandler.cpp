@@ -15,13 +15,13 @@ namespace jet
         deps.insert(cu.sourceFilePath);
 
         if (cu.depFilePath.empty()) {
-            context->delegate->onLog(LogSeverity::kWarning, "Empty depfile path for cu: " + cu.sourceFilePath);
+            context->listener->onLog(LogSeverity::kWarning, "Empty depfile path for cu: " + cu.sourceFilePath);
             return deps;
         }
 
         std::ifstream f{cu.depFilePath};
         if (!f.is_open()) {
-            context->delegate->onLog(LogSeverity::kWarning, "Cannot open depfile: " + cu.depFilePath);
+            context->listener->onLog(LogSeverity::kWarning, "Cannot open depfile: " + cu.depFilePath);
             return deps;
         }
 

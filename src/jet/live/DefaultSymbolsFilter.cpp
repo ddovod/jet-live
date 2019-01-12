@@ -1,9 +1,6 @@
 
-#include "LiveDelegate.hpp"
-#include "jet/live/CompileCommandsCompilationUnitsParser.hpp"
-#include "jet/live/DefaultProgramInfoLoader.hpp"
-#include "jet/live/DepfileDependenciesHandler.hpp"
-#include "jet/live/Utility.hpp"
+#include "DefaultSymbolsFilter.hpp"
+#include "jet/live/DataTypes.hpp"
 
 namespace
 {
@@ -15,31 +12,21 @@ namespace
 
 namespace jet
 {
-    void LiveDelegate::onLog(LogSeverity, const std::string&) {}
-
-    void LiveDelegate::onCodePreLoad() {}
-
-    void LiveDelegate::onCodePostLoad() {}
-
-    size_t LiveDelegate::getWorkerThreadsCount() { return 4; }
-
-    std::vector<std::string> LiveDelegate::getDirectoriesToMonitor() { return {}; }
-
-    bool LiveDelegate::shouldReloadMachoSymbol(const MachoContext& context, const MachoSymbol& symbol)
+    bool DefaultSymbolsFilter::shouldReloadMachoSymbol(const MachoContext& context, const MachoSymbol& symbol)
     {
         static const std::string textSectionName = "__text";
         const auto& sectionName = getStringOr(context.sectionNames, symbol.sectionIndex, "?");
         return (symbol.type == MachoSymbolType::kSection && !symbol.weakDef && sectionName == textSectionName);
     }
 
-    bool LiveDelegate::shouldReloadElfSymbol(const ElfContext& context, const ElfSymbol& symbol)
+    bool DefaultSymbolsFilter::shouldReloadElfSymbol(const ElfContext& context, const ElfSymbol& symbol)
     {
         static const std::string textSectionName = ".text";
         const auto& sectionName = getStringOr(context.sectionNames, symbol.sectionIndex, "?");
         return (symbol.type == ElfSymbolType::kFunction && symbol.size != 0 && sectionName == textSectionName);
     }
 
-    bool LiveDelegate::shouldTransferMachoSymbol(const MachoContext& context, const MachoSymbol& symbol)
+    bool DefaultSymbolsFilter::shouldTransferMachoSymbol(const MachoContext& context, const MachoSymbol& symbol)
     {
         static const std::string bssSectionName = "__bss";
         static const std::string dataSectionName = "__data";
@@ -48,7 +35,7 @@ namespace jet
                 && (sectionName == bssSectionName || sectionName == dataSectionName));
     }
 
-    bool LiveDelegate::shouldTransferElfSymbol(const ElfContext& context, const ElfSymbol& symbol)
+    bool DefaultSymbolsFilter::shouldTransferElfSymbol(const ElfContext& context, const ElfSymbol& symbol)
     {
         static const std::string bssSectionName = ".bss";
         static const std::string dataSectionName = ".data";
@@ -56,20 +43,5 @@ namespace jet
         return (symbol.type == ElfSymbolType::kObject && symbol.binding == ElfSymbolBinding::kLocal
                 && symbol.visibility == ElfSymbolVisibility::kDefault
                 && (sectionName == bssSectionName || sectionName == dataSectionName));
-    }
-
-    std::unique_ptr<ICompilationUnitsParser> LiveDelegate::createCompilationUnitsParser()
-    {
-        return jet::make_unique<CompileCommandsCompilationUnitsParser>();
-    }
-
-    std::unique_ptr<IDependenciesHandler> LiveDelegate::createDependenciesHandler()
-    {
-        return jet::make_unique<DepfileDependenciesHandler>();
-    }
-
-    std::unique_ptr<IProgramInfoLoader> LiveDelegate::createProgramInfoLoader()
-    {
-        return jet::make_unique<DefaultProgramInfoLoader>();
     }
 }

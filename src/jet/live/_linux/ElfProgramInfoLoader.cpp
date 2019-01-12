@@ -67,7 +67,7 @@ namespace jet
         ELFIO::elfio elfFile;
         std::string realFilepath = filepath.empty() ? context->thisExecutablePath : filepath;
         if (!elfFile.load(realFilepath)) {
-            context->delegate->onLog(LogSeverity::kError, "Cannot load " + realFilepath + " file");
+            context->listener->onLog(LogSeverity::kError, "Cannot load " + realFilepath + " file");
             return res;
         }
 
@@ -136,11 +136,11 @@ namespace jet
                         symbol.hash = currentHash;
                     }
 
-                    if (context->delegate->shouldReloadElfSymbol(elfContext, elfSymbol)) {
+                    if (context->symbolsFilter->shouldReloadElfSymbol(elfContext, elfSymbol)) {
                         res.functions[symbol.name].push_back(symbol);
                     }
 
-                    if (context->delegate->shouldTransferElfSymbol(elfContext, elfSymbol)) {
+                    if (context->symbolsFilter->shouldTransferElfSymbol(elfContext, elfSymbol)) {
                         res.variables[symbol.name].push_back(symbol);
                     }
                 }

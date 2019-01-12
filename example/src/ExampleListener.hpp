@@ -2,16 +2,15 @@
 #pragma once
 
 #include <functional>
-#include <jet/live/LiveDelegate.hpp>
+#include <jet/live/ILiveListener.hpp>
 
-class TestDelegate : public jet::LiveDelegate
+class ExampleListener : public jet::ILiveListener
 {
 public:
+    ExampleListener(std::function<void()>&& codePreLoadCallback, std::function<void()>&& codePostLoadCallback);
     void onLog(jet::LogSeverity severity, const std::string& message) override;
     void onCodePreLoad() override;
     void onCodePostLoad() override;
-
-    void setCallbacks(std::function<void()>&& codePreLoadCallback, std::function<void()>&& codePostLoadCallback);
 
 private:
     std::function<void()> m_codePreLoadCallback;

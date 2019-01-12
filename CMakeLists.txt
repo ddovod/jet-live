@@ -167,7 +167,7 @@ endif()
 target_sources(jet-live
   PRIVATE
   src/jet/live/Utility.cpp
-  src/jet/live/LiveDelegate.cpp
+  src/jet/live/DefaultSymbolsFilter.cpp
   src/jet/live/FileWatcher.cpp
   src/jet/live/CompileCommandsCompilationUnitsParser.cpp
   src/jet/live/Compiler.cpp
