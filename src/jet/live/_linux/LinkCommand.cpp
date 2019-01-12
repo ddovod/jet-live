@@ -8,7 +8,7 @@ namespace jet
         const std::vector<std::string>& objectFilePaths)
     {
         std::string linkCommand =
-            compilerPath + " -fPIC -g -rdynamic -shared -Wl,-soname," + libName + " -o  " + libName + " ";
+            compilerPath + " -fPIC -mcmodel=medium -g -rdynamic -shared -Wl,-soname," + libName + " -o  " + libName + " ";
         for (const auto& oFile : objectFilePaths) {
             linkCommand.append("\"" + oFile + "\" ");
         }
