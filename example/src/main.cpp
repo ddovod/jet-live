@@ -6,7 +6,7 @@
 #include <thread>
 #include <jet/live/Live.hpp>
 #include <jet/live/Utility.hpp>
-#include "ExampleDelegate.hpp"
+#include "ExampleListener.hpp"
 #include "SimpleCommandInterpreter.hpp"
 
 std::mutex g_inputMutex;
@@ -41,7 +41,10 @@ std::string getNextCommand()
 
 int main()
 {
-    auto live = jet::make_unique<jet::Live>(jet::make_unique<ExampleDelegate>(preLoadCallback, postLoadCallback));
+    auto listener = jet::make_unique<ExampleListener>(preLoadCallback, postLoadCallback);
+    jet::LiveConfig config;
+    config.workerThreadsCount = 2;
+    auto live = jet::make_unique<jet::Live>(std::move(listener), config);
 
     // Polling input in background
     std::thread inputThread{[] {

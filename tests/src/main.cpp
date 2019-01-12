@@ -5,19 +5,19 @@
 #include <memory>
 #include <jet/live/Live.hpp>
 #include <jet/live/Utility.hpp>
-#include "TestDelegate.hpp"
+#include "TestListener.hpp"
 
-TestDelegate* g_testDelegatePtr = nullptr;
+TestListener* g_testListenerPtr = nullptr;
 jet::Live* g_live = nullptr;
 
 int main(int argc, char* argv[])
 {
     std::cout.setf(std::ios::unitbuf);
 
-    auto testDelegate = jet::make_unique<TestDelegate>();
-    g_testDelegatePtr = testDelegate.get();
+    auto testListener = jet::make_unique<TestListener>();
+    g_testListenerPtr = testListener.get();
 
-    auto live = jet::make_unique<jet::Live>(std::move(testDelegate));
+    auto live = jet::make_unique<jet::Live>(std::move(testListener));
     g_live = live.get();
 
     return Catch::Session().run(argc, argv);

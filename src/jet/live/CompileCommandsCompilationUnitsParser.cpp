@@ -20,17 +20,17 @@ namespace jet
 
         TeenyPath::path probablyDbPath = getCompileCommandsPath(context);
         if (!probablyDbPath.exists()) {
-            context->delegate->onLog(
+            context->listener->onLog(
                 LogSeverity::kError, "Cannot find 'compile_commands.json' path at " + probablyDbPath.string());
             return res;
         }
 
         // Parsing `compile_commands.json`
-        context->delegate->onLog(
+        context->listener->onLog(
             LogSeverity::kInfo, "Reading `compile_commands.json` from " + probablyDbPath.resolve_absolute().string());
         std::ifstream f{probablyDbPath.resolve_absolute().string()};
         if (!f.is_open()) {
-            context->delegate->onLog(
+            context->listener->onLog(
                 LogSeverity::kError, "Cannot open 'compile_commands.json' at " + probablyDbPath.string());
             return res;
         }
@@ -55,7 +55,7 @@ namespace jet
                 static_cast<int>(result.we_wordc), result.we_wordv, argh::parser::PREFER_PARAM_FOR_UNREG_OPTION);
             cu.objFilePath = parser({"-o", "--output"}).str();
             if (cu.objFilePath.empty()) {
-                context->delegate->onLog(
+                context->listener->onLog(
                     LogSeverity::kWarning, "Cannot find object file path, skipping: " + cu.sourceFilePath);
                 continue;
             }

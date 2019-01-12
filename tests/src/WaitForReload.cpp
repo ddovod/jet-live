@@ -6,7 +6,7 @@ void waitForReload()
 {
     bool cont = true;
     int updatesCount = 0;
-    g_testDelegatePtr->setCallbacks(nullptr, [&cont] {
+    g_testListenerPtr->setCallbacks(nullptr, [&cont] {
         cont = false;
     });
     while (cont) {
@@ -17,5 +17,5 @@ void waitForReload()
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         updatesCount++;
     }
-    g_testDelegatePtr->setCallbacks(nullptr, nullptr);
+    g_testListenerPtr->setCallbacks(nullptr, nullptr);
 }

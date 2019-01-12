@@ -44,7 +44,7 @@ namespace jet
             }
         }
         if (!found) {
-            context->delegate->onLog(LogSeverity::kError, "Cannot find address slide of image " + realFilepath);
+            context->listener->onLog(LogSeverity::kError, "Cannot find address slide of image " + realFilepath);
             return res;
         }
 
@@ -62,7 +62,7 @@ namespace jet
         auto header = reinterpret_cast<mach_header_64*>(content.get());
         if (header->magic != MH_MAGIC_64) {
             // Probably it is some system "fat" library, we're not interested in it
-            // context->delegate->onLog(LogSeverity::kError, "Cannot read symbols, not a Mach-O 64 binary");
+            // context->listener->onLog(LogSeverity::kError, "Cannot read symbols, not a Mach-O 64 binary");
             return res;
         }
 
@@ -221,7 +221,7 @@ namespace jet
                             if (addrFound != symbolsBounds[machoSymbol.sectionIndex].end()) {
                                 machoSymbol.size = *addrFound - machoSymbol.virtualAddress;
                             } else {
-                                context->delegate->onLog(LogSeverity::kDebug, "wtf?");
+                                context->listener->onLog(LogSeverity::kDebug, "wtf?");
                             }
                         }
 
@@ -230,11 +230,11 @@ namespace jet
                         sym.runtimeAddress = baseAddress + machoSymbol.virtualAddress;
                         sym.size = machoSymbol.size;
 
-                        if (context->delegate->shouldReloadMachoSymbol(machoContext, machoSymbol)) {
+                        if (context->symbolsFilter->shouldReloadMachoSymbol(machoContext, machoSymbol)) {
                             res.functions[sym.name].push_back(sym);
                         }
 
-                        if (context->delegate->shouldTransferMachoSymbol(machoContext, machoSymbol)) {
+                        if (context->symbolsFilter->shouldTransferMachoSymbol(machoContext, machoSymbol)) {
                             sym.hash = addressHashMap[machoSymbol.virtualAddress];
                             res.variables[sym.name].push_back(sym);
                         }

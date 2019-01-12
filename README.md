@@ -37,7 +37,7 @@ target_link_libraries(your-app-target jet-live)
 
 **Important:** This library is not thread safe. It uses threads under the hood to run compiler, but you should call all library methods from the same thread.
 
-Also I use this library only with debug builds (`-O0`, not stripped, without `-fvisibility=hidden` and things like that) to not deal with optimized and inlined functions and variables. I don't know how it works on highly optimized release builds, but you can try, probably it will fit your needs.
+Also I use this library only with debug builds (`-O0`, not stripped, without `-fvisibility=hidden` and things like that) to not deal with optimized and inlined functions and variables. I don't know how it works on highly optimized stripped builds, most likely it will not work at all.
 
 Personally I use it like this. I have a `Ctrl+r` shortcut to which `tryReload` is assigned in my application. Also app calls `update` in the main runloop and listens for `onCodePreLoad` and `onCodePostLoad` events to recreate some objects or re-evaluate some functions:
 1. I start my application
@@ -56,7 +56,7 @@ mkdir build && cd build
 cmake .. && make
 ./example/example
 ```
-and follow instructions. Don't forget to run `reload` command after fixing the function.
+and try `hello` command. Don't forget to run `reload` command after fixing the function.
 
 ### Features
 Implemented:
@@ -70,20 +70,20 @@ Will be ready soon (in the importance order):
 - Code reload in multithreaded app (right now reloading of code in multithreaded app is not reliable)
 - Dealing with global variables in reloadable code (if you try to reload code wich has globals definitions, it will most likely not work fine)
 - Ability to add new compilations units on the fly (see "How it works")
-- Unit tests
 
 Will not be implemented at all:
 - Reload of lambda functions with non-empty captures. Lambdas with empty capture list are ok since they are just a plain functions under the hood (at least they are implemented this way). There's only 1 case where we can handle lambdas with non-empty capture list properly - if old and new code has lambda with exactly same capture list, signature and exactly same lambdas **before this lambda** within this file, in other cases the reload of lambdas is not reliable. The reason for this is mangled name of lambda type depends on the captures list, arguments and position of this lambda relative to another lambdas in this compilation unit. Please refer to tests to see good and bad cases.
 
 ### Customizations
-**jet-live** is fine-tuned to work with cmake and make/ninja tools, but if you want to adopt it to another build tool, or to receive logs from it, there's a way to customize its' behaviour in some aspects. Please refer to documentation of `LiveDelegate`, `ICompilationUnitsParser`, `IDependenciesHandler` and `IProgramInfoLoader` for more info and examples.
+**jet-live** is fine-tuned to work with cmake and make/ninja tools, but if you want to adopt it to another build tool, there's a way to customize its' behaviour in some aspects. Please refer to documentation of `ISymbolsFilter`, `ICompilationUnitsParser`, `IDependenciesHandler` and `IProgramInfoLoader` for more info and examples.
+Also it is a good idea to create your own listener to receive events from the library. Please refer to documentation of `ILiveListener` and `LiveConfig`.
 
-**Important:** it is highly recommended to log all messages from the library to see if something went wrong. Please see `LiveDelegate::onLog` method.
+**Important:** it is highly recommended to log all messages from the library using `ILiveListener::onLog` to see if something went wrong.
 
 ### How it works (for curious ones)
-The library reads elf headers and sections of this executable and all loaded shared libraries, finds all symbols and tries to find out which of them can either be hooked (functions) or should be transferred (static variables). Also it finds symbols size and "real" address. You can configure the behaviour of filtering, but defaults should work fine.
+The library reads elf headers and sections of this executable and all loaded shared libraries, finds all symbols and tries to find out which of them can either be hooked (functions) or should be transferred (static variables). Also it finds symbols size and "real" address.
 
-Apart from that **jet-live** tries to find `compile_commands.json` near your executable or in its' parent directories recursively. You can configure this behaviour. Using this file it distinguishes:
+Apart from that **jet-live** tries to find `compile_commands.json` near your executable or in its' parent directories recursively. Using this file it distinguishes:
 - compilation command
 - source file path
 - `.o` (object) file path
@@ -108,25 +108,23 @@ or
 ```
 It will pick up all dependencies which are under the watching directories, so things like `/usr/include/elf.h` will not be treated as dependency even if this file really use it cause most likely you'll not touch any system headers and libraries your project depends on.
 
-You can alter this behaviour and provide your own implementation of dependencies handler.
+Now the library is initialized.
 
-Now the library is initialized
+Next, when you edit some source file and save it, **jet-live** immediately starts compilation of all dependent files in the background. By default the number of simultaneous compilation processes is 4, but you can configure it. It will write to log about successes and errors using `ILiveListener::onLog` method of listener. If you trigger compilation of some file when it is already compiling (or waiting in the queue), old compilation process will be killed and new one will be added to the queue, so its kinda safe to not wait for compilation to finish and make new changes of the code. Also after each file was compiled, it will update dependencies for compiled file since compiler can recreate depfile for it if new version of compilation unit has new dependencies.
 
-Next, when you edit some source file and save it, **jet-live** immediately starts compilation of all dependent files in the background. By default the number of simultaneous compilation processes is 4, but you can configure it. It will write to log about successes and errors using `LiveDelegate::onLog` method of delegate. If you trigger compilation of some file when it is already compiling (or waiting in the queue), old compilation process will be killed and new one will be added to the queue, so its kinda safe to not wait for compilation to finish and make new changes of the code. Also after each file was compiled, it will update dependencies for compiled file since compiler can recreate depfile for it if new version of compilation unit has new dependencies.
+When you call `Live::tryReload`, the library will wait for unfinished compilation processes and then all accumulated new object files will be linked together in shared library and placed near your executable with name `lib_reloadXXX.so`, where `XXX` is a number of "reloads" during this session. So `lib_reloadXXX.so` contains all new code.
 
-When you call `Live::tryReload`, the library will wait for unfinished compilation processes and then all accumulated new object files will be linked together in shared library and placed near your executable with name `lib_reloadXXX.so`, where `XXX` is a number of "reloads" during this session. So `lib_reloadXXX.so` contains all new code. The most interesting part starts here.
-
-**jet-live** loads this library using `dlopen`, reads elf headers and sections, finds all symbols and:
+**jet-live** loads this library using `dlopen`, reads elf/mach-o headers and sections, finds all symbols and:
 - For all hookable functions it transfers the control flow from old version to new one
-- For all static variables it just `memcpy` memory from old location to new one
+- For all local static variables it just `memcpy` memory from old location to new one
 
-**Important:** `LiveDelegate::onCodePreLoad` event is fired right before `lib_reloadXXX.so` is loaded into the process memory. `LiveDelegate::onCodePostLoad` event is fired right after all functions was hooked and all variables was transferred.
+**Important:** `ILiveListener::onCodePreLoad` event is fired right before `lib_reloadXXX.so` is loaded into the process memory. `ILiveListener::onCodePostLoad` event is fired right after all functions was hooked and all variables was transferred.
 
 ##### About functions hooking
-You can read more about function hooking [here](https://jbremer.org/x86-api-hooking-demystified/). This library uses awesome [subhook](https://github.com/Zeex/subhook) library to redirect function flow from old to new ones. You can see that on 32 bit platforms your functions should be at least 5 bytes long to be hookable. On 64 bit you need at least 14 bytes which is a lot, and for example empty stub function will probably not fit into 14 bytes. I don't know the truth, but if you disassemble your program compiled with modern compiler, you will see that all functions are 16 bytes aligned (at least on debug without optimizations). That means the spacing between begins of any 2 functions is not less that 16 bytes, which makes possible to hook any function. Probably it somehow connected to [this](https://stackoverflow.com/questions/22235236/how-much-does-function-alignment-actually-matter-on-modern-processors). If you have some problems with it, just declare a couple of variables in the empty stub function to make its' size >= 14 bytes.
+You can read more about function hooking [here](https://jbremer.org/x86-api-hooking-demystified/). This library uses awesome [subhook](https://github.com/Zeex/subhook) library to redirect function flow from old to new ones. You can see that on 32 bit platforms your functions should be at least 5 bytes long to be hookable. On 64 bit you need at least 14 bytes which is a lot, and for example empty stub function will probably not fit into 14 bytes. From my observations, clang by default produces code with 16-byte functions alignment. GCC don't do this by default, so for GCC the `-falign-functions=16` flag is used. That means the spacing between begins of any 2 functions is not less that 16 bytes, which makes possible to hook any function.
 
 ##### About state transfer
-By default all static variables are transferred from old code to new one. Why is it important?
+By default all local static variables are transferred from old code to new one. Why is it important?
 Suppose you have (a bit synthetic example, but anyway):
 ```cpp
 // Singleton.hpp
@@ -157,7 +155,7 @@ int veryUsefulFunction(int value)
     return value * 3;
 }
 ```
-Great, it will now multiplies argument by 3. But since whole `Singleton.cpp` will be reloaded and `Singleton::instance` function will be hooked to call new version, `lib_reloadXXX.so` will contain new static variable `static Singleton ins`, which is not initialized, and if you call `Singleton::instance()` after code was reloaded, it will initialize this variable again which is not good cause we don't want to call its constructor again. Thats why we need to transfer statics as well as their [guard variables](https://monoinfinito.wordpress.com/2013/12/03/static-initialization-in-c/).
+Great, now it multiplies argument by 3. But since whole `Singleton.cpp` will be reloaded and `Singleton::instance` function will be hooked to call new version, `lib_reloadXXX.so` will contain new static variable `static Singleton ins`, which is not initialized, and if you call `Singleton::instance()` after code was reloaded, it will initialize this variable again which is not good cause we don't want to call its constructor again. Thats why we need to transfer statics as well as their [guard variables](https://monoinfinito.wordpress.com/2013/12/03/static-initialization-in-c/).
 
 Also your app will probably crash if you try to change memory layout of your data types in reloadable code.
 

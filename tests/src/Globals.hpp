@@ -2,7 +2,7 @@
 #pragma once
 
 #include <jet/live/Live.hpp>
-#include "TestDelegate.hpp"
+#include "TestListener.hpp"
 
-extern TestDelegate* g_testDelegatePtr;
+extern TestListener* g_testListenerPtr;
 extern jet::Live* g_live;

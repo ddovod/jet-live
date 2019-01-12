@@ -33,7 +33,7 @@ namespace jet
                 if (status == 0) {
                     m_readyCompilationUnits[el.second.cuOrLibFilepath] = {
                         el.second.cuOrLibFilepath, el.second.objFilepath};
-                    m_context->delegate->onLog(LogSeverity::kInfo, "Success: " + el.second.filename);
+                    m_context->listener->onLog(LogSeverity::kInfo, "Success: " + el.second.filename);
                 } else {
                     std::string message = "Failed: " + el.second.filename;
                     if (el.second.hasColorDiagnosticsFlag) {
@@ -43,7 +43,7 @@ namespace jet
                         message += "\n";
                     }
                     message += el.second.errMessage;
-                    m_context->delegate->onLog(LogSeverity::kWarning, message);
+                    m_context->listener->onLog(LogSeverity::kWarning, message);
                 }
 
                 tasksToRemove.push_back(el.first);
@@ -55,7 +55,7 @@ namespace jet
             m_runningCompilationTasks.erase(el);
         }
 
-        while (m_runningCompilationTasks.size() < m_context->delegate->getWorkerThreadsCount()) {
+        while (m_runningCompilationTasks.size() < m_context->liveConfig.workerThreadsCount) {
             if (m_pendingCompilationTasks.empty()) {
                 break;
             }
@@ -73,10 +73,10 @@ namespace jet
             int status = 0;
             if (m_runningLinkTask->process->try_get_exit_status(status)) {
                 if (status != 0) {
-                    m_context->delegate->onLog(LogSeverity::kWarning,
+                    m_context->listener->onLog(LogSeverity::kWarning,
                         "Link failed: " + m_runningLinkTask->cuOrLibFilepath + "\n" + m_runningLinkTask->errMessage);
                 } else {
-                    m_context->delegate->onLog(LogSeverity::kInfo, "Linked successfully");
+                    m_context->listener->onLog(LogSeverity::kInfo, "Linked successfully");
                 }
 
                 m_runningLinkTask->finishCallback(
@@ -136,7 +136,7 @@ namespace jet
         std::function<void(int, const std::string&, const std::string&)>&& finishCallback)
     {
         auto filename = TeenyPath::path{cu.sourceFilePath}.filename();
-        m_context->delegate->onLog(LogSeverity::kInfo, "Compiling: " + filename);
+        m_context->listener->onLog(LogSeverity::kInfo, "Compiling: " + filename);
 
         Task task;
         task.filename = filename;
@@ -165,10 +165,10 @@ namespace jet
     void Compiler::doLink(std::function<void(int, const std::string&, const std::string&)>&& finishCallback)
     {
         if (m_readyCompilationUnits.empty()) {
-            m_context->delegate->onLog(LogSeverity::kInfo, "Nothing to reload.");
+            m_context->listener->onLog(LogSeverity::kInfo, "Nothing to reload.");
             return;
         }
-        m_context->delegate->onLog(LogSeverity::kInfo, "Linking...");
+        m_context->listener->onLog(LogSeverity::kInfo, "Linking...");
 
         std::string libName = "lib_reload" + std::to_string(m_currentLibIndex++) + ".so";
         std::vector<std::string> objectFilePaths;

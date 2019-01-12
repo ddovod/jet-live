@@ -4,22 +4,28 @@
 #include <dlfcn.h>
 #include <subhook.h>
 #include <teenypath.h>
+#include "jet/live/CompileCommandsCompilationUnitsParser.hpp"
+#include "jet/live/DefaultProgramInfoLoader.hpp"
+#include "jet/live/DefaultSymbolsFilter.hpp"
+#include "jet/live/DepfileDependenciesHandler.hpp"
 #include "jet/live/Utility.hpp"
 
 namespace jet
 {
-    Live::Live(std::unique_ptr<LiveDelegate>&& delegate)
+    Live::Live(std::unique_ptr<ILiveListener>&& listener, const LiveConfig& config)
         : m_context(jet::make_unique<LiveContext>())
     {
-        if (delegate) {
-            m_context->delegate = std::move(delegate);
+        m_context->liveConfig = config;
+        if (listener) {
+            m_context->listener = std::move(listener);
         } else {
-            m_context->delegate = jet::make_unique<LiveDelegate>();
+            m_context->listener = jet::make_unique<ILiveListener>();
         }
         m_context->thisExecutablePath = getExecutablePath();
-        m_context->compilationUnitsParser = m_context->delegate->createCompilationUnitsParser();
-        m_context->dependenciesHandler = m_context->delegate->createDependenciesHandler();
-        m_context->programInfoLoader = m_context->delegate->createProgramInfoLoader();
+        m_context->compilationUnitsParser = jet::make_unique<CompileCommandsCompilationUnitsParser>();
+        m_context->dependenciesHandler = jet::make_unique<DepfileDependenciesHandler>();
+        m_context->programInfoLoader = jet::make_unique<DefaultProgramInfoLoader>();
+        m_context->symbolsFilter = jet::make_unique<DefaultSymbolsFilter>();
 
         for (const auto& el : m_context->programInfoLoader->getAllLoadedProgramsPaths(m_context.get())) {
             Program program;
@@ -29,21 +35,21 @@ namespace jet
                 // Program has no symbols, skipping
                 continue;
             }
-            m_context->delegate->onLog(LogSeverity::kInfo,
+            m_context->listener->onLog(LogSeverity::kInfo,
                 "Symbols loaded: funcs " + std::to_string(program.symbols.functions.size()) + ", vars "
                     + std::to_string(program.symbols.variables.size()) + ", "
                     + (el.empty() ? std::string("Self") : el));
             m_context->programs.push_back(std::move(program));
         }
 
-        m_context->delegate->onLog(LogSeverity::kInfo, "Parsing compilation commands...");
+        m_context->listener->onLog(LogSeverity::kInfo, "Parsing compilation commands...");
         m_context->compilationUnits = m_context->compilationUnitsParser->parseCompilationUnits(m_context.get());
         if (m_context->compilationUnits.empty()) {
-            m_context->delegate->onLog(LogSeverity::kError, "There're no compilation units");
+            m_context->listener->onLog(LogSeverity::kError, "There're no compilation units");
             return;
         }
 
-        m_context->delegate->onLog(LogSeverity::kInfo,
+        m_context->listener->onLog(LogSeverity::kInfo,
             "Success parsing compilation commands, total " + std::to_string(m_context->compilationUnits.size())
                 + " compilation units");
 
@@ -51,11 +57,11 @@ namespace jet
 
         m_compiler = jet::make_unique<Compiler>(m_context.get());
 
-        m_context->delegate->onLog(LogSeverity::kInfo, "Parsing dependencies...");
+        m_context->listener->onLog(LogSeverity::kInfo, "Parsing dependencies...");
         for (const auto& cu : m_context->compilationUnits) {
             updateDependencies(cu.second);
         }
-        m_context->delegate->onLog(LogSeverity::kInfo, "Success parsing dependencies");
+        m_context->listener->onLog(LogSeverity::kInfo, "Success parsing dependencies");
     }
 
     void Live::update()
@@ -71,21 +77,21 @@ namespace jet
     void Live::setupFileWatcher()
     {
         std::vector<std::string> dirs;
-        auto delegateDirs = m_context->delegate->getDirectoriesToMonitor();
-        if (!delegateDirs.empty()) {
+        const auto& configDirs = m_context->liveConfig.directoriesToMonitor;
+        if (!configDirs.empty()) {
             std::vector<std::string> existingDirs;
-            for (const auto& el : delegateDirs) {
+            for (const auto& el : configDirs) {
                 auto p = TeenyPath::path{el};
                 if (p.exists() && p.is_directory()) {
                     existingDirs.push_back(el);
                 } else {
-                    m_context->delegate->onLog(
+                    m_context->listener->onLog(
                         LogSeverity::kWarning, "Directory doesn't exist or is not a directory: " + el);
                 }
             }
 
             if (existingDirs.empty()) {
-                m_context->delegate->onLog(LogSeverity::kError, "Delegate didn't provide any existing directories");
+                m_context->listener->onLog(LogSeverity::kError, "Delegate didn't provide any existing directories");
                 return;
             }
 
@@ -94,9 +100,9 @@ namespace jet
                 directoriesStr.append("  ").append(el).append("\n");
             }
             directoriesStr.pop_back();  // last '\n' char
-            m_context->delegate->onLog(
+            m_context->listener->onLog(
                 LogSeverity::kInfo, "Watching directories provided by delegate: \n" + directoriesStr);
-            dirs = delegateDirs;
+            dirs = configDirs;
         } else {
             std::string commonDir;
             for (const auto& cu : m_context->compilationUnits) {
@@ -117,7 +123,7 @@ namespace jet
                     commonDir = p.parent_path().string();
                 }
             }
-            m_context->delegate->onLog(
+            m_context->listener->onLog(
                 LogSeverity::kInfo, "Watching directory substituted from compilation commands: \n  " + commonDir);
             dirs.push_back(commonDir);
         }
@@ -140,7 +146,7 @@ namespace jet
                         m_compiler->compile(
                             cu, [this, cu](int, const std::string&, const std::string&) { updateDependencies(cu); });
                     } else {
-                        m_context->delegate->onLog(LogSeverity::kError, "Cannot find dependency cu for " + filepath);
+                        m_context->listener->onLog(LogSeverity::kError, "Cannot find dependency cu for " + filepath);
                     }
                 }
             }
@@ -149,31 +155,31 @@ namespace jet
 
     void Live::tryReload()
     {
-        m_context->delegate->onLog(LogSeverity::kInfo, "Trying to reload code...");
+        m_context->listener->onLog(LogSeverity::kInfo, "Trying to reload code...");
         m_compiler->link([this](int status, const std::string& libPath, const std::string&) {
             if (status != 0) {
                 return;
             }
 
-            m_context->delegate->onCodePreLoad();
+            m_context->listener->onCodePreLoad();
 
-            m_context->delegate->onLog(LogSeverity::kInfo, "Opening " + libPath + "...");
+            m_context->listener->onLog(LogSeverity::kInfo, "Opening " + libPath + "...");
             auto libHandle = dlopen(libPath.c_str(), RTLD_NOW | RTLD_GLOBAL);  // NOLINT
             if (!libHandle) {
-                m_context->delegate->onLog(
+                m_context->listener->onLog(
                     LogSeverity::kError, "Cannot open library " + libPath + "\n" + std::string(dlerror()));
-                m_context->delegate->onCodePostLoad();
+                m_context->listener->onCodePostLoad();
                 return;
             }
-            m_context->delegate->onLog(LogSeverity::kInfo, "Library opene successfully");
+            m_context->listener->onLog(LogSeverity::kInfo, "Library opene successfully");
 
-            m_context->delegate->onLog(LogSeverity::kInfo, "Loading symbols from " + libPath + "...");
+            m_context->listener->onLog(LogSeverity::kInfo, "Loading symbols from " + libPath + "...");
             auto libSymbols = m_context->programInfoLoader->getProgramSymbols(m_context.get(), libPath);
-            m_context->delegate->onLog(LogSeverity::kInfo,
+            m_context->listener->onLog(LogSeverity::kInfo,
                 "Symbols loaded: funcs " + std::to_string(libSymbols.functions.size()) + ", vars "
                     + std::to_string(libSymbols.variables.size()) + ", " + libPath);
 
-            m_context->delegate->onLog(LogSeverity::kInfo, "Reloading old code with new one...");
+            m_context->listener->onLog(LogSeverity::kInfo, "Reloading old code with new one...");
             int functionsReloaded = 0;
             for (const auto& syms : libSymbols.functions) {
                 for (const auto& sym : syms.second) {
@@ -201,7 +207,7 @@ namespace jet
 
                     auto hook = subhook_new(oldFuncPtr, newFuncPtr, SUBHOOK_64BIT_OFFSET);
                     if (auto subhookStatus = subhook_install(hook)) {
-                        m_context->delegate->onLog(LogSeverity::kError,
+                        m_context->listener->onLog(LogSeverity::kError,
                             "Cannot hook function: " + sym.name + ", status " + std::to_string(subhookStatus));
                     } else {
                         functionsReloaded++;
@@ -247,9 +253,9 @@ namespace jet
             libProgram.symbols = libSymbols;
             m_context->programs.push_back(std::move(libProgram));
 
-            m_context->delegate->onCodePostLoad();
+            m_context->listener->onCodePostLoad();
 
-            m_context->delegate->onLog(LogSeverity::kInfo,
+            m_context->listener->onLog(LogSeverity::kInfo,
                 "Code reloaded successfully: funcs " + std::to_string(functionsReloaded) + "/"
                     + std::to_string(libSymbols.functions.size()) + ", vars " + std::to_string(variablesTransferred)
                     + "/" + std::to_string(libSymbols.variables.size()));
