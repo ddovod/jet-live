@@ -145,7 +145,7 @@ namespace jet
         task.cuOrLibFilepath = cu.sourceFilePath;
         task.objFilepath = cu.objFilePath;
         auto compilationCommandStr = cu.compilationCommandStr;
-        compilationCommandStr.append(" -fPIC -mcmodel=medium ");
+        compilationCommandStr.append(" -fPIC ");
         if (!cu.depFilePath.empty()) {
             compilationCommandStr.append(" -MD -MF ").append(cu.depFilePath);
         }

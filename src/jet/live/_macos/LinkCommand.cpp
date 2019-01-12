@@ -7,10 +7,13 @@ namespace jet
         const std::string& compilerPath,
         const std::vector<std::string>& objectFilePaths)
     {
-        std::string linkCommand = compilerPath
-                                  + " -undefined dynamic_lookup -fPIC -mcmodel=medium"
-                                  + " -g -Wl,-export_dynamic -shared -Wl,-install_name,"
-                                  + libName + " -o " + libName + " ";
+        // clang-format off
+        std::string linkCommand = (compilerPath + " -undefined dynamic_lookup"
+                                   + " -fPIC -shared -g"
+                                   + " -Wl,-export_dynamic"
+                                   + " -Wl,-install_name," + libName
+                                   + " -o " + libName + " ");
+        // clang-format on
         for (const auto& oFile : objectFilePaths) {
             linkCommand.append("\"" + oFile + "\" ");
         }
