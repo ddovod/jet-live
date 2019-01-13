@@ -24,6 +24,10 @@ namespace jet
         m_context->programInfoLoader = jet::make_unique<DefaultProgramInfoLoader>();
         m_context->symbolsFilter = jet::make_unique<DefaultSymbolsFilter>();
 
+        if (m_context->linkerType == LinkerType::kUnknown) {
+            m_context->listener->onLog(LogSeverity::kError, "Cannot figure out the linker type.");
+        }
+
         for (const auto& el : m_context->programInfoLoader->getAllLoadedProgramsPaths(m_context.get())) {
             Program program;
             program.path = el;

@@ -1,6 +1,7 @@
 
 #include "Utility.hpp"
 #include <iomanip>
+#include <process.hpp>
 #include <sstream>
 #include <whereami.h>
 
@@ -166,6 +167,10 @@ namespace jet
                     .append(" -undefined dynamic_lookup");
                 break;
             }
+            case LinkerType::kUnknown: {
+                return "INVALID LINKER TYPE";
+                break;
+            }
         }
 
         res.append(" -o ").append(libName).append(" ");
@@ -185,7 +190,23 @@ namespace jet
 
     LinkerType getSystemLinkerType()
     {
-        // TODO: implement me
-        return LinkerType::kLLVM_lld;
+        std::string procOutput;
+        auto status =
+            TinyProcessLib::Process{
+                "ld -v", "", [&procOutput](const char* bytes, size_t n) { procOutput += std::string(bytes, n); }}
+                .get_exit_status();
+        if (status != 0) {
+            return LinkerType::kUnknown;
+        }
+
+        if (procOutput.find("LLVM") != std::string::npos) {
+            return LinkerType::kLLVM_lld;
+        } else if (procOutput.find("GNU") != std::string::npos) {
+            return LinkerType::kGNU_ld;
+        } else if (procOutput.find("@(#)PROGRAM:ld") != std::string::npos) {
+            return LinkerType::kApple_ld;
+        }
+
+        return LinkerType::kUnknown;
     }
 }

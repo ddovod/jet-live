@@ -15,6 +15,7 @@ namespace jet
      */
     enum class LinkerType
     {
+        kUnknown,  /** Unknown linker. */
         kLLVM_lld, /** LLVM LLD linker. */
         kGNU_ld,   /** GNU ld linker. */
         kApple_ld, /** Apple ld linker. */
