@@ -29,7 +29,7 @@ matrix:
       compiler: clang
 
 script:
-  - ld -v
+  - if [ "$LD" == "lld-6.0" ]; then sudo mv /usr/bin/ld /usr/bin/ld.old && sudo ln -s /usr/bin/lld-6.0 /usr/bin/ld; fi
   - mkdir build && cd build
   - cmake -DCMAKE_BUILD_TYPE=Debug -DJET_LIVE_BUILD_TESTS=ON ..
   - make
