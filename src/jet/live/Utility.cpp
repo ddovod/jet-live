@@ -201,27 +201,28 @@ namespace jet
 
     LinkerType getSystemLinkerType(const LiveContext* context)
     {
-        std::string procOutput;
+        std::string procOut;
         std::string procError;
         auto status = TinyProcessLib::Process{"ld -v",
             "",
-            [&procOutput](const char* bytes, size_t n) { procOutput += std::string(bytes, n); },
+            [&procOut](const char* bytes, size_t n) { procOut += std::string(bytes, n); },
             [&procError](const char* bytes, size_t n) { procError += std::string(bytes, n); }}
                           .get_exit_status();
         if (status != 0) {
-            context->listener->onLog(LogSeverity::kError, "'ld -v' failed: \n" + procOutput + "\n" + procError);
+            context->listener->onLog(LogSeverity::kError, "'ld -v' failed: \n" + procOut + "\n" + procError);
             return LinkerType::kUnknown;
         }
 
-        if (procOutput.find("LLD") != std::string::npos) {
+        if (procOut.find("LLD") != std::string::npos) {
             return LinkerType::kLLVM_lld;
-        } else if (procOutput.find("GNU") != std::string::npos) {
+        } else if (procOut.find("GNU") != std::string::npos) {
             return LinkerType::kGNU_ld;
-        } else if (procOutput.find("PROGRAM:ld") != std::string::npos) {
+        } else if (procError.find("PROGRAM:ld") != std::string::npos) {
+            // For some reason apple ld prints this info to stderr
             return LinkerType::kApple_ld;
         }
 
-        context->listener->onLog(LogSeverity::kError, "Cannot find out linker type: \n" + procOutput);
+        context->listener->onLog(LogSeverity::kError, "Cannot find out linker type: \n" + procOut);
         return LinkerType::kUnknown;
     }
 }
