@@ -15,10 +15,11 @@ namespace jet
      */
     enum class LinkerType
     {
-        kUnknown,  /** Unknown linker. */
-        kLLVM_lld, /** LLVM LLD linker. */
-        kGNU_ld,   /** GNU ld linker. */
-        kApple_ld, /** Apple ld linker. */
+        kUnknown,   /** Unknown linker. */
+        kLLVM_lld,  /** LLVM LLD linker. */
+        kLLVM_lld6, /** This version of lld is broken. https://reviews.llvm.org/D45261 */
+        kGNU_ld,    /** GNU ld linker. */
+        kApple_ld,  /** Apple ld linker. */
     };
 
     /**

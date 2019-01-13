@@ -8,14 +8,14 @@ matrix:
       addons:
         apt:
           packages:
-            - clang-6.0
-            - lld-6.0
+            - clang-7
+            - lld-7
       env:
-        - CC=clang-6.0
-        - CXX=clang++-6.0
-        - CC_FOR_BUILD=clang-6.0
-        - CXX_FOR_BUILD=clang++-6.0
-        - LD=lld-6.0
+        - CC=clang-7
+        - CXX=clang++-7
+        - CC_FOR_BUILD=clang-7
+        - CXX_FOR_BUILD=clang++-7
+        - LD=lld-7
     - os: linux
       compiler: gcc
       dist: xenial
@@ -28,8 +28,13 @@ matrix:
     - os: osx
       compiler: clang
 
+before_install:
+  - curl https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+  - echo "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main" | sudo tee -a /etc/apt/sources.list
+  - sudo apt-get update -qq
+
 script:
-  - if [ "$LD" == "lld-6.0" ]; then sudo mv /usr/bin/ld /usr/bin/ld.old && sudo ln -s /usr/bin/lld-6.0 /usr/bin/ld; fi
+  - if [ "$LD" == "lld-7" ]; then sudo mv /usr/bin/ld /usr/bin/ld.old && sudo ln -s /usr/bin/lld-7 /usr/bin/ld; fi
   - mkdir build && cd build
   - cmake -DCMAKE_BUILD_TYPE=Debug -DJET_LIVE_BUILD_TESTS=ON ..
   - make -j4

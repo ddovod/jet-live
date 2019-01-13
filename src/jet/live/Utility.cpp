@@ -161,6 +161,7 @@ namespace jet
                     .append(libName);
                 break;
             }
+            case LinkerType::kLLVM_lld6:
             case LinkerType::kLLVM_lld: {
                 res.append(" -Wl,--image-base,0x")
                     .append(ss.str())
@@ -214,7 +215,13 @@ namespace jet
         }
 
         if (procOut.find("LLD") != std::string::npos) {
-            return LinkerType::kLLVM_lld;
+            if (procOut.find("6.0") != std::string::npos) {
+                context->listener->onLog(LogSeverity::kWarning,
+                    "You're using LLD 6.0, it has bugs and some features could work bad. Please update lld.");
+                return LinkerType::kLLVM_lld6;
+            } else {
+                return LinkerType::kLLVM_lld;
+            }
         } else if (procOut.find("GNU") != std::string::npos) {
             return LinkerType::kGNU_ld;
         } else if (procError.find("PROGRAM:ld") != std::string::npos) {
