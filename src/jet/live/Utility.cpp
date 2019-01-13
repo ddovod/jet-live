@@ -4,6 +4,7 @@
 #include <process.hpp>
 #include <sstream>
 #include <whereami.h>
+#include "jet/live/LiveContext.hpp"
 
 namespace jet
 {
@@ -131,6 +132,16 @@ namespace jet
         return s;
     }
 
+    std::string toString(LinkerType linkerType)
+    {
+        switch (linkerType) {
+            case LinkerType::kLLVM_lld: return "LLVM lld";
+            case LinkerType::kGNU_ld: return "GNU ld";
+            case LinkerType::kApple_ld: return "Apple ld";
+            default: return "Unknown";
+        }
+    }
+
     std::string createLinkCommand(const std::string& libName,
         const std::string& compilerPath,
         uintptr_t baseAddress,
@@ -188,25 +199,29 @@ namespace jet
         return 0;
     }
 
-    LinkerType getSystemLinkerType()
+    LinkerType getSystemLinkerType(const LiveContext* context)
     {
         std::string procOutput;
-        auto status =
-            TinyProcessLib::Process{
-                "ld -v", "", [&procOutput](const char* bytes, size_t n) { procOutput += std::string(bytes, n); }}
-                .get_exit_status();
+        std::string procError;
+        auto status = TinyProcessLib::Process{"ld -v",
+            "",
+            [&procOutput](const char* bytes, size_t n) { procOutput += std::string(bytes, n); },
+            [&procError](const char* bytes, size_t n) { procError += std::string(bytes, n); }}
+                          .get_exit_status();
         if (status != 0) {
+            context->listener->onLog(LogSeverity::kError, "'ld -v' failed: \n" + procOutput + "\n" + procError);
             return LinkerType::kUnknown;
         }
 
-        if (procOutput.find("LLVM") != std::string::npos) {
+        if (procOutput.find("LLD") != std::string::npos) {
             return LinkerType::kLLVM_lld;
         } else if (procOutput.find("GNU") != std::string::npos) {
             return LinkerType::kGNU_ld;
-        } else if (procOutput.find("@(#)PROGRAM:ld") != std::string::npos) {
+        } else if (procOutput.find("PROGRAM:ld") != std::string::npos) {
             return LinkerType::kApple_ld;
         }
 
+        context->listener->onLog(LogSeverity::kError, "Cannot find out linker type: \n" + procOutput);
         return LinkerType::kUnknown;
     }
 }

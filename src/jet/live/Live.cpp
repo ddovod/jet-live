@@ -18,7 +18,7 @@ namespace jet
         m_context->liveConfig = config;
         m_context->listener = listener ? std::move(listener) : jet::make_unique<ILiveListener>();
         m_context->thisExecutablePath = getExecutablePath();
-        m_context->linkerType = getSystemLinkerType();
+        m_context->linkerType = getSystemLinkerType(m_context.get());
         m_context->compilationUnitsParser = jet::make_unique<CompileCommandsCompilationUnitsParser>();
         m_context->dependenciesHandler = jet::make_unique<DepfileDependenciesHandler>();
         m_context->programInfoLoader = jet::make_unique<DefaultProgramInfoLoader>();
@@ -274,4 +274,6 @@ namespace jet
         }
         m_context->dependencies[cu.sourceFilePath] = std::move(cuDeps);
     }
+
+    void Live::printInfo() { m_context->listener->onLog(LogSeverity::kDebug, toString(m_context->linkerType)); }
 }

@@ -7,6 +7,8 @@
 
 namespace jet
 {
+    struct LiveContext;
+
     /**
      * Retreives the path to this executable file.
      */
@@ -32,6 +34,11 @@ namespace jet
      * Used for debugging.
      */
     std::string toString(const MachoContext& context, const MachoSymbol& machoSymbol);
+
+    /**
+     * Gives string representation of the linker type.
+     */
+    std::string toString(LinkerType linkerType);
 
     /**
      * Creates shared library linkage command string.
@@ -60,5 +67,5 @@ namespace jet
     /**
      * Finds out which linker is used in the system.
      */
-    LinkerType getSystemLinkerType();
+    LinkerType getSystemLinkerType(const LiveContext* context);
 }
