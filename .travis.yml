@@ -8,14 +8,14 @@ matrix:
       addons:
         apt:
           packages:
-            - clang-7
-            - lld-7
+            - clang-6.0
+            - lld-6.0
       env:
-        - CC=clang-7
-        - CXX=clang++-7
-        - CC_FOR_BUILD=clang-7
-        - CXX_FOR_BUILD=clang++-7
-        - LD=lld-7
+        - CC=clang-6.0
+        - CXX=clang++-6.0
+        - CC_FOR_BUILD=clang-6.0
+        - CXX_FOR_BUILD=clang++-6.0
+        - LD=lld-6.0
     - os: linux
       compiler: gcc
       dist: xenial
