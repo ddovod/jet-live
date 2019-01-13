@@ -29,6 +29,7 @@ matrix:
       compiler: clang
 
 script:
+  - ld -v
   - mkdir build && cd build
   - cmake -DCMAKE_BUILD_TYPE=Debug -DJET_LIVE_BUILD_TESTS=ON ..
   - make
