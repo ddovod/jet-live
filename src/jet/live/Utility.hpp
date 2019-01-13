@@ -68,4 +68,13 @@ namespace jet
      * Finds out which linker is used in the system.
      */
     LinkerType getSystemLinkerType(const LiveContext* context);
+
+    /**
+     * Retrieves memory mapping of the process.
+     * Returns a sorted vector with memory regions.
+     * First element is an executable file region.
+     * Each region end is next region begin, like
+     * `regions[0].regionEnd == regions[1].regionBegin`
+     */
+    std::vector<MemoryRegion> getMemoryRegions();
 }

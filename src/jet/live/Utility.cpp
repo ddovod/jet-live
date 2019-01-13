@@ -1,5 +1,6 @@
 
 #include "Utility.hpp"
+#include <fstream>
 #include <iomanip>
 #include <process.hpp>
 #include <sstream>
@@ -195,8 +196,21 @@ namespace jet
 
     uintptr_t findPrefferedBaseAddressForLibrary(const std::vector<std::string>& objectFilePaths)
     {
-        // TODO: implement me
-        (void)objectFilePaths;
+        // Estimating size of the future shared library
+        size_t libSize = 0;
+        for (const auto& el : objectFilePaths) {
+            std::ifstream f{el, std::ifstream::ate | std::ifstream::binary};
+            libSize += static_cast<size_t>(f.tellg());
+        }
+
+        // Trying to find empty space for it
+        for (const auto& el : getMemoryRegions()) {
+            if (!el.isInUse && (el.regionEnd - el.regionBegin) > libSize) {
+                return el.regionBegin;
+            }
+        }
+
+        // Or just using default relocation
         return 0;
     }
 

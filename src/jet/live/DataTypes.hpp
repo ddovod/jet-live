@@ -23,6 +23,17 @@ namespace jet
     };
 
     /**
+     * Represents a region of virtual memory.
+     * Used to find free region to place shared library into.
+     */
+    struct MemoryRegion
+    {
+        uintptr_t regionBegin = 0;
+        uintptr_t regionEnd = 0;
+        bool isInUse = false;
+    };
+
+    /**
      * Represents compilation unit.
      */
     struct CompilationUnit

@@ -178,11 +178,13 @@ if (UNIX AND NOT APPLE)
   target_sources(jet-live
     PRIVATE
     src/jet/live/_linux/ElfProgramInfoLoader.cpp
+    src/jet/live/_linux/Utility.cpp
     )
 elseif (UNIX AND APPLE)
   target_sources(jet-live
     PRIVATE
     src/jet/live/_macos/MachoProgramInfoLoader.cpp
+    src/jet/live/_macos/Utility.cpp
     )
 endif()
 target_include_directories(jet-live
