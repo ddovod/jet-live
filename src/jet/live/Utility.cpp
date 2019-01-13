@@ -1,5 +1,7 @@
 
 #include "Utility.hpp"
+#include <iomanip>
+#include <sstream>
 #include <whereami.h>
 
 namespace jet
@@ -126,5 +128,64 @@ namespace jet
         s += machoSymbol.name;
 
         return s;
+    }
+
+    std::string createLinkCommand(const std::string& libName,
+        const std::string& compilerPath,
+        uintptr_t baseAddress,
+        LinkerType linkerType,
+        const std::vector<std::string>& objectFilePaths)
+    {
+        std::string res = compilerPath + " -fPIC -shared -g";
+        std::stringstream ss;
+        ss << std::hex << baseAddress;
+
+        switch (linkerType) {
+            case LinkerType::kGNU_ld: {
+                res.append(" -Wl,-Ttext-segment=0x")
+                    .append(ss.str())
+                    .append(" -Wl,-export-dynamic")
+                    .append(" -Wl,-soname,")
+                    .append(libName);
+                break;
+            }
+            case LinkerType::kLLVM_lld: {
+                res.append(" -Wl,--image-base=0x")
+                    .append(ss.str())
+                    .append(" -Wl,-export-dynamic")
+                    .append(" -Wl,-soname,")
+                    .append(libName);
+                break;
+            }
+            case LinkerType::kApple_ld: {
+                res.append(" -Wl,-image_base=0x")
+                    .append(ss.str())
+                    .append(" -Wl,-export_dynamic")
+                    .append(" -Wl,-install_name,")
+                    .append(libName)
+                    .append(" -undefined dynamic_lookup");
+                break;
+            }
+        }
+
+        res.append(" -o ").append(libName).append(" ");
+        for (const auto& oFile : objectFilePaths) {
+            res.append("\"" + oFile + "\" ");
+        }
+
+        return res;
+    }
+
+    uintptr_t findPrefferedBaseAddressForLibrary(const std::vector<std::string>& objectFilePaths)
+    {
+        // TODO: implement me
+        (void)objectFilePaths;
+        return 0;
+    }
+
+    LinkerType getSystemLinkerType()
+    {
+        // TODO: implement me
+        return LinkerType::kLLVM_lld;
     }
 }

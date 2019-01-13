@@ -177,13 +177,11 @@ target_sources(jet-live
 if (UNIX AND NOT APPLE)
   target_sources(jet-live
     PRIVATE
-    src/jet/live/_linux/LinkCommand.cpp
     src/jet/live/_linux/ElfProgramInfoLoader.cpp
     )
 elseif (UNIX AND APPLE)
   target_sources(jet-live
     PRIVATE
-    src/jet/live/_macos/LinkCommand.cpp
     src/jet/live/_macos/MachoProgramInfoLoader.cpp
     )
 endif()

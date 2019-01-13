@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cassert>
 #include <teenypath.h>
-#include "jet/live/LinkCommand.hpp"
 #include "jet/live/Utility.hpp"
 
 namespace jet
@@ -175,7 +174,11 @@ namespace jet
         for (const auto& cu : m_readyCompilationUnits) {
             objectFilePaths.push_back(cu.second.objFilepath);
         }
-        std::string linkCommand = createLinkCommand(libName, m_compilerPath, objectFilePaths);
+        auto linkCommand = createLinkCommand(libName,
+            m_compilerPath,
+            findPrefferedBaseAddressForLibrary(objectFilePaths),
+            m_context->linkerType,
+            objectFilePaths);
 
         Task task;
         task.finishCallback = std::move(finishCallback);

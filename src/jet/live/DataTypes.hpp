@@ -9,6 +9,18 @@
 namespace jet
 {
     /**
+     * The type of a linker.
+     * Different linkers have different capabilities, so we should
+     * know which linker we are using.
+     */
+    enum class LinkerType
+    {
+        kLLVM_lld, /** LLVM LLD linker. */
+        kGNU_ld,   /** GNU ld linker. */
+        kApple_ld, /** Apple ld linker. */
+    };
+
+    /**
      * Represents compilation unit.
      */
     struct CompilationUnit

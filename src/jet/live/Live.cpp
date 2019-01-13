@@ -16,12 +16,9 @@ namespace jet
         : m_context(jet::make_unique<LiveContext>())
     {
         m_context->liveConfig = config;
-        if (listener) {
-            m_context->listener = std::move(listener);
-        } else {
-            m_context->listener = jet::make_unique<ILiveListener>();
-        }
+        m_context->listener = listener ? std::move(listener) : jet::make_unique<ILiveListener>();
         m_context->thisExecutablePath = getExecutablePath();
+        m_context->linkerType = getSystemLinkerType();
         m_context->compilationUnitsParser = jet::make_unique<CompileCommandsCompilationUnitsParser>();
         m_context->dependenciesHandler = jet::make_unique<DepfileDependenciesHandler>();
         m_context->programInfoLoader = jet::make_unique<DefaultProgramInfoLoader>();

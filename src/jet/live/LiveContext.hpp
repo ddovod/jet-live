@@ -45,6 +45,9 @@ namespace jet
         /** This executable file path. */
         std::string thisExecutablePath;
 
+        /** Current linker type. */
+        LinkerType linkerType;
+
         /** Directories which are monitored for changes. */
         std::vector<std::string> dirsToMonitor;
 
