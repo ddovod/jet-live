@@ -170,7 +170,7 @@ namespace jet
                 break;
             }
             case LinkerType::kApple_ld: {
-                res.append(" -Wl,-image_base=0x")
+                res.append(" -Wl,-image_base 0x")
                     .append(ss.str())
                     .append(" -Wl,-export_dynamic")
                     .append(" -Wl,-install_name,")

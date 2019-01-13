@@ -172,7 +172,7 @@ namespace jet
                 m_context->listener->onCodePostLoad();
                 return;
             }
-            m_context->listener->onLog(LogSeverity::kInfo, "Library opene successfully");
+            m_context->listener->onLog(LogSeverity::kInfo, "Library opened successfully");
 
             m_context->listener->onLog(LogSeverity::kInfo, "Loading symbols from " + libPath + "...");
             auto libSymbols = m_context->programInfoLoader->getProgramSymbols(m_context.get(), libPath);
