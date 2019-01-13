@@ -1,19 +1,33 @@
 language: cpp
-dist: xenial
 
 matrix:
   include:
     - os: linux
       compiler: clang
+      dist: xenial
+      env:
+        - CC=clang-7
+        - CXX=clang++-7
+        - CC_FOR_BUILD=clang-7
+        - CXX_FOR_BUILD=clang++-7
+        - LD=lld-7
     - os: linux
       compiler: gcc
+      dist: xenial
+      env:
+        - CC=gcc
+        - CXX=g++
+        - CC_FOR_BUILD=gcc
+        - CXX_FOR_BUILD=g++
+        - LD=ld
     - os: osx
       compiler: clang
 
 addons:
   apt:
     packages:
-      - clang-6.0
+      - clang-7
+      - lld-7
 
 script:
   - mkdir build && cd build
