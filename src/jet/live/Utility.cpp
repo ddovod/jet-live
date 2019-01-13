@@ -154,7 +154,7 @@ namespace jet
 
         switch (linkerType) {
             case LinkerType::kGNU_ld: {
-                res.append(" -Wl,-Ttext-segment=0x")
+                res.append(" -Wl,-Ttext-segment,0x")
                     .append(ss.str())
                     .append(" -Wl,-export-dynamic")
                     .append(" -Wl,-soname,")
@@ -162,7 +162,7 @@ namespace jet
                 break;
             }
             case LinkerType::kLLVM_lld: {
-                res.append(" -Wl,--image-base=0x")
+                res.append(" -Wl,--image-base,0x")
                     .append(ss.str())
                     .append(" -Wl,-export-dynamic")
                     .append(" -Wl,-soname,")
@@ -170,7 +170,7 @@ namespace jet
                 break;
             }
             case LinkerType::kApple_ld: {
-                res.append(" -Wl,-image_base 0x")
+                res.append(" -Wl,-image_base,0x")
                     .append(ss.str())
                     .append(" -Wl,-export_dynamic")
                     .append(" -Wl,-install_name,")
