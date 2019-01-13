@@ -8,8 +8,8 @@ matrix:
       addons:
         apt:
           packages:
-            - clang-7.0
-            - lld-7.0
+            - clang-7
+            - lld-7
       env:
         - CC=clang-7
         - CXX=clang++-7
