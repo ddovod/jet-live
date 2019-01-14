@@ -14,5 +14,5 @@ TEST_CASE("Relocation of static internal variable, comparing address", "[variabl
     waitForReload();
 
     auto newVariableAddress = getStaticInternalVariableAddress();
-    REQUIRE_FALSE(oldVariableAddress == newVariableAddress); // note REQUIRE_FALSE
+    REQUIRE(oldVariableAddress == newVariableAddress);
 }

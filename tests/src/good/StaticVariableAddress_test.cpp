@@ -14,5 +14,5 @@ TEST_CASE("Relocation of static variable, comparing address", "[variable]")
     waitForReload();
 
     auto newVariableAddress = getStaticVariableAddress();
-    REQUIRE_FALSE(oldVariableAddress == newVariableAddress); // note REQUIRE_FALSE
+    REQUIRE(oldVariableAddress == newVariableAddress);
 }

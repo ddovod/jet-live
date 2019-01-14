@@ -14,5 +14,5 @@ TEST_CASE("Relocation of function local static variable, comparing address", "[v
     waitForReload();
 
     auto afterReload = getStaticFunctionLocalVariableAddress();
-    REQUIRE_FALSE(beforeReload == afterReload); // note REQUIRE_FALSE
+    REQUIRE(beforeReload == afterReload);
 }
