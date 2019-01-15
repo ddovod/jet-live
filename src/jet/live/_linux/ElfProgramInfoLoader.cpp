@@ -5,6 +5,41 @@
 #include <elfio/elfio.hpp>
 #include <link.h>
 // clang-format on
+#include "jet/live/Utility.hpp"
+#include <iostream>
+#include <map>
+
+namespace
+{
+    uintptr_t getBaseAddress(const std::string& filepath)
+    {
+        struct DlArgument
+        {
+            uintptr_t baseAddress = 0;
+            std::string libPath;
+        };
+        DlArgument dlArgument;
+        dlArgument.libPath = filepath;
+        dl_iterate_phdr(
+            [](struct dl_phdr_info* info, size_t, void* data) {
+                auto arg = reinterpret_cast<DlArgument*>(data);
+                const char* libPath = nullptr;
+                if (info->dlpi_name && (info->dlpi_name[0] != 0)) {
+                    libPath = info->dlpi_name;
+                } else {
+                    libPath = "";
+                }
+                if (libPath == arg->libPath) {
+                    arg->baseAddress = info->dlpi_addr;
+                    return 1;
+                }
+                return 0;
+            },
+            &dlArgument);
+
+        return dlArgument.baseAddress;
+    }
+}
 
 namespace jet
 {
@@ -36,32 +71,7 @@ namespace jet
     {
         Symbols res;
         ElfContext elfContext;
-
-        struct DlArgument
-        {
-            uintptr_t baseAddress = 0;
-            std::string libPath;
-        };
-        DlArgument dlArgument;
-        dlArgument.libPath = filepath;
-        dl_iterate_phdr(
-            [](struct dl_phdr_info* info, size_t, void* data) {
-                auto arg = reinterpret_cast<DlArgument*>(data);
-                const char* libPath = nullptr;
-                if (info->dlpi_name && (info->dlpi_name[0] != 0)) {
-                    libPath = info->dlpi_name;
-                } else {
-                    libPath = "";
-                }
-                if (libPath == arg->libPath) {
-                    arg->baseAddress = info->dlpi_addr;
-                    return 1;
-                }
-                return 0;
-            },
-            &dlArgument);
-
-        const auto baseAddress = dlArgument.baseAddress;
+        const auto baseAddress = ::getBaseAddress(filepath);
 
         // This executable has empty string name on linux
         ELFIO::elfio elfFile;
@@ -133,7 +143,7 @@ namespace jet
                     symbol.size = elfSymbol.size;
                     symbol.runtimeAddress = baseAddress + elfSymbol.virtualAddress;
                     if (elfSymbol.binding == ElfSymbolBinding::kLocal) {
-                        symbol.hash = currentHash;
+                        elfSymbol.hash = symbol.hash = currentHash;
                     }
 
                     if (context->symbolsFilter->shouldReloadElfSymbol(elfContext, elfSymbol)) {
@@ -149,4 +159,217 @@ namespace jet
 
         return res;
     }
+
+    std::vector<Relocation> ElfProgramInfoLoader::getStaticRelocations(const LiveContext* context,
+        const std::vector<std::string>& objFilePaths)
+    {
+        std::vector<Relocation> res;
+
+        for (const auto& el : objFilePaths) {
+            ELFIO::elfio elfFile;
+            if (!elfFile.load(el)) {
+                context->listener->onLog(LogSeverity::kError, "Cannot load " + el + " file");
+                continue;
+            }
+
+            std::unordered_map<ElfW(Word), ElfW(Half)> symbolsSectionIndexes;
+            std::vector<std::map<uintptr_t, ElfSymbol>> symbolsInSections;
+            std::vector<std::string> sectionNames;
+            size_t textSectionIndex = 0;
+            size_t bssSectionIndex = 0;
+            size_t dataSectionIndex = 0;
+            std::hash<std::string> stringHasher;
+            uint64_t currentHash = 0;
+            sectionNames.resize(elfFile.sections.size());
+            symbolsInSections.resize(elfFile.sections.size());
+            for (uint32_t i = 0; i < elfFile.sections.size(); i++) {
+                const auto& section = elfFile.sections[i];
+                sectionNames[i] = section->get_name();
+                if (sectionNames[i] == ".text") {
+                    textSectionIndex = i;
+                } else if (sectionNames[i] == ".bss") {
+                    bssSectionIndex = i;
+                } else if (sectionNames[i] == ".data") {
+                    dataSectionIndex = i;
+                }
+
+                if (section->get_type() == SHT_SYMTAB) {
+                    const ELFIO::symbol_section_accessor symbols{elfFile, section};
+                    for (uint32_t j = 0; j < symbols.get_symbols_num(); j++) {
+                        std::string name;
+                        ElfW(Addr) value = 0;
+                        ElfW(Xword) size = 0;
+                        unsigned char bind = 0;
+                        unsigned char type = 0;
+                        ElfW(Half) sectionIndex = 0;
+                        unsigned char other = 0;
+                        symbols.get_symbol(j, name, value, size, bind, type, sectionIndex, other);
+                        symbolsSectionIndexes[j] = sectionIndex;
+
+                        if (type == STT_SECTION) {
+                            continue;
+                        }
+
+                        ElfSymbol elfSymbol;
+                        elfSymbol.name = name;
+                        elfSymbol.sectionIndex = sectionIndex;
+                        elfSymbol.size = size;
+                        elfSymbol.virtualAddress = value;
+
+                        switch (type) {
+                            case STT_NOTYPE: elfSymbol.type = ElfSymbolType::kNo; break;
+                            case STT_OBJECT: elfSymbol.type = ElfSymbolType::kObject; break;
+                            case STT_FUNC: elfSymbol.type = ElfSymbolType::kFunction; break;
+                            case STT_SECTION: elfSymbol.type = ElfSymbolType::kSection; break;
+                            case STT_FILE: elfSymbol.type = ElfSymbolType::kFile; break;
+                            case STT_COMMON: elfSymbol.type = ElfSymbolType::kCommonObject; break;
+                            case STT_TLS: elfSymbol.type = ElfSymbolType::kThreadLocalObject; break;
+                            case STT_GNU_IFUNC: elfSymbol.type = ElfSymbolType::kIndirect; break;
+                            default: break;
+                        }
+
+                        switch (bind) {
+                            case STB_LOCAL: elfSymbol.binding = ElfSymbolBinding::kLocal; break;
+                            case STB_GLOBAL: elfSymbol.binding = ElfSymbolBinding::kGlobal; break;
+                            case STB_WEAK: elfSymbol.binding = ElfSymbolBinding::kWeak; break;
+                            case STB_GNU_UNIQUE: elfSymbol.binding = ElfSymbolBinding::kUnique; break;
+                            default: break;
+                        }
+
+                        switch (ELF64_ST_VISIBILITY(other)) {  // NOLINT
+                            case STV_DEFAULT: elfSymbol.visibility = ElfSymbolVisibility::kDefault; break;
+                            case STV_INTERNAL: elfSymbol.visibility = ElfSymbolVisibility::kInternal; break;
+                            case STV_HIDDEN: elfSymbol.visibility = ElfSymbolVisibility::kHidden; break;
+                            case STV_PROTECTED: elfSymbol.visibility = ElfSymbolVisibility::kProtected; break;
+                            default: break;
+                        }
+
+                        if (elfSymbol.type == ElfSymbolType::kFile) {
+                            currentHash = stringHasher(elfSymbol.name);
+                            continue;
+                        }
+
+                        if (elfSymbol.binding == ElfSymbolBinding::kLocal) {
+                            elfSymbol.hash = currentHash;
+                        }
+
+                        if (elfSymbol.sectionIndex < symbolsInSections.size()) {
+                            symbolsInSections[elfSymbol.sectionIndex][elfSymbol.virtualAddress] = elfSymbol;
+                        }
+                    }
+                }
+            }
+
+            for (uint32_t i = 0; i < elfFile.sections.size(); i++) {
+                const auto& section = elfFile.sections[i];
+
+                if (section->get_type() == SHT_RELA) {
+                    if (section->get_info() != textSectionIndex) {
+                        continue;
+                    }
+
+                    const ELFIO::relocation_section_accessor relocs{elfFile, section};
+                    for (uint32_t j = 0; j < relocs.get_entries_num(); j++) {
+                        ElfW(Addr) offset;
+                        ElfW(Word) symbol;
+                        ElfW(Word) type;
+                        ElfW(Sxword) addend;
+                        relocs.get_entry(j, offset, symbol, type, addend);
+
+                        auto sectionIndex = symbolsSectionIndexes[symbol];
+                        if (sectionIndex != bssSectionIndex && sectionIndex != dataSectionIndex) {
+                            continue;
+                        }
+
+                        uintptr_t symRelAddr = 0;
+                        switch (type) {
+                            case R_X86_64_PC32: symRelAddr = static_cast<uintptr_t>(addend + 4); break;
+                            case R_X86_64_32S: symRelAddr = static_cast<uintptr_t>(addend); break;
+                            case R_X86_64_GOTPCREL:
+                            case R_X86_64_PC8:
+                            case R_X86_64_PC16:
+                            case R_X86_64_PC64:
+                            case R_X86_64_GOTPC32:
+                            case R_X86_64_RELATIVE:
+                            case R_X86_64_GLOB_DAT:
+                            case R_X86_64_NONE:
+                            case R_X86_64_8:
+                            case R_X86_64_16:
+                            case R_X86_64_32:
+                            case R_X86_64_64:
+                            case R_X86_64_GOT32:
+                            case R_X86_64_PLT32:
+                            case R_X86_64_COPY:
+                            case R_X86_64_JUMP_SLOT:
+                            case R_X86_64_GOTOFF64:
+                            case R_X86_64_SIZE32:
+                            case R_X86_64_SIZE64:
+                                context->listener->onLog(
+                                    LogSeverity::kError, "Relocation " + relToString(type) + " is not implemented");
+                                continue;
+                        }
+
+                        auto symFound = symbolsInSections[sectionIndex].find(symRelAddr);
+                        if (symFound == symbolsInSections[sectionIndex].end()) {
+                            context->listener->onLog(LogSeverity::kError, "WTF");
+                            continue;
+                        }
+
+                        auto found = symbolsInSections[section->get_info()].upper_bound(offset);
+                        if (found != symbolsInSections[section->get_info()].begin()) {
+                            found--;
+                        }
+                        if (found->second.virtualAddress > offset
+                            || offset >= found->second.virtualAddress + found->second.size) {
+                            context->listener->onLog(LogSeverity::kError, "WTF1");
+                            continue;
+                        }
+
+                        Relocation reloc;
+                        reloc.targetSymbolName = found->second.name;
+                        reloc.targetSymbolHash = found->second.hash;
+                        reloc.relocationOffsetRelativeTargetSymbolAddress = offset - found->second.virtualAddress;
+                        reloc.relocationSymbolName = symFound->second.name;
+                        reloc.relocationSymbolHash = symFound->second.hash;
+                        res.push_back(reloc);
+                    }
+                }
+            }
+        }
+        return res;
+    }
 }
+
+/*
+ * A: Addend of Elfxx_Rela entries.
+ * B: Image base where the shared object was loaded in process virtual address space.
+ * G: Offset to the GOT relative to the address of the correspondent relocation entry’s symbol.
+ * GOT: Address of the Global Offset Table
+ * L: Section offset or address of the procedure linkage table (PLT, .got.plt).
+ * P: The section offset or address of the storage unit being relocated. retrieved via r_offset relocation entry’s
+ * field. S: Relocation entry’s correspondent symbol value. Z: Size of Relocations entry’s symbol.
+ */
+
+/*
+ * R_X86_64_NONE	None	None
+ * R_X86_64_64  	qword	S + A
+ * R_X86_64_PC32	dword	S + A – P
+ * R_X86_64_GOT32	dword	G + A
+ * R_X86_64_PLT32	dword	L + A – P
+ * R_X86_64_COPY	None	Value is copied directly from shared object
+ * R_X86_64_GLOB_DAT	qword	S
+ * R_X86_64_JUMP_SLOT	qword	S
+ * R_X86_64_RELATIVE	qword	B + A
+ * R_X86_64_GOTPCREL	dword	G + GOT + A – P
+ * R_X86_64_32  	dword	S + A
+ * R_X86_64_32S 	dword	S + A
+ * R_X86_64_16  	word	S + A
+ * R_X86_64_PC16	word	S + A – P
+ * R_X86_64_8   	word8	S + A
+ * R_X86_64_PC8 	word8	S + A – P
+ * R_X86_64_PC64	qword	S + A – P
+ * R_X86_64_GOTOFF64	qword	S + A – GOT
+ * R_X86_64_GOTPC32	dword	GOT + A – P
+ * R_X86_64_SIZE32	dword	Z + A
+ * R_X86_64_SIZE64	qword	Z + A
+ */

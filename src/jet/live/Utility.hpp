@@ -41,6 +41,11 @@ namespace jet
     std::string toString(LinkerType linkerType);
 
     /**
+     * Gives string representation of elf or mach-o relocation type.
+     */
+    std::string relToString(uint32_t relocType);
+
+    /**
      * Creates shared library linkage command string.
      * It tries to create a link command to produce the library which will be loaded
      * into the `baseAddress` address.
@@ -77,4 +82,9 @@ namespace jet
      * `regions[0].regionEnd == regions[1].regionBegin`
      */
     std::vector<MemoryRegion> getMemoryRegions();
+
+    // TODO: docs
+    const Symbol* findFunction(const Symbols& symbols, const std::string& name, uint64_t hash);
+    const Symbol* findVariable(const Symbols& symbols, const std::string& name, uint64_t hash);
+    void* unprotect(void* address, size_t size);
 }

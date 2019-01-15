@@ -24,5 +24,9 @@ namespace jet
          * \param filepath Path to the program file. Empty string for this executable.
          */
         virtual Symbols getProgramSymbols(const LiveContext* context, const std::string& filepath) const = 0;
+
+        // TODO: docs
+        virtual std::vector<Relocation> getStaticRelocations(const LiveContext* context,
+            const std::vector<std::string>& objFilePaths) = 0;
     };
 }

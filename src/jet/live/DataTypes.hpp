@@ -13,7 +13,7 @@ namespace jet
      * Different linkers have different capabilities, so we should
      * know which linker we are using.
      */
-    enum class LinkerType
+    enum class LinkerType : uint8_t
     {
         kUnknown,   /** Unknown linker. */
         kLLVM_lld,  /** LLVM LLD linker. */
@@ -76,6 +76,19 @@ namespace jet
         Symbols symbols;  /** Sybmols of the program. */
     };
 
+    /**
+     * Represents a relocation entry;
+     */
+    // TODO: docs
+    struct Relocation
+    {
+        std::string targetSymbolName;
+        uint64_t targetSymbolHash = 0;
+        uintptr_t relocationOffsetRelativeTargetSymbolAddress = 0;
+        std::string relocationSymbolName;
+        uint64_t relocationSymbolHash = 0;
+    };
+
     // Mach-O specific structures
     // For more info please refer to `mach-o/loader.h` and `mach-o/nlist.h`
     enum class MachoSymbolType : uint8_t
@@ -133,6 +146,7 @@ namespace jet
     struct MachoSymbol
     {
         std::string name;
+        uint64_t hash = 0;
         MachoSymbolType type;
         MachoSymbolReferenceType referenceType;
         bool referencedDynamically = false;
@@ -184,6 +198,7 @@ namespace jet
     struct ElfSymbol
     {
         std::string name;
+        uint64_t hash = 0;
         ElfSymbolType type;
         ElfSymbolBinding binding;
         ElfSymbolVisibility visibility;

@@ -78,8 +78,12 @@ namespace jet
                     m_context->listener->onLog(LogSeverity::kInfo, "Linked successfully");
                 }
 
-                m_runningLinkTask->finishCallback(
-                    status, m_runningLinkTask->cuOrLibFilepath, m_runningLinkTask->errMessage);
+                std::vector<std::string> objFilePaths;
+                for (const auto& el : m_readyCompilationUnits) {
+                    objFilePaths.push_back(el.second.objFilepath);
+                }
+                m_runningLinkTask->linkFinishCallback(
+                    status, m_runningLinkTask->cuOrLibFilepath, objFilePaths, m_runningLinkTask->errMessage);
                 m_runningLinkTask.reset();
 
                 if (status == 0) {
@@ -121,7 +125,9 @@ namespace jet
         m_pendingCompilationTasks.push_back(std::move(pendingTask));
     }
 
-    void Compiler::link(std::function<void(int, const std::string&, const std::string&)>&& finishCallback)
+    void Compiler::link(
+        std::function<void(int, const std::string&, const std::vector<std::string>&, const std::string&)>&&
+            finishCallback)
     {
         if (!m_runningCompilationTasks.empty() || m_runningLinkTask) {
             m_shouldLink = true;
@@ -161,7 +167,9 @@ namespace jet
         m_runningCompilationTasks[cu.sourceFilePath] = std::move(task);
     }
 
-    void Compiler::doLink(std::function<void(int, const std::string&, const std::string&)>&& finishCallback)
+    void Compiler::doLink(
+        std::function<void(int, const std::string&, const std::vector<std::string>&, const std::string&)>&&
+            finishCallback)
     {
         if (m_readyCompilationUnits.empty()) {
             m_context->listener->onLog(LogSeverity::kInfo, "Nothing to reload.");
@@ -181,7 +189,7 @@ namespace jet
             objectFilePaths);
 
         Task task;
-        task.finishCallback = std::move(finishCallback);
+        task.linkFinishCallback = std::move(finishCallback);
         task.cuOrLibFilepath = m_workingDirectory + "/" + libName;
         task.process = jet::make_unique<TinyProcessLib::Process>(
             linkCommand, m_workingDirectory, nullptr, [this](const char* bytes, size_t n) {

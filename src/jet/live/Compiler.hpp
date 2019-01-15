@@ -6,6 +6,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 #include "jet/live/DataTypes.hpp"
 #include "jet/live/LiveContext.hpp"
 
@@ -42,7 +43,8 @@ namespace jet
          * and then link newly compiled object files into shared library.
          * \param finishCallback Callback which will be called after linkage process finish.
          */
-        void link(std::function<void(int, const std::string&, const std::string&)>&& finishCallback);
+        void link(std::function<void(int, const std::string&, const std::vector<std::string>&, const std::string&)>&&
+                finishCallback);
 
     private:
         const LiveContext* m_context;
@@ -56,6 +58,8 @@ namespace jet
             std::string objFilepath;
             std::string errMessage;
             std::function<void(int, const std::string&, const std::string&)> finishCallback;
+            std::function<void(int, const std::string&, const std::vector<std::string>&, const std::string&)>
+                linkFinishCallback;
         };
 
         struct ShortCompilationUnit
@@ -80,10 +84,12 @@ namespace jet
         std::string m_compilerPath;
 
         bool m_shouldLink = false;
-        std::function<void(int, const std::string&, const std::string&)> m_pendingLinkingFinishCallback;
+        std::function<void(int, const std::string&, const std::vector<std::string>&, const std::string&)>
+            m_pendingLinkingFinishCallback;
 
         void doCompile(const CompilationUnit& cu,
             std::function<void(int, const std::string&, const std::string&)>&& finishCallback);
-        void doLink(std::function<void(int, const std::string&, const std::string&)>&& finishCallback);
+        void doLink(std::function<void(int, const std::string&, const std::vector<std::string>&, const std::string&)>&&
+                finishCallback);
     };
 }

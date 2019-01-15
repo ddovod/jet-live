@@ -153,7 +153,10 @@ namespace jet
     void Live::tryReload()
     {
         m_context->listener->onLog(LogSeverity::kInfo, "Trying to reload code...");
-        m_compiler->link([this](int status, const std::string& libPath, const std::string&) {
+        m_compiler->link([this](int status,
+                             const std::string& libPath,
+                             const std::vector<std::string>& objFilePaths,
+                             const std::string&) {
             if (status != 0) {
                 return;
             }
@@ -175,6 +178,44 @@ namespace jet
             m_context->listener->onLog(LogSeverity::kInfo,
                 "Symbols loaded: funcs " + std::to_string(libSymbols.functions.size()) + ", vars "
                     + std::to_string(libSymbols.variables.size()) + ", " + libPath);
+
+            m_context->listener->onLog(LogSeverity::kInfo, "Loading static relocations for " + libPath + "...");
+            const auto& relocs = m_context->programInfoLoader->getStaticRelocations(m_context.get(), objFilePaths);
+            for (const auto& reloc : relocs) {
+                const Symbol* targetSymbol = findFunction(libSymbols, reloc.targetSymbolName, reloc.targetSymbolHash);
+                if (!targetSymbol) {
+                    m_context->listener->onLog(
+                        LogSeverity::kError, "targetSymbol not fount: " + reloc.targetSymbolName);
+                    continue;
+                }
+                const Symbol* relocSymbol =
+                    findVariable(libSymbols, reloc.relocationSymbolName, reloc.relocationSymbolHash);
+                if (!relocSymbol) {
+                    m_context->listener->onLog(
+                        LogSeverity::kError, "relocSymbol not found: " + reloc.relocationSymbolName);
+                    continue;
+                }
+                const Symbol* oldVar = nullptr;
+                const auto& progs = m_context->programs;
+                for (auto it = progs.rbegin(); it != progs.rend() && !oldVar; it++) {
+                    oldVar = findVariable(it->symbols, reloc.relocationSymbolName, reloc.relocationSymbolHash);
+                }
+                if (!oldVar) {
+                    continue;
+                }
+
+                auto relocAddressVal = targetSymbol->runtimeAddress + reloc.relocationOffsetRelativeTargetSymbolAddress;
+                int32_t* relocAddress = reinterpret_cast<int32_t*>(relocAddressVal);
+                if (!unprotect(relocAddress, 4)) {
+                    m_context->listener->onLog(LogSeverity::kError, "unprotect failed");
+                    continue;
+                }
+
+                *relocAddress += oldVar->runtimeAddress - relocSymbol->runtimeAddress;
+                m_context->listener->onLog(LogSeverity::kInfo, ">>> " + relocSymbol->name + " was relocated");
+                // TODO: delete relocated vars
+            }
+            m_context->listener->onLog(LogSeverity::kInfo, "Done");
 
             m_context->listener->onLog(LogSeverity::kInfo, "Reloading old code with new one...");
             int functionsReloaded = 0;
@@ -213,37 +254,38 @@ namespace jet
             }
 
             int variablesTransferred = 0;
-            for (const auto& syms : libSymbols.variables) {
-                for (const auto& sym : syms.second) {
-                    void* oldVarPtr = nullptr;
-                    size_t oldVarSize = 0;
-                    bool found = false;
-                    const auto& progs = m_context->programs;
-                    for (auto it = progs.rbegin(); it != progs.rend() && !found; it++) {
-                        auto foundSyms = it->symbols.variables.find(sym.name);
-                        if (foundSyms != it->symbols.variables.end()) {
-                            for (const auto& foundSym : foundSyms->second) {
-                                if (sym.hash == foundSym.hash) {
-                                    oldVarSize = foundSym.size;
-                                    oldVarPtr = reinterpret_cast<void*>(foundSym.runtimeAddress);
-                                    found = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
+            // TODO:
+            // for (const auto& syms : libSymbols.variables) {
+            //     for (const auto& sym : syms.second) {
+            //         void* oldVarPtr = nullptr;
+            //         size_t oldVarSize = 0;
+            //         bool found = false;
+            //         const auto& progs = m_context->programs;
+            //         for (auto it = progs.rbegin(); it != progs.rend() && !found; it++) {
+            //             auto foundSyms = it->symbols.variables.find(sym.name);
+            //             if (foundSyms != it->symbols.variables.end()) {
+            //                 for (const auto& foundSym : foundSyms->second) {
+            //                     if (sym.hash == foundSym.hash) {
+            //                         oldVarSize = foundSym.size;
+            //                         oldVarPtr = reinterpret_cast<void*>(foundSym.runtimeAddress);
+            //                         found = true;
+            //                         break;
+            //                     }
+            //                 }
+            //             }
+            //         }
 
-                    if (!found) {
-                        continue;
-                    }
+            //         if (!found) {
+            //             continue;
+            //         }
 
-                    auto newVarPtr = reinterpret_cast<void*>(sym.runtimeAddress);
+            //         auto newVarPtr = reinterpret_cast<void*>(sym.runtimeAddress);
 
-                    // Trying to do our best
-                    memcpy(newVarPtr, oldVarPtr, std::min(sym.size, oldVarSize));
-                    variablesTransferred++;
-                }
-            }
+            //         // Trying to do our best
+            //         memcpy(newVarPtr, oldVarPtr, std::min(sym.size, oldVarSize));
+            //         variablesTransferred++;
+            //     }
+            // }
 
             Program libProgram;
             libProgram.path = libPath;

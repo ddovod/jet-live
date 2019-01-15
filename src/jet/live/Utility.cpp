@@ -4,7 +4,9 @@
 #include <iomanip>
 #include <process.hpp>
 #include <sstream>
+#include <unistd.h>
 #include <whereami.h>
+#include <sys/mman.h>
 #include "jet/live/LiveContext.hpp"
 
 namespace jet
@@ -245,5 +247,43 @@ namespace jet
 
         context->listener->onLog(LogSeverity::kError, "Cannot find out linker type: \n" + procOut);
         return LinkerType::kUnknown;
+    }
+
+    const Symbol* findFunction(const Symbols& symbols, const std::string& name, uint64_t hash)
+    {
+        auto found = symbols.functions.find(name);
+        if (found != symbols.functions.end()) {
+            for (auto& sym : found->second) {
+                if (sym.hash == hash) {
+                    return &sym;
+                }
+            }
+        }
+        return nullptr;
+    }
+
+    const Symbol* findVariable(const Symbols& symbols, const std::string& name, uint64_t hash)
+    {
+        auto found = symbols.variables.find(name);
+        if (found != symbols.variables.end()) {
+            for (auto& sym : found->second) {
+                if (sym.hash == hash) {
+                    return &sym;
+                }
+            }
+        }
+        return nullptr;
+    }
+
+    void* unprotect(void* address, size_t size)
+    {
+        long pagesize;
+        pagesize = sysconf(_SC_PAGESIZE);
+        address = (void*)((long)address & ~(pagesize - 1));
+        if (mprotect(address, size, PROT_READ | PROT_WRITE | PROT_EXEC) == 0) {
+            return address;
+        } else {
+            return NULL;
+        }
     }
 }
