@@ -63,4 +63,9 @@ namespace jet
 
         return res;
     }
+
+    std::string relToString(uint32_t relocType)
+    {
+        return "";
+    }
 }
