@@ -1,16 +1,16 @@
 
 #include "MachoProgramInfoLoader.hpp"
 #include <dlfcn.h>
+#include <map>
 #include <set>
 #include <teenypath.h>
 #include <mach-o/dyld.h>
 #include <mach-o/dyld_images.h>
 #include <mach-o/nlist.h>
-#include <mach-o/stab.h>
 #include <mach-o/reloc.h>
+#include <mach-o/stab.h>
 #include <mach-o/x86_64/reloc.h>
 #include "jet/live/LiveContext.hpp"
-#include <map>
 
 namespace jet
 {
@@ -246,7 +246,8 @@ namespace jet
                             sym.hash = addressHashMap[machoSymbol.virtualAddress];
                             res.variables[sym.name].push_back(sym);
                             if (sym.name == "_ZL25staticVariableWithAddress") {
-                                context->listener->onLog(LogSeverity::kDebug, std::to_string(sym.hash) + ": " + hashNameMap[sym.hash]);
+                                context->listener->onLog(
+                                    LogSeverity::kDebug, std::to_string(sym.hash) + ": " + hashNameMap[sym.hash]);
                             }
                         }
                     }
@@ -274,7 +275,7 @@ namespace jet
     */
 
     std::vector<Relocation> MachoProgramInfoLoader::getStaticRelocations(const LiveContext* context,
-            const std::vector<std::string>& objFilePaths)
+        const std::vector<std::string>& objFilePaths)
     {
         std::vector<Relocation> res;
 
@@ -470,12 +471,14 @@ namespace jet
                             if (machoSymbol.type == MachoSymbolType::kOSO) {
                                 currentHash = stringHasher(machoSymbol.name);
                                 continue;
-                            } else if (machoSymbol.type == MachoSymbolType::kSTSYM || machoSymbol.type == MachoSymbolType::kFUN) {
+                            } else if (machoSymbol.type == MachoSymbolType::kSTSYM
+                                       || machoSymbol.type == MachoSymbolType::kFUN) {
                                 addressHashMap[machoSymbol.virtualAddress] = currentHash;
                             }
 
                             if (machoSymbol.type == MachoSymbolType::kSection) {
-                                auto addrFound = symbolsBounds[machoSymbol.sectionIndex].find(machoSymbol.virtualAddress);
+                                auto addrFound =
+                                    symbolsBounds[machoSymbol.sectionIndex].find(machoSymbol.virtualAddress);
                                 assert(addrFound != symbolsBounds[machoSymbol.sectionIndex].end());
                                 addrFound++;
                                 if (addrFound != symbolsBounds[machoSymbol.sectionIndex].end()) {
@@ -538,7 +541,8 @@ namespace jet
 
                                 rel.targetSymbolName = found->second.name;
                                 rel.targetSymbolHash = found->second.hash;
-                                rel.relocationOffsetRelativeTargetSymbolAddress = reloc.r_address - found->second.virtualAddress;
+                                rel.relocationOffsetRelativeTargetSymbolAddress =
+                                    reloc.r_address - found->second.virtualAddress;
                                 rel.relocationSymbolName = orderedSymbols[reloc.r_symbolnum].name;
                                 rel.relocationSymbolHash = stringHasher(filepath);
                                 res.push_back(rel);

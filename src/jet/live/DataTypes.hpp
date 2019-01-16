@@ -28,6 +28,7 @@ namespace jet
      */
     struct MemoryRegion
     {
+        std::string name;
         uintptr_t regionBegin = 0;
         uintptr_t regionEnd = 0;
         bool isInUse = false;

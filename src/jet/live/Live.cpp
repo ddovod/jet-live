@@ -211,6 +211,12 @@ namespace jet
                     continue;
                 }
 
+                if (std::abs(static_cast<intptr_t>(oldVar->runtimeAddress - relocSymbol->runtimeAddress))
+                    > std::numeric_limits<int32_t>::max()) {
+                    m_context->listener->onLog(
+                        LogSeverity::kWarning, "Cannot relocate variable, address diff doesn't fit into int32");
+                    continue;
+                }
                 *relocAddress += oldVar->runtimeAddress - relocSymbol->runtimeAddress;
                 m_context->listener->onLog(LogSeverity::kInfo, ">>> " + relocSymbol->name + " was relocated");
                 // TODO: delete relocated vars

@@ -28,6 +28,20 @@ namespace jet
             if (addrDelim == std::string::npos || addrEnd == std::string::npos) {
                 continue;
             }
+            size_t nameBegin = addrEnd;
+            for (int i = 0; i < 4; i++) {
+                nameBegin = line.find(" ", nameBegin + 1);
+            }
+            while (line[nameBegin] == ' ') {
+                if (nameBegin == line.size() - 1) {
+                    break;
+                } else {
+                    nameBegin++;
+                }
+            }
+            if (nameBegin != line.size() - 1) {
+                region.name = line.substr(nameBegin);
+            }
 
             auto addrBeginStr = "0x" + std::string(line, 0, addrDelim);
             auto addrEndStr = "0x" + std::string(line, addrDelim + 1, addrEnd - addrDelim - 1);
@@ -38,14 +52,21 @@ namespace jet
             ss >> region.regionEnd;
             ss.clear();
             region.isInUse = true;
-            if (!res.empty() && res.back().regionEnd != region.regionBegin) {
+
+            if (res.empty()) {
+                res.push_back(region);
+            } else if (res.back().name == region.name && !region.name.empty()) {
+                res.back().regionEnd = region.regionEnd;
+            } else if (res.back().regionEnd != region.regionBegin) {
                 MemoryRegion freeRegion;
                 freeRegion.regionBegin = res.back().regionEnd;
                 freeRegion.regionEnd = region.regionBegin;
                 freeRegion.isInUse = false;
                 res.push_back(freeRegion);
+                res.push_back(region);
+            } else {
+                res.push_back(region);
             }
-            res.push_back(region);
         }
 
         return res;
@@ -93,8 +114,8 @@ namespace jet
             case R_X86_64_TLSDESC: return "R_X86_64_TLSDESC";
             case R_X86_64_IRELATIVE: return "R_X86_64_IRELATIVE";
             case R_X86_64_RELATIVE64: return "R_X86_64_RELATIVE64";
-            //case R_X86_64_GOTPCRELX: return "R_X86_64_GOTPCRELX";
-            //case R_X86_64_REX_GOTPCRELX: return "R_X86_64_REX_GOTPCRELX";
+            // case R_X86_64_GOTPCRELX: return "R_X86_64_GOTPCRELX";
+            // case R_X86_64_REX_GOTPCRELX: return "R_X86_64_REX_GOTPCRELX";
             case R_X86_64_NUM: return "R_X86_64_NUM\t";
             default: return "UNKNOWN";
         }
