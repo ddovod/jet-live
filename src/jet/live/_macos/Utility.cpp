@@ -11,17 +11,14 @@ namespace jet
     {
         std::vector<MemoryRegion> res;
 
-        std::string cmd = "vmmap -interleaved " + std::to_string(getpid());
+        std::string cmd = "vmmap -interleaved -forkCorpse " + std::to_string(getpid());
         std::string procOut;
         std::string procError;
-        auto status = TinyProcessLib::Process{cmd,
+        TinyProcessLib::Process{cmd,
             "",
             [&procOut](const char* bytes, size_t n) { procOut += std::string(bytes, n); },
             [&procError](const char* bytes, size_t n) { procError += std::string(bytes, n); }}
-                          .get_exit_status();
-        if (status != 0) {
-            return res;
-        }
+            .get_exit_status();
 
         std::stringstream ss;
         std::string line;

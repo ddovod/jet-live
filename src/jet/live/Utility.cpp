@@ -220,15 +220,11 @@ namespace jet
     {
         std::string procOut;
         std::string procError;
-        auto status = TinyProcessLib::Process{"ld -v",
+        TinyProcessLib::Process{"ld -v",
             "",
             [&procOut](const char* bytes, size_t n) { procOut += std::string(bytes, n); },
             [&procError](const char* bytes, size_t n) { procError += std::string(bytes, n); }}
-                          .get_exit_status();
-        if (status != 0) {
-            context->listener->onLog(LogSeverity::kError, "'ld -v' failed: \n" + procOut + "\n" + procError);
-            return LinkerType::kUnknown;
-        }
+            .get_exit_status();
 
         if (procOut.find("LLD") != std::string::npos) {
             if (procOut.find("6.0") != std::string::npos) {
