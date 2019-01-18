@@ -15,7 +15,7 @@ TEST_CASE("Reload of class static method", "[function]")
 
     REQUIRE(ClassStaticMethod::computeResult(v1, v2) == sum);
 
-    std::cout << "JET_TEST: disable(2:1); enable(2:2)" << std::endl;
+    std::cout << "JET_TEST: disable(cls_st_meth:1); enable(cls_st_meth:2)" << std::endl;
     waitForReload();
 
     REQUIRE(ClassStaticMethod::computeResult(v1, v2) == mul);

@@ -15,7 +15,7 @@ TEST_CASE("Reload of global free function", "[function]")
 
     REQUIRE(computeResult(v1, v2) == sum);
 
-    std::cout << "JET_TEST: disable(1:1); enable(1:2)" << std::endl;
+    std::cout << "JET_TEST: disable(glob_free_func:1); enable(glob_free_func:2)" << std::endl;
     waitForReload();
 
     REQUIRE(computeResult(v1, v2) == mul);

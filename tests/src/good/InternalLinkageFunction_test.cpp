@@ -18,7 +18,7 @@ TEST_CASE("Reload of function with internal linkage", "[function]")
     REQUIRE(computeResult1(v1, v2) == sum);
     REQUIRE((*internalFunctionPtr)(v1, v2) == sum);
 
-    std::cout << "JET_TEST: disable(5:1); enable(5:2)" << std::endl;
+    std::cout << "JET_TEST: disable(intern_func:1); enable(intern_func:2)" << std::endl;
     waitForReload();
 
     REQUIRE(computeResult1(v1, v2) == mul);

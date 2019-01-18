@@ -16,7 +16,7 @@ TEST_CASE("Relocation of static variables with same names in different compilati
     REQUIRE(beforeReload2.first == 10);
     REQUIRE(beforeReload2.second == 110);
 
-    std::cout << "JET_TEST: disable(17:1); enable(17:2)" << std::endl;
+    std::cout << "JET_TEST: disable(st_var_same_name:1); enable(st_var_same_name:2)" << std::endl;
     waitForReload();
 
     auto afterReload1 = getNextSameName1();

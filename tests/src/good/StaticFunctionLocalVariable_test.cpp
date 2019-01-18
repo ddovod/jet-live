@@ -11,7 +11,7 @@ TEST_CASE("Relocation of function local static variable", "[variable]")
     auto beforeReload = getNext2();
     REQUIRE(beforeReload == 4);
 
-    std::cout << "JET_TEST: disable(13:1)" << std::endl;
+    std::cout << "JET_TEST: disable(st_func_loc_var:1)" << std::endl;
     waitForReload();
 
     auto afterReload = getNext2();

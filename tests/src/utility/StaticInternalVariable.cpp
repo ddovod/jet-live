@@ -8,6 +8,6 @@ namespace
 
 std::pair<int, int> getNext1()
 {
-    return {0, staticVariable++}; // <jet_tag: 12:1>
-//    return {1, staticVariable++}; // <jet_tag: 12:2>
+    return {0, staticVariable++}; // <jet_tag: st_intern_var:1>
+//    return {1, staticVariable++}; // <jet_tag: st_intern_var:2>
 }

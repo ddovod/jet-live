@@ -17,7 +17,7 @@ TEST_CASE("Reload of class instance virtual method", "[function]")
 
     REQUIRE(ins->computeResult(v1, v2) == sum);
 
-    std::cout << "JET_TEST: disable(4:1); enable(4:2)" << std::endl;
+    std::cout << "JET_TEST: disable(cls_virt_meth:1); enable(cls_virt_meth:2)" << std::endl;
     waitForReload();
 
     REQUIRE(ins->computeResult(v1, v2) == mul);

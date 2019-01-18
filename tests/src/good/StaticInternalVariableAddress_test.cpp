@@ -10,7 +10,7 @@ TEST_CASE("Relocation of static internal variable, comparing address", "[variabl
 {
     auto oldVariableAddress = getStaticInternalVariableAddress();
 
-    std::cout << "JET_TEST: disable(15:1)" << std::endl;
+    std::cout << "JET_TEST: disable(st_intern_var_addr:1)" << std::endl;
     waitForReload();
 
     auto newVariableAddress = getStaticInternalVariableAddress();
