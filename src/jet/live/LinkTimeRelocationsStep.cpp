@@ -14,6 +14,7 @@ namespace jet
         const auto& relocs = context->programInfoLoader->getStaticRelocations(context, newProgram->objFilePaths);
         auto totalRelocs = relocs.size();
         size_t appliedRelocs = 0;
+        std::vector<Symbol> relocatedSymbols;
         for (const auto& reloc : relocs) {
             const Symbol* targetSymbol =
                 findFunction(newProgram->symbols, reloc.targetSymbolName, reloc.targetSymbolHash);
@@ -56,17 +57,21 @@ namespace jet
             *relocAddress += oldVar->runtimeAddress - relocSymbol->runtimeAddress;
             context->listener->onLog(LogSeverity::kInfo, relocSymbol->name + " was relocated");
 
-            // auto& newVars = newProgram->symbols.variables[relocSymbol->name];
-            // for (size_t i = 0; i < newVars.size(); i++) {
-            //     if (newVars[i].hash == relocSymbol->hash) {
-            //         newVars.erase(newVars.begin() + i);
-            //         break;
-            //     }
-            // }
-            // if (newVars.empty()) {
-            //     newProgram->symbols.variables.erase(relocSymbol->name);
-            // }
+            relocatedSymbols.push_back(*relocSymbol);
             appliedRelocs++;
+        }
+
+        for (const auto& relocSymbol : relocatedSymbols) {
+            auto& newVars = newProgram->symbols.variables[relocSymbol.name];
+            for (size_t i = 0; i < newVars.size(); i++) {
+                if (newVars[i].hash == relocSymbol.hash) {
+                    newVars.erase(newVars.begin() + i);
+                    break;
+                }
+            }
+            if (newVars.empty()) {
+                newProgram->symbols.variables.erase(relocSymbol.name);
+            }
         }
 
         context->listener->onLog(LogSeverity::kInfo,
