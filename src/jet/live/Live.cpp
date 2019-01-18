@@ -1,13 +1,15 @@
 
 #include "Live.hpp"
-#include <cstring>
 #include <dlfcn.h>
-#include <subhook.h>
 #include <teenypath.h>
+#include "jet/live/CodeReloadPipeline.hpp"
 #include "jet/live/CompileCommandsCompilationUnitsParser.hpp"
 #include "jet/live/DefaultProgramInfoLoader.hpp"
 #include "jet/live/DefaultSymbolsFilter.hpp"
 #include "jet/live/DepfileDependenciesHandler.hpp"
+#include "jet/live/FunctionsHookingStep.hpp"
+#include "jet/live/LinkTimeRelocationsStep.hpp"
+#include "jet/live/StaticsCopyStep.hpp"
 #include "jet/live/Utility.hpp"
 
 namespace jet
@@ -23,6 +25,11 @@ namespace jet
         m_context->dependenciesHandler = jet::make_unique<DepfileDependenciesHandler>();
         m_context->programInfoLoader = jet::make_unique<DefaultProgramInfoLoader>();
         m_context->symbolsFilter = jet::make_unique<DefaultSymbolsFilter>();
+        m_context->codeReloadPipeline = jet::make_unique<CodeReloadPipeline>();
+
+        m_context->codeReloadPipeline->addStep(jet::make_unique<LinkTimeRelocationsStep>());
+        m_context->codeReloadPipeline->addStep(jet::make_unique<FunctionsHookingStep>());
+        m_context->codeReloadPipeline->addStep(jet::make_unique<StaticsCopyStep>());
 
         for (const auto& el : m_context->programInfoLoader->getAllLoadedProgramsPaths(m_context.get())) {
             Program program;
@@ -175,135 +182,17 @@ namespace jet
 
             m_context->listener->onLog(LogSeverity::kInfo, "Loading symbols from " + libPath + "...");
             auto libSymbols = m_context->programInfoLoader->getProgramSymbols(m_context.get(), libPath);
-            m_context->listener->onLog(LogSeverity::kInfo,
-                "Symbols loaded: funcs " + std::to_string(libSymbols.functions.size()) + ", vars "
-                    + std::to_string(libSymbols.variables.size()) + ", " + libPath);
-
-            m_context->listener->onLog(LogSeverity::kInfo, "Loading static relocations for " + libPath + "...");
-            const auto& relocs = m_context->programInfoLoader->getStaticRelocations(m_context.get(), objFilePaths);
-            for (const auto& reloc : relocs) {
-                const Symbol* targetSymbol = findFunction(libSymbols, reloc.targetSymbolName, reloc.targetSymbolHash);
-                if (!targetSymbol) {
-                    m_context->listener->onLog(
-                        LogSeverity::kError, "targetSymbol not fount: " + reloc.targetSymbolName);
-                    continue;
-                }
-                const Symbol* relocSymbol =
-                    findVariable(libSymbols, reloc.relocationSymbolName, reloc.relocationSymbolHash);
-                if (!relocSymbol) {
-                    m_context->listener->onLog(
-                        LogSeverity::kError, "relocSymbol not found: " + reloc.relocationSymbolName);
-                    continue;
-                }
-                const Symbol* oldVar = nullptr;
-                const auto& progs = m_context->programs;
-                for (auto it = progs.rbegin(); it != progs.rend() && !oldVar; it++) {
-                    oldVar = findVariable(it->symbols, reloc.relocationSymbolName, reloc.relocationSymbolHash);
-                }
-                if (!oldVar) {
-                    continue;
-                }
-
-                auto relocAddressVal = targetSymbol->runtimeAddress + reloc.relocationOffsetRelativeTargetSymbolAddress;
-                int32_t* relocAddress = reinterpret_cast<int32_t*>(relocAddressVal);
-                if (!unprotect(relocAddress, 4)) {
-                    m_context->listener->onLog(LogSeverity::kError, "unprotect failed");
-                    continue;
-                }
-
-                if (std::abs(static_cast<intptr_t>(oldVar->runtimeAddress - relocSymbol->runtimeAddress))
-                    > std::numeric_limits<int32_t>::max()) {
-                    m_context->listener->onLog(
-                        LogSeverity::kWarning, "Cannot relocate variable, address diff doesn't fit into int32");
-                    continue;
-                }
-                *relocAddress += oldVar->runtimeAddress - relocSymbol->runtimeAddress;
-                m_context->listener->onLog(LogSeverity::kInfo, ">>> " + relocSymbol->name + " was relocated");
-                // TODO: delete relocated vars
-            }
-            m_context->listener->onLog(LogSeverity::kInfo, "Done");
-
-            m_context->listener->onLog(LogSeverity::kInfo, "Reloading old code with new one...");
-            int functionsReloaded = 0;
-            for (const auto& syms : libSymbols.functions) {
-                for (const auto& sym : syms.second) {
-                    void* oldFuncPtr = nullptr;
-                    bool found = false;
-                    const auto& progs = m_context->programs;
-                    for (auto it = progs.rbegin(); it != progs.rend() && !found; it++) {
-                        auto foundSyms = it->symbols.functions.find(sym.name);
-                        if (foundSyms != it->symbols.functions.end()) {
-                            for (const auto& foundSym : foundSyms->second) {
-                                if (foundSym.hash == sym.hash) {
-                                    oldFuncPtr = reinterpret_cast<void*>(foundSym.runtimeAddress);
-                                    found = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    if (!found) {
-                        continue;
-                    }
-
-                    auto newFuncPtr = reinterpret_cast<void*>(sym.runtimeAddress);
-
-                    auto hook = subhook_new(oldFuncPtr, newFuncPtr, SUBHOOK_64BIT_OFFSET);
-                    if (auto subhookStatus = subhook_install(hook)) {
-                        m_context->listener->onLog(LogSeverity::kError,
-                            "Cannot hook function: " + sym.name + ", status " + std::to_string(subhookStatus));
-                    } else {
-                        functionsReloaded++;
-                    }
-                }
-            }
-
-            int variablesTransferred = 0;
-            // TODO:
-            // for (const auto& syms : libSymbols.variables) {
-            //     for (const auto& sym : syms.second) {
-            //         void* oldVarPtr = nullptr;
-            //         size_t oldVarSize = 0;
-            //         bool found = false;
-            //         const auto& progs = m_context->programs;
-            //         for (auto it = progs.rbegin(); it != progs.rend() && !found; it++) {
-            //             auto foundSyms = it->symbols.variables.find(sym.name);
-            //             if (foundSyms != it->symbols.variables.end()) {
-            //                 for (const auto& foundSym : foundSyms->second) {
-            //                     if (sym.hash == foundSym.hash) {
-            //                         oldVarSize = foundSym.size;
-            //                         oldVarPtr = reinterpret_cast<void*>(foundSym.runtimeAddress);
-            //                         found = true;
-            //                         break;
-            //                     }
-            //                 }
-            //             }
-            //         }
-
-            //         if (!found) {
-            //             continue;
-            //         }
-
-            //         auto newVarPtr = reinterpret_cast<void*>(sym.runtimeAddress);
-
-            //         // Trying to do our best
-            //         memcpy(newVarPtr, oldVarPtr, std::min(sym.size, oldVarSize));
-            //         variablesTransferred++;
-            //     }
-            // }
+            m_context->listener->onLog(LogSeverity::kInfo, "Symbols loaded");
 
             Program libProgram;
             libProgram.path = libPath;
             libProgram.symbols = libSymbols;
-            m_context->programs.push_back(std::move(libProgram));
+            libProgram.objFilePaths = objFilePaths;
 
+            m_context->codeReloadPipeline->reload(m_context.get(), &libProgram);
+
+            m_context->programs.emplace_back(std::move(libProgram));
             m_context->listener->onCodePostLoad();
-
-            m_context->listener->onLog(LogSeverity::kInfo,
-                "Code reloaded successfully: funcs " + std::to_string(functionsReloaded) + "/"
-                    + std::to_string(libSymbols.functions.size()) + ", vars " + std::to_string(variablesTransferred)
-                    + "/" + std::to_string(libSymbols.variables.size()));
         });
     }
 

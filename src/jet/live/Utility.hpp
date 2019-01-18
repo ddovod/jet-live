@@ -86,5 +86,7 @@ namespace jet
     // TODO: docs
     const Symbol* findFunction(const Symbols& symbols, const std::string& name, uint64_t hash);
     const Symbol* findVariable(const Symbols& symbols, const std::string& name, uint64_t hash);
+    size_t getTotalFunctions(const Symbols& symbols);
+    size_t getTotalVariables(const Symbols& symbols);
     void* unprotect(void* address, size_t size);
 }

@@ -173,6 +173,10 @@ target_sources(jet-live
   src/jet/live/Compiler.cpp
   src/jet/live/Live.cpp
   src/jet/live/DepfileDependenciesHandler.cpp
+  src/jet/live/CodeReloadPipeline.cpp
+  src/jet/live/LinkTimeRelocationsStep.cpp
+  src/jet/live/FunctionsHookingStep.cpp
+  src/jet/live/StaticsCopyStep.cpp
   )
 if (UNIX AND NOT APPLE)
   target_sources(jet-live

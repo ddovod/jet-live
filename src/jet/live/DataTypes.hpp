@@ -73,8 +73,9 @@ namespace jet
      */
     struct Program
     {
-        std::string path; /** Program filepath. Empty for this executable. */
-        Symbols symbols;  /** Sybmols of the program. */
+        std::string path;                      /** Program filepath. Empty for this executable. */
+        std::vector<std::string> objFilePaths; /** File paths to obj files of the program. Empty for this executable. */
+        Symbols symbols;                       /** Sybmols of the program. */
     };
 
     /**

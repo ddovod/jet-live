@@ -271,6 +271,24 @@ namespace jet
         return nullptr;
     }
 
+    size_t getTotalFunctions(const Symbols& symbols)
+    {
+        size_t res = 0;
+        for (const auto& el : symbols.functions) {
+            res += el.second.size();
+        }
+        return res;
+    }
+
+    size_t getTotalVariables(const Symbols& symbols)
+    {
+        size_t res = 0;
+        for (const auto& el : symbols.variables) {
+            res += el.second.size();
+        }
+        return res;
+    }
+
     void* unprotect(void* address, size_t size)
     {
         long pagesize;
