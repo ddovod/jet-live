@@ -56,16 +56,16 @@ namespace jet
             *relocAddress += oldVar->runtimeAddress - relocSymbol->runtimeAddress;
             context->listener->onLog(LogSeverity::kInfo, relocSymbol->name + " was relocated");
 
-            auto& newVars = newProgram->symbols.variables[relocSymbol->name];
-            for (size_t i = 0; i < newVars.size(); i++) {
-                if (newVars[i].hash == relocSymbol->hash) {
-                    newVars.erase(newVars.begin() + i);
-                    break;
-                }
-            }
-            if (newVars.empty()) {
-                newProgram->symbols.variables.erase(relocSymbol->name);
-            }
+            // auto& newVars = newProgram->symbols.variables[relocSymbol->name];
+            // for (size_t i = 0; i < newVars.size(); i++) {
+            //     if (newVars[i].hash == relocSymbol->hash) {
+            //         newVars.erase(newVars.begin() + i);
+            //         break;
+            //     }
+            // }
+            // if (newVars.empty()) {
+            //     newProgram->symbols.variables.erase(relocSymbol->name);
+            // }
             appliedRelocs++;
         }
 
