@@ -525,7 +525,7 @@ namespace jet
                                         || reloc.r_address >= found->second.virtualAddress + found->second.size) {
                                         s += "WTF1\t";
                                     } else {
-                                        s += "target: " + found->second.name + "|\t"
+                                        s += "target: " + found->second.name + "|\t";
                                     }
 
                                     s += "reloc: " + orderedSymbols[reloc.r_symbolnum].name + "|\t";
