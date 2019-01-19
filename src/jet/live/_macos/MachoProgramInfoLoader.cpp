@@ -218,7 +218,7 @@ namespace jet
                             machoSymbol.name = stringTable + symbol.n_un.n_strx;
                             currentHash = stringHasher(machoSymbol.name);
                             currentFileName = machoSymbol.name;
-                        } else if (machoSymbol.type == MachoSymbolType::kSTSYM) {
+                        } else if (machoSymbol.type == MachoSymbolType::kSTSYM || machoSymbol.type == MachoSymbolType::kGSYM) {
                             addressHashMap[machoSymbol.virtualAddress] = currentHash;
                             hashNameMap[currentHash] = currentFileName;
                         }
@@ -464,7 +464,8 @@ namespace jet
                                 currentHash = stringHasher(machoSymbol.name);
                                 continue;
                             } else if (machoSymbol.type == MachoSymbolType::kSTSYM
-                                       || machoSymbol.type == MachoSymbolType::kFUN) {
+                                       || machoSymbol.type == MachoSymbolType::kFUN
+                                       || machoSymbol.type == MachoSymbolType::kGSYM) {
                                 addressHashMap[machoSymbol.virtualAddress] = currentHash;
                             }
 
