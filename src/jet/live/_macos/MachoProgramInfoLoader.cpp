@@ -522,6 +522,8 @@ namespace jet
                                 }
 
                                 if (!reloc.r_pcrel) {
+                                    context->listener->onLog(LogSeverity::kDebug,
+                                            "reloc.r_pcrel == 0");
                                     continue;
                                 }
 
