@@ -125,6 +125,7 @@ namespace jet
         std::string currentFileName;
         std::unordered_map<uintptr_t, uint64_t> addressHashMap;
         std::unordered_map<uint64_t, std::string> hashNameMap;
+        std::unordered_map<uint64_t, std::unordered_map<uintptr_t, MachoSymbolType>> hashAddressStabType;
         commandOffset = sizeof(mach_header_64);
         for (uint32_t iCmd = 0; iCmd < header->ncmds; iCmd++) {
             auto command = reinterpret_cast<load_command*>(machoPtr + commandOffset);
@@ -221,6 +222,7 @@ namespace jet
                         } else if (machoSymbol.type == MachoSymbolType::kSTSYM) {
                             addressHashMap[machoSymbol.virtualAddress] = currentHash;
                             hashNameMap[currentHash] = currentFileName;
+                            hashAddressStabType[currentHash][machoSymbol.virtualAddress] = MachoSymbolType::kSTSYM;
                         }
 
                         if (machoSymbol.type == MachoSymbolType::kSection) {
@@ -239,13 +241,15 @@ namespace jet
                         sym.runtimeAddress = baseAddress + machoSymbol.virtualAddress;
                         sym.size = machoSymbol.size;
                         sym.hash = machoSymbol.hash = addressHashMap[machoSymbol.virtualAddress];
+                        if (hashAddressStabType[sym.hash][machoSymbol.virtualAddress] == MachoSymbolType::kSTSYM) {
+                            sym.checkHash = true;
+                        }
 
                         if (context->symbolsFilter->shouldReloadMachoSymbol(machoContext, machoSymbol)) {
                             res.functions[sym.name].push_back(sym);
                         }
 
                         if (context->symbolsFilter->shouldTransferMachoSymbol(machoContext, machoSymbol)) {
-                            sym.checkHash = true;
                             res.variables[sym.name].push_back(sym);
                         }
                     }

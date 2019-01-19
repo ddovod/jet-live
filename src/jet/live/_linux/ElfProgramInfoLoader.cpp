@@ -143,6 +143,7 @@ namespace jet
                     symbol.size = elfSymbol.size;
                     symbol.runtimeAddress = baseAddress + elfSymbol.virtualAddress;
                     if (elfSymbol.binding == ElfSymbolBinding::kLocal) {
+                        symbol.checkHash = true;
                         elfSymbol.hash = symbol.hash = currentHash;
                     }
 
@@ -151,7 +152,6 @@ namespace jet
                     }
 
                     if (context->symbolsFilter->shouldTransferElfSymbol(elfContext, elfSymbol)) {
-                        symbol.checkHash = true;
                         res.variables[symbol.name].push_back(symbol);
                     }
                 }
