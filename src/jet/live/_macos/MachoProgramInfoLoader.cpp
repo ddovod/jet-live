@@ -538,8 +538,8 @@ namespace jet
                                     case X86_64_RELOC_GOT:         // other GOT references
                                     case X86_64_RELOC_SUBTRACTOR:  // must be followed by a X86_64_RELOC_UNSIGNED
                                     case X86_64_RELOC_TLV:         // for thread local variables
-                                        content->listener->onLog(LogSeverity::kError,
-                                            "Unsupported relocation type: " + toString(reloc.r_type));
+                                        context->listener->onLog(LogSeverity::kError,
+                                            "Unsupported relocation type: " + relToString(reloc.r_type));
                                         continue;
                                 }
 
