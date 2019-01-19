@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "terminal" : "integrated",
+            "name": "Debug",
+            "program": "${workspaceFolder}/build/example/example",
+            "cwd": "${workspaceFolder}/build",
+            "preLaunchTask": "build"
+        }
+    ]
+}
