@@ -308,10 +308,10 @@ namespace jet
                                 continue;
 
                             // Not yet supported relocations
-                            case R_X86_64_PC8:       // 8,       S + A – P
-                            case R_X86_64_PC16:      // 16,      S + A – P
-                            case R_X86_64_GOTPC32:   // 32,      GOT + A – P
-                            case R_X86_64_PLT32:     // 32,      L + A – P
+                            case R_X86_64_PC8:      // 8,       S + A – P
+                            case R_X86_64_PC16:     // 16,      S + A – P
+                            case R_X86_64_GOTPC32:  // 32,      GOT + A – P
+                            case R_X86_64_PLT32:    // 32,      L + A – P
                                 context->listener->onLog(
                                     LogSeverity::kError, "Relocation " + relToString(type) + " is not implemented");
                                 continue;

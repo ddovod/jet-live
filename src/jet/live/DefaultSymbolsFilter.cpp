@@ -2,11 +2,6 @@
 #include "DefaultSymbolsFilter.hpp"
 #include "jet/live/DataTypes.hpp"
 
-#include <iostream>
-#include "jet/live/Utility.hpp"
-
-extern bool shouldLogDebug;
-
 namespace
 {
     const std::string& getStringOr(const std::vector<std::string>& vec, size_t index, const std::string& fallback)
@@ -19,10 +14,6 @@ namespace jet
 {
     bool DefaultSymbolsFilter::shouldReloadMachoSymbol(const MachoContext& context, const MachoSymbol& symbol)
     {
-        if (shouldLogDebug) {
-            std::cout << "SYM: |" << toString(context, symbol) << std::endl;
-        }
-        
         static const std::string textSectionName = "__text";
         const auto& sectionName = getStringOr(context.sectionNames, symbol.sectionIndex, "?");
         return (symbol.type == MachoSymbolType::kSection && !symbol.weakDef && sectionName == textSectionName);

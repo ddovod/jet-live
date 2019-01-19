@@ -497,118 +497,6 @@ namespace jet
                             relocation_info* relocs = reinterpret_cast<relocation_info*>(machoPtr + section.reloff);
                             for (int j = 0; j < section.nreloc; j++) {
                                 const auto& reloc = relocs[j];
-                                
-                                {
-                                    std::string s;
-                                    s += std::to_string(reloc.r_address) + "|\t";
-                                    s += std::to_string(reloc.r_symbolnum) + "|\t";
-                                    s += std::to_string(reloc.r_pcrel) + "|\t";
-                                    s += std::to_string(reloc.r_length) + "|\t";
-                                    s += std::to_string(reloc.r_extern) + "|\t";
-                                    s += std::to_string(reloc.r_type) + "|\t";
-                                    auto symSectionIndex = symbolsSectionIndexes[reloc.r_symbolnum];
-                                    s += "sym_sect: " + std::to_string(orderedSymbols[reloc.r_symbolnum].sectionIndex) + " (text:" + std::to_string(textSectionIndex) + ") (data:" + std::to_string(dataSectionIndex) + ") (bss:" + std::to_string(dataSectionIndex) + ")\t";
-
-                                    {
-                                        auto& symbol = *orderedSymbols[reloc.r_symbolnum].symPtr;
-                                        auto table = orderedSymbols[reloc.r_symbolnum].table;
-                                        auto stringTable = machoPtr + table->stroff;
-                                        MachoSymbol machoSymbol;
-                                        if (symbol.n_type & N_STAB) {
-                                            switch (symbol.n_type) {
-                                                case N_GSYM: machoSymbol.type = MachoSymbolType::kGSYM; break;
-                                                case N_FNAME: machoSymbol.type = MachoSymbolType::kFNAME; break;
-                                                case N_FUN: machoSymbol.type = MachoSymbolType::kFUN; break;
-                                                case N_STSYM: machoSymbol.type = MachoSymbolType::kSTSYM; break;
-                                                case N_LCSYM: machoSymbol.type = MachoSymbolType::kLCSYM; break;
-                                                case N_BNSYM: machoSymbol.type = MachoSymbolType::kBNSYM; break;
-                                                case N_AST: machoSymbol.type = MachoSymbolType::kAST; break;
-                                                case N_OPT: machoSymbol.type = MachoSymbolType::kOPT; break;
-                                                case N_RSYM: machoSymbol.type = MachoSymbolType::kRSYM; break;
-                                                case N_SLINE: machoSymbol.type = MachoSymbolType::kSLINE; break;
-                                                case N_ENSYM: machoSymbol.type = MachoSymbolType::kENSYM; break;
-                                                case N_SSYM: machoSymbol.type = MachoSymbolType::kSSYM; break;
-                                                case N_SO: machoSymbol.type = MachoSymbolType::kSO; break;
-                                                case N_OSO: machoSymbol.type = MachoSymbolType::kOSO; break;
-                                                case N_LSYM: machoSymbol.type = MachoSymbolType::kLSYM; break;
-                                                case N_BINCL: machoSymbol.type = MachoSymbolType::kBINCL; break;
-                                                case N_SOL: machoSymbol.type = MachoSymbolType::kSOL; break;
-                                                case N_PARAMS: machoSymbol.type = MachoSymbolType::kPARAMS; break;
-                                                case N_VERSION: machoSymbol.type = MachoSymbolType::kVERSION; break;
-                                                case N_OLEVEL: machoSymbol.type = MachoSymbolType::kOLEVEL; break;
-                                                case N_PSYM: machoSymbol.type = MachoSymbolType::kPSYM; break;
-                                                case N_EINCL: machoSymbol.type = MachoSymbolType::kEINCL; break;
-                                                case N_ENTRY: machoSymbol.type = MachoSymbolType::kENTRY; break;
-                                                case N_LBRAC: machoSymbol.type = MachoSymbolType::kLBRAC; break;
-                                                case N_EXCL: machoSymbol.type = MachoSymbolType::kEXCL; break;
-                                                case N_RBRAC: machoSymbol.type = MachoSymbolType::kRBRAC; break;
-                                                case N_BCOMM: machoSymbol.type = MachoSymbolType::kBCOMM; break;
-                                                case N_ECOMM: machoSymbol.type = MachoSymbolType::kECOMM; break;
-                                                case N_ECOML: machoSymbol.type = MachoSymbolType::kECOML; break;
-                                                case N_LENG: machoSymbol.type = MachoSymbolType::kLENG; break;
-                                                case N_PC: machoSymbol.type = MachoSymbolType::kPC; break;
-                                            }
-                                        } else {
-                                            switch (symbol.n_type & N_TYPE) {
-                                                case N_UNDF: machoSymbol.type = MachoSymbolType::kUndefined; break;
-                                                case N_ABS: machoSymbol.type = MachoSymbolType::kAbsolute; break;
-                                                case N_SECT: machoSymbol.type = MachoSymbolType::kSection; break;
-                                                case N_PBUD: machoSymbol.type = MachoSymbolType::kPreboundUndefined; break;
-                                                case N_INDR: machoSymbol.type = MachoSymbolType::kIndirect; break;
-                                            }
-                                        }
-
-                                        switch (symbol.n_desc & REFERENCE_TYPE) {
-                                            case REFERENCE_FLAG_UNDEFINED_NON_LAZY:
-                                                machoSymbol.referenceType = MachoSymbolReferenceType::kUndefinedNonLazy;
-                                                break;
-                                            case REFERENCE_FLAG_UNDEFINED_LAZY:
-                                                machoSymbol.referenceType = MachoSymbolReferenceType::kUndefinedLazy;
-                                                break;
-                                            case REFERENCE_FLAG_DEFINED:
-                                                machoSymbol.referenceType = MachoSymbolReferenceType::kDefined;
-                                                break;
-                                            case REFERENCE_FLAG_PRIVATE_DEFINED:
-                                                machoSymbol.referenceType = MachoSymbolReferenceType::kPrivateDefined;
-                                                break;
-                                            case REFERENCE_FLAG_PRIVATE_UNDEFINED_NON_LAZY:
-                                                machoSymbol.referenceType = MachoSymbolReferenceType::kPrivateUndefinedNonLazy;
-                                                break;
-                                            case REFERENCE_FLAG_PRIVATE_UNDEFINED_LAZY:
-                                                machoSymbol.referenceType = MachoSymbolReferenceType::kPrivateUndefinedLazy;
-                                                break;
-                                        }
-
-                                        machoSymbol.referencedDynamically = symbol.n_desc & REFERENCED_DYNAMICALLY;
-                                        machoSymbol.descDiscarded = symbol.n_desc & N_DESC_DISCARDED;
-                                        machoSymbol.weakRef = symbol.n_desc & N_WEAK_REF;
-                                        machoSymbol.weakDef = symbol.n_desc & N_WEAK_DEF;
-                                        machoSymbol.privateExternal = symbol.n_type & N_PEXT;
-                                        machoSymbol.external = symbol.n_type & N_EXT;
-                                        machoSymbol.sectionIndex = symbol.n_sect;
-                                        machoSymbol.virtualAddress = symbol.n_value;
-                                        // All symbol names starts with '_', so just skipping 1 char
-                                        machoSymbol.name = stringTable + symbol.n_un.n_strx + 1;
-
-                                        s += toString({}, machoSymbol) + "|\t";
-                                    }
-
-                                    auto found = symbolsInSections[textSectionIndex].upper_bound(reloc.r_address);
-                                    if (found != symbolsInSections[textSectionIndex].begin()) {
-                                        found--;
-                                    }
-                                    if (found->second.virtualAddress > reloc.r_address
-                                        || reloc.r_address >= found->second.virtualAddress + found->second.size) {
-                                        s += "WTF1\t";
-                                    } else {
-                                        s += "target: " + found->second.name + "|\t";
-                                    }
-
-                                    s += "reloc: " + orderedSymbols[reloc.r_symbolnum].name + "|\t" + std::to_string(orderedSymbols[reloc.r_symbolnum].hash) + "|\t";
-                                    
-                                    context->listener->onLog(LogSeverity::kDebug, s);
-                                }
-                                
                                 auto sectionIndex = orderedSymbols[reloc.r_symbolnum].sectionIndex;
                                 if (sectionIndex != bssSectionIndex && sectionIndex != dataSectionIndex) {
                                     continue;
@@ -626,18 +514,17 @@ namespace jet
                                 }
 
                                 if (!reloc.r_pcrel) {
-                                    context->listener->onLog(LogSeverity::kDebug,
-                                            "reloc.r_pcrel == 0");
+                                    context->listener->onLog(LogSeverity::kDebug, "reloc.r_pcrel == 0");
                                     continue;
                                 }
 
                                 switch (reloc.r_type) {
-                                    case X86_64_RELOC_SIGNED:    // for signed 32-bit displacement
-                                    case X86_64_RELOC_SIGNED_1:  // for signed 32-bit displacement with a -1 addend
-                                    case X86_64_RELOC_SIGNED_2:  // for signed 32-bit displacement with a -2 addend
-                                    case X86_64_RELOC_SIGNED_4:  // for signed 32-bit displacement with a -4 addend
+                                    case X86_64_RELOC_SIGNED:  // for signed 32-bit displacement
                                         break;
 
+                                    case X86_64_RELOC_SIGNED_1:    // for signed 32-bit displacement with a -1 addend
+                                    case X86_64_RELOC_SIGNED_2:    // for signed 32-bit displacement with a -2 addend
+                                    case X86_64_RELOC_SIGNED_4:    // for signed 32-bit displacement with a -4 addend
                                     case X86_64_RELOC_UNSIGNED:    // for absolute addresses
                                     case X86_64_RELOC_BRANCH:      // a CALL/JMP instruction with 32-bit displacement
                                     case X86_64_RELOC_GOT_LOAD:    // a MOVQ load of a GOT entry
