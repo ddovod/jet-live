@@ -218,7 +218,7 @@ namespace jet
                             machoSymbol.name = stringTable + symbol.n_un.n_strx;
                             currentHash = stringHasher(machoSymbol.name);
                             currentFileName = machoSymbol.name;
-                        } else if (machoSymbol.type == MachoSymbolType::kSTSYM || machoSymbol.type == MachoSymbolType::kGSYM) {
+                        } else if (machoSymbol.type == MachoSymbolType::kSTSYM) {
                             addressHashMap[machoSymbol.virtualAddress] = currentHash;
                             hashNameMap[currentHash] = currentFileName;
                         }
@@ -371,9 +371,10 @@ namespace jet
                             shortSym.name = stringTable + symbol.n_un.n_strx + 1;
                             if (symbol.n_type & N_STAB && symbol.n_type == N_OSO) {
                                 currentHash = stringHasher(shortSym.name);
+                            } else if (symbol.n_type & N_STAB && symbol.n_type == N_STSYM) {
+                                addressHashMap[symbol.n_value] = currentHash;
                             }
-                            addressHashMap[symbol.n_value] = currentHash;
-                            currentHash = addressHashMap[symbol.n_value];
+                            shortSym.hash = addressHashMap[symbol.n_value];
                             shortSym.sectionIndex = symbol.n_sect;
                             orderedSymbols.push_back(shortSym);
 
@@ -459,9 +460,7 @@ namespace jet
                             if (machoSymbol.type == MachoSymbolType::kOSO) {
                                 currentHash = stringHasher(machoSymbol.name);
                                 continue;
-                            } else if (machoSymbol.type == MachoSymbolType::kSTSYM
-                                       || machoSymbol.type == MachoSymbolType::kFUN
-                                       || machoSymbol.type == MachoSymbolType::kGSYM) {
+                            } else if (machoSymbol.type == MachoSymbolType::kSTSYM) {
                                 addressHashMap[machoSymbol.virtualAddress] = currentHash;
                             }
 
@@ -673,7 +672,7 @@ namespace jet
                                 rel.relocationOffsetRelativeTargetSymbolAddress =
                                     reloc.r_address - found->second.virtualAddress;
                                 rel.relocationSymbolName = orderedSymbols[reloc.r_symbolnum].name;
-                                rel.relocationSymbolHash = stringHasher(filepath);
+                                rel.relocationSymbolHash = orderedSymbols[reloc.r_symbolnum].hash;
                                 res.push_back(rel);
                             }
                         }
