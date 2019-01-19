@@ -289,7 +289,7 @@ namespace jet
                 uint64_t hash = 0;
                 int sectionIndex = 0;
                 nlist_64* symPtr = nullptr;
-                symtab_command* table = nullptr
+                symtab_command* table = nullptr;
             };
 
             std::vector<ShortMachoSymbol> orderedSymbols;
