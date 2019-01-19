@@ -612,7 +612,7 @@ namespace jet
                                         s += "target: " + found->second.name + "|\t";
                                     }
 
-                                    s += "reloc: " + orderedSymbols[reloc.r_symbolnum].name + "|\t" + std::to_string(stringHasher(filepath)) + "|\t";
+                                    s += "reloc: " + orderedSymbols[reloc.r_symbolnum].name + "|\t" + std::to_string(orderedSymbols[reloc.r_symbolnum].hash) + "|\t";
                                     
                                     context->listener->onLog(LogSeverity::kDebug, s);
                                 }
