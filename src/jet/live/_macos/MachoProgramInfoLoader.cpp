@@ -369,9 +369,10 @@ namespace jet
                             shortSym.symPtr = &symbolsPtr[i];
                             shortSym.table = table;
                             shortSym.name = stringTable + symbol.n_un.n_strx + 1;
-                            if (symbol.n_type & N_STAB && symbol.n_type == N_OSO) {
+                            if ((symbol.n_type & N_STAB) && symbol.n_type == N_OSO) {
+                                shortSym.name = stringTable + symbol.n_un.n_strx
                                 currentHash = stringHasher(shortSym.name);
-                            } else if (symbol.n_type & N_STAB && symbol.n_type == N_STSYM) {
+                            } else if ((symbol.n_type & N_STAB) && symbol.n_type == N_STSYM) {
                                 addressHashMap[symbol.n_value] = currentHash;
                             }
                             shortSym.hash = addressHashMap[symbol.n_value];
