@@ -505,6 +505,34 @@ namespace jet
                             relocation_info* relocs = reinterpret_cast<relocation_info*>(machoPtr + section.reloff);
                             for (int j = 0; j < section.nreloc; j++) {
                                 const auto& reloc = relocs[j];
+                                
+                                {
+                                    std::string s;
+                                    s += std::to_string(reloc.r_address) + "|\t";
+                                    s += std::to_string(reloc.r_symbolnum) + "|\t";
+                                    s += std::to_string(reloc.r_pcrel) + "|\t";
+                                    s += std::to_string(reloc.r_length) + "|\t";
+                                    s += std::to_string(reloc.r_extern) + "|\t";
+                                    s += std::to_string(reloc.r_type) + "|\t";
+                                    auto symSectionIndex = symbolsSectionIndexes[reloc.r_symbolnum];
+                                    s += "sym_sect: " + std::to_string(symSectionIndex) + " (text:" + std::to_string(textSectionIndex) + ") (data:" + std::to_string(dataSectionIndex) + ") (bss:" + std::to_string(dataSectionIndex) + ")\t";
+
+                                    auto found = symbolsInSections[textSectionIndex].upper_bound(reloc.r_address);
+                                    if (found != symbolsInSections[textSectionIndex].begin()) {
+                                        found--;
+                                    }
+                                    if (found->second.virtualAddress > reloc.r_address
+                                        || reloc.r_address >= found->second.virtualAddress + found->second.size) {
+                                        s += "WTF1\t";
+                                    } else {
+                                        s += "target: " + found->second.name + "|\t"
+                                    }
+
+                                    s += "reloc: " + orderedSymbols[reloc.r_symbolnum].name + "|\t";
+                                    
+                                    context->listener->onLog(LogSeverity::kDebug, s);
+                                }
+                                
                                 auto sectionIndex = symbolsSectionIndexes[reloc.r_symbolnum];
                                 if (sectionIndex != bssSectionIndex && sectionIndex != dataSectionIndex) {
                                     continue;
@@ -552,11 +580,6 @@ namespace jet
                                 if (found->second.virtualAddress > reloc.r_address
                                     || reloc.r_address >= found->second.virtualAddress + found->second.size) {
                                     context->listener->onLog(LogSeverity::kError, "WTF1");
-                                    continue;
-                                }
-
-                                auto symSectIndex = orderedSymbols[reloc.r_symbolnum].sectionIndex;
-                                if (symSectIndex != dataSectionIndex && symSectIndex != bssSectionIndex) {
                                     continue;
                                 }
 
