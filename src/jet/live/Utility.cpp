@@ -159,6 +159,7 @@ namespace jet
             case LinkerType::kGNU_ld: {
                 res.append(" -Wl,-Ttext-segment,0x")
                     .append(ss.str())
+                    .append(" -Wl,-z,max-page-size=0x1000")
                     .append(" -Wl,-export-dynamic")
                     .append(" -Wl,-soname,")
                     .append(libName);
