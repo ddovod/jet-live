@@ -504,10 +504,10 @@ namespace jet
                             relocation_info* relocs = reinterpret_cast<relocation_info*>(machoPtr + section.reloff);
                             for (int j = 0; j < section.nreloc; j++) {
                                 const auto& reloc = relocs[j];
-                                // auto sectionIndex = symbolsSectionIndexes[reloc.r_symbolnum];
-                                // if (sectionIndex != bssSectionIndex && sectionIndex != dataSectionIndex) {
-                                //     continue;
-                                // }
+                                auto sectionIndex = symbolsSectionIndexes[reloc.r_symbolnum];
+                                if (sectionIndex != bssSectionIndex && sectionIndex != dataSectionIndex) {
+                                    continue;
+                                }
 
                                 Relocation rel;
                                 rel.size = 4;
