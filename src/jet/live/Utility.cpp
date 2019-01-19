@@ -186,7 +186,7 @@ namespace jet
                 break;
             }
             case LinkerType::kUnknown: {
-                return "INVALID LINKER TYPE";
+                return "INVALID_LINKER_TYPE";
                 break;
             }
         }
