@@ -174,9 +174,9 @@ namespace jet
 
             std::unordered_map<ElfW(Word), ElfW(Half)> symbolsSectionIndexes;
             std::vector<std::map<uintptr_t, ElfSymbol>> symbolsInSections;
-            size_t textSectionIndex = 0;
-            size_t bssSectionIndex = 0;
-            size_t dataSectionIndex = 0;
+            int textSectionIndex = -1;
+            int bssSectionIndex = -1;
+            int dataSectionIndex = -1;
             std::hash<std::string> stringHasher;
             uint64_t currentHash = 0;
             symbolsInSections.resize(elfFile.sections.size());
@@ -184,11 +184,11 @@ namespace jet
                 const auto& section = elfFile.sections[i];
                 const auto& sectionName = section->get_name();
                 if (sectionName == ".text") {
-                    textSectionIndex = i;
+                    textSectionIndex = static_cast<int>(i);
                 } else if (sectionName == ".bss") {
-                    bssSectionIndex = i;
+                    bssSectionIndex = static_cast<int>(i);
                 } else if (sectionName == ".data") {
-                    dataSectionIndex = i;
+                    dataSectionIndex = static_cast<int>(i);
                 }
 
                 if (section->get_type() == SHT_SYMTAB) {
@@ -261,7 +261,7 @@ namespace jet
             for (uint32_t i = 0; i < elfFile.sections.size(); i++) {
                 const auto& section = elfFile.sections[i];
                 if (section->get_type() == SHT_RELA) {
-                    if (section->get_info() != textSectionIndex) {
+                    if (section->get_info() != static_cast<ElfW(Word)>(textSectionIndex)) {
                         continue;
                     }
 
@@ -310,12 +310,13 @@ namespace jet
                             case R_X86_64_PC8:       // 8,       S + A – P
                             case R_X86_64_PC16:      // 16,      S + A – P
                             case R_X86_64_GOTPC32:   // 32,      GOT + A – P
-                            case R_X86_64_RELATIVE:  // 64,      B + A
+                            case R_X86_64_PLT32:     // 32,      L + A – P
                                 context->listener->onLog(
                                     LogSeverity::kError, "Relocation " + relToString(type) + " is not implemented");
                                 continue;
 
                             // Non-PIC relocations
+                            case R_X86_64_RELATIVE:   // 64,      B + A
                             case R_X86_64_GLOB_DAT:   // 64,      S
                             case R_X86_64_NONE:       // None,    None
                             case R_X86_64_8:          // 8,       S + A
@@ -324,7 +325,6 @@ namespace jet
                             case R_X86_64_32S:        // 32,      S + A
                             case R_X86_64_64:         // 64,      S + A
                             case R_X86_64_GOT32:      // 32,      G + A
-                            case R_X86_64_PLT32:      // 32,      L + A – P
                             case R_X86_64_COPY:       // None,    Value is copied directly from shared object
                             case R_X86_64_JUMP_SLOT:  // 64,      S
                             case R_X86_64_GOTOFF64:   // 64,      S + A – GOT
