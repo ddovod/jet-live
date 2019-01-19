@@ -12,6 +12,8 @@
 #include "jet/live/StaticsCopyStep.hpp"
 #include "jet/live/Utility.hpp"
 
+bool shouldLogDebug = false;
+
 namespace jet
 {
     Live::Live(std::unique_ptr<ILiveListener>&& listener, const LiveConfig& config)
@@ -45,6 +47,8 @@ namespace jet
                     + (el.empty() ? std::string("Self") : el));
             m_context->programs.push_back(std::move(program));
         }
+
+        shouldLogDebug = true;
 
         m_context->listener->onLog(LogSeverity::kInfo, "Parsing compilation commands...");
         m_context->compilationUnits = m_context->compilationUnitsParser->parseCompilationUnits(m_context.get());
