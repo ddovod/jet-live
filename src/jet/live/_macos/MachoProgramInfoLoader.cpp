@@ -515,7 +515,7 @@ namespace jet
                                     s += std::to_string(reloc.r_extern) + "|\t";
                                     s += std::to_string(reloc.r_type) + "|\t";
                                     auto symSectionIndex = symbolsSectionIndexes[reloc.r_symbolnum];
-                                    s += "sym_sect: " + std::to_string(symSectionIndex) + " (text:" + std::to_string(textSectionIndex) + ") (data:" + std::to_string(dataSectionIndex) + ") (bss:" + std::to_string(dataSectionIndex) + ")\t";
+                                    s += "sym_sect: " + std::to_string(orderedSymbols[reloc.r_symbolnum].sectionIndex) + " (text:" + std::to_string(textSectionIndex) + ") (data:" + std::to_string(dataSectionIndex) + ") (bss:" + std::to_string(dataSectionIndex) + ")\t";
 
                                     auto found = symbolsInSections[textSectionIndex].upper_bound(reloc.r_address);
                                     if (found != symbolsInSections[textSectionIndex].begin()) {
@@ -533,7 +533,7 @@ namespace jet
                                     context->listener->onLog(LogSeverity::kDebug, s);
                                 }
                                 
-                                auto sectionIndex = symbolsSectionIndexes[reloc.r_symbolnum];
+                                auto sectionIndex = orderedSymbols[reloc.r_symbolnum].sectionIndex;
                                 if (sectionIndex != bssSectionIndex && sectionIndex != dataSectionIndex) {
                                     continue;
                                 }
