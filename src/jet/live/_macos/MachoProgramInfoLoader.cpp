@@ -11,6 +11,7 @@
 #include <mach-o/stab.h>
 #include <mach-o/x86_64/reloc.h>
 #include "jet/live/LiveContext.hpp"
+#include "jet/live/Utility.hpp"
 
 namespace jet
 {
@@ -510,22 +511,37 @@ namespace jet
                                 }
 
                                 Relocation rel;
-                                rel.size = 4;
 
-                                
-    /*
-      X86_64_RELOC_UNSIGNED,		// for absolute addresses
-      X86_64_RELOC_SIGNED,		// for signed 32-bit displacement
-      X86_64_RELOC_BRANCH,		// a CALL/JMP instruction with 32-bit displacement
-      X86_64_RELOC_GOT_LOAD,		// a MOVQ load of a GOT entry
-      X86_64_RELOC_GOT,			// other GOT references
-      X86_64_RELOC_SUBTRACTOR,	        // must be followed by a X86_64_RELOC_UNSIGNED
-      X86_64_RELOC_SIGNED_1,		// for signed 32-bit displacement with a -1 addend
-      X86_64_RELOC_SIGNED_2,		// for signed 32-bit displacement with a -2 addend
-      X86_64_RELOC_SIGNED_4,		// for signed 32-bit displacement with a -4 addend
-      X86_64_RELOC_TLV,		        // for thread local variables
-    */
+                                switch (reloc.r_length) {
+                                    case 2: rel.size = 4; break;
+                                    case 3: rel.size = 8; break;
+                                    default:
+                                        context->listener->onLog(LogSeverity::kError,
+                                            "Unsupported relocation length: " + std::to_string(reloc.r_length));
+                                        continue;
+                                }
 
+                                if (!reloc.r_pcrel) {
+                                    continue;
+                                }
+
+                                switch (reloc.r_type) {
+                                    case X86_64_RELOC_SIGNED:    // for signed 32-bit displacement
+                                    case X86_64_RELOC_SIGNED_1:  // for signed 32-bit displacement with a -1 addend
+                                    case X86_64_RELOC_SIGNED_2:  // for signed 32-bit displacement with a -2 addend
+                                    case X86_64_RELOC_SIGNED_4:  // for signed 32-bit displacement with a -4 addend
+                                        break;
+
+                                    case X86_64_RELOC_UNSIGNED:    // for absolute addresses
+                                    case X86_64_RELOC_BRANCH:      // a CALL/JMP instruction with 32-bit displacement
+                                    case X86_64_RELOC_GOT_LOAD:    // a MOVQ load of a GOT entry
+                                    case X86_64_RELOC_GOT:         // other GOT references
+                                    case X86_64_RELOC_SUBTRACTOR:  // must be followed by a X86_64_RELOC_UNSIGNED
+                                    case X86_64_RELOC_TLV:         // for thread local variables
+                                        content->listener->onLog(LogSeverity::kError,
+                                            "Unsupported relocation type: " + toString(reloc.r_type));
+                                        continue;
+                                }
 
                                 auto found = symbolsInSections[textSectionIndex].upper_bound(reloc.r_address);
                                 if (found != symbolsInSections[textSectionIndex].begin()) {

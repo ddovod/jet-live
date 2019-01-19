@@ -4,6 +4,7 @@
 #include <process.hpp>
 #include <sstream>
 #include <unistd.h>
+#include <mach-o/x86_64/reloc.h>
 
 namespace jet
 {
@@ -61,5 +62,20 @@ namespace jet
         return res;
     }
 
-    std::string relToString(uint32_t relocType) { return ""; }
+    std::string relToString(uint32_t relocType)
+    {
+        switch (relocType) {
+            case X86_64_RELOC_SIGNED: return "X86_64_RELOC_SIGNED";
+            case X86_64_RELOC_SIGNED_1: return "X86_64_RELOC_SIGNED_1";
+            case X86_64_RELOC_SIGNED_2: return "X86_64_RELOC_SIGNED_2";
+            case X86_64_RELOC_SIGNED_4: return "X86_64_RELOC_SIGNED_4";
+            case X86_64_RELOC_UNSIGNED: return "X86_64_RELOC_UNSIGNED";
+            case X86_64_RELOC_BRANCH: return "X86_64_RELOC_BRANCH";
+            case X86_64_RELOC_GOT_LOAD: return "X86_64_RELOC_GOT_LOAD";
+            case X86_64_RELOC_GOT: return "X86_64_RELOC_GOT";
+            case X86_64_RELOC_SUBTRACTOR: return "X86_64_RELOC_SUBTRACTOR";
+            case X86_64_RELOC_TLV: return "X86_64_RELOC_TLV";
+            default: return "UNKNOWN";
+        }
+    }
 }
