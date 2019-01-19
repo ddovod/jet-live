@@ -25,8 +25,13 @@ namespace jet
          */
         virtual Symbols getProgramSymbols(const LiveContext* context, const std::string& filepath) const = 0;
 
-        // TODO: docs
-        virtual std::vector<Relocation> getStaticRelocations(const LiveContext* context,
+        /**
+         * Retrieves a link-time relocations in the `text`
+         * section which use symbols from `bss` and `data` sections.
+         * Used to fix static/global variable addresses in new code to
+         * make them pointing to corresponding variables in old code.
+         */
+        virtual std::vector<Relocation> getLinkTimeRelocations(const LiveContext* context,
             const std::vector<std::string>& objFilePaths) = 0;
     };
 }

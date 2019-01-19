@@ -274,7 +274,7 @@ namespace jet
       X86_64_RELOC_TLV,		        // for thread local variables
     */
 
-    std::vector<Relocation> MachoProgramInfoLoader::getStaticRelocations(const LiveContext* context,
+    std::vector<Relocation> MachoProgramInfoLoader::getLinkTimeRelocations(const LiveContext* context,
         const std::vector<std::string>& objFilePaths)
     {
         std::vector<Relocation> res;

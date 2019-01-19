@@ -11,7 +11,7 @@ namespace jet
     {
         context->listener->onLog(LogSeverity::kInfo, "Loading link-time relocations...");
 
-        const auto& relocs = context->programInfoLoader->getStaticRelocations(context, newProgram->objFilePaths);
+        const auto& relocs = context->programInfoLoader->getLinkTimeRelocations(context, newProgram->objFilePaths);
         auto totalRelocs = relocs.size();
         size_t appliedRelocs = 0;
         std::vector<Symbol> relocatedSymbols;
@@ -41,20 +41,33 @@ namespace jet
             }
 
             auto relocAddressVal = targetSymbol->runtimeAddress + reloc.relocationOffsetRelativeTargetSymbolAddress;
-            int32_t* relocAddress = reinterpret_cast<int32_t*>(relocAddressVal);
-            if (!unprotect(relocAddress, 4)) {
+            auto distance = std::abs(static_cast<intptr_t>(oldVar->runtimeAddress - relocSymbol->runtimeAddress));
+            int64_t maxAllowedDistance = 0;
+            if (reloc.size == 4) {
+                maxAllowedDistance = std::numeric_limits<int32_t>::max();
+            } else if (reloc.size == 8) {
+                maxAllowedDistance = std::numeric_limits<int64_t>::max();
+            } else {
+                context->listener->onLog(LogSeverity::kError, "LinkTimeRelocationsStep: WTF");
+                continue;
+            }
+            if (distance > maxAllowedDistance) {
+                context->listener->onLog(LogSeverity::kWarning,
+                    "Cannot apply relocation for " + relocSymbol->name
+                        + ", distance doesn't fit into max allowed distance");
+                continue;
+            }
+
+            auto relocAddress = reinterpret_cast<void*>(relocAddressVal);
+            if (!unprotect(relocAddress, reloc.size)) {
                 context->listener->onLog(LogSeverity::kError, "'unprotect' failed");
                 continue;
             }
-
-            auto distance = std::abs(static_cast<intptr_t>(oldVar->runtimeAddress - relocSymbol->runtimeAddress));
-            if (distance > std::numeric_limits<int32_t>::max()) {
-                context->listener->onLog(
-                    LogSeverity::kWarning, "Cannot relocate variable, distance doesn't fit into 'int32'");
-                continue;
+            if (reloc.size == 4) {
+                *reinterpret_cast<int32_t*>(relocAddress) += oldVar->runtimeAddress - relocSymbol->runtimeAddress;
+            } else if (reloc.size == 8) {
+                *reinterpret_cast<int64_t*>(relocAddress) += oldVar->runtimeAddress - relocSymbol->runtimeAddress;
             }
-
-            *relocAddress += oldVar->runtimeAddress - relocSymbol->runtimeAddress;
             context->listener->onLog(LogSeverity::kInfo, relocSymbol->name + " was relocated");
 
             relocatedSymbols.push_back(*relocSymbol);

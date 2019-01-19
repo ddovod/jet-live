@@ -83,10 +83,29 @@ namespace jet
      */
     std::vector<MemoryRegion> getMemoryRegions();
 
-    // TODO: docs
+    /**
+     * Shortcut to find function symbol with `name` and `hash` in the `symbols`.
+     */
     const Symbol* findFunction(const Symbols& symbols, const std::string& name, uint64_t hash);
+
+    /**
+     * Shortcut to find variable symbol with `name` and `hash` in the `symbols`.
+     */
     const Symbol* findVariable(const Symbols& symbols, const std::string& name, uint64_t hash);
+
+    /**
+     * Shortcut to find total number of function symbols in `symbols`.
+     */
     size_t getTotalFunctions(const Symbols& symbols);
+
+    /**
+     * Shortcut to find total number of variables symbols in `symbols`.
+     */
     size_t getTotalVariables(const Symbols& symbols);
+
+    /**
+     * Sets READ, WRITE and EXEC flags to the memory pages which contains data
+     * pointed by `address` of the given size.
+     */
     void* unprotect(void* address, size_t size);
 }

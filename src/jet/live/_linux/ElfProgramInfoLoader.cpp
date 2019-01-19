@@ -160,7 +160,7 @@ namespace jet
         return res;
     }
 
-    std::vector<Relocation> ElfProgramInfoLoader::getStaticRelocations(const LiveContext* context,
+    std::vector<Relocation> ElfProgramInfoLoader::getLinkTimeRelocations(const LiveContext* context,
         const std::vector<std::string>& objFilePaths)
     {
         std::vector<Relocation> res;
@@ -174,22 +174,20 @@ namespace jet
 
             std::unordered_map<ElfW(Word), ElfW(Half)> symbolsSectionIndexes;
             std::vector<std::map<uintptr_t, ElfSymbol>> symbolsInSections;
-            std::vector<std::string> sectionNames;
             size_t textSectionIndex = 0;
             size_t bssSectionIndex = 0;
             size_t dataSectionIndex = 0;
             std::hash<std::string> stringHasher;
             uint64_t currentHash = 0;
-            sectionNames.resize(elfFile.sections.size());
             symbolsInSections.resize(elfFile.sections.size());
             for (uint32_t i = 0; i < elfFile.sections.size(); i++) {
                 const auto& section = elfFile.sections[i];
-                sectionNames[i] = section->get_name();
-                if (sectionNames[i] == ".text") {
+                const auto& sectionName = section->get_name();
+                if (sectionName == ".text") {
                     textSectionIndex = i;
-                } else if (sectionNames[i] == ".bss") {
+                } else if (sectionName == ".bss") {
                     bssSectionIndex = i;
-                } else if (sectionNames[i] == ".data") {
+                } else if (sectionName == ".data") {
                     dataSectionIndex = i;
                 }
 
@@ -262,7 +260,6 @@ namespace jet
 
             for (uint32_t i = 0; i < elfFile.sections.size(); i++) {
                 const auto& section = elfFile.sections[i];
-
                 if (section->get_type() == SHT_RELA) {
                     if (section->get_info() != textSectionIndex) {
                         continue;
@@ -270,6 +267,8 @@ namespace jet
 
                     const ELFIO::relocation_section_accessor relocs{elfFile, section};
                     for (uint32_t j = 0; j < relocs.get_entries_num(); j++) {
+                        Relocation reloc;
+
                         ElfW(Addr) offset;
                         ElfW(Word) symbol;
                         ElfW(Word) type;
@@ -293,8 +292,13 @@ namespace jet
                          */
                         uintptr_t symRelAddr = 0;
                         switch (type) {
-                            // Link-time relocations, we should fix it by ourself
+                            // Link-time relocation, we should fix it by ourself
                             case R_X86_64_PC32:  // 32,      S + A – P
+                                reloc.size = 4;
+                                symRelAddr = static_cast<uintptr_t>(addend + 4);
+                                break;
+                            case R_X86_64_PC64:  // 64,      S + A – P
+                                reloc.size = 8;
                                 symRelAddr = static_cast<uintptr_t>(addend + 4);
                                 break;
 
@@ -305,7 +309,6 @@ namespace jet
                             // Not yet supported relocations
                             case R_X86_64_PC8:       // 8,       S + A – P
                             case R_X86_64_PC16:      // 16,      S + A – P
-                            case R_X86_64_PC64:      // 64,      S + A – P
                             case R_X86_64_GOTPC32:   // 32,      GOT + A – P
                             case R_X86_64_RELATIVE:  // 64,      B + A
                                 context->listener->onLog(
@@ -348,7 +351,6 @@ namespace jet
                             continue;
                         }
 
-                        Relocation reloc;
                         reloc.targetSymbolName = found->second.name;
                         reloc.targetSymbolHash = found->second.hash;
                         reloc.relocationOffsetRelativeTargetSymbolAddress = offset - found->second.virtualAddress;

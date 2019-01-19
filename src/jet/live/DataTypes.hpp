@@ -8,6 +8,8 @@
 
 namespace jet
 {
+    struct LiveContext;
+
     /**
      * The type of a linker.
      * Different linkers have different capabilities, so we should
@@ -79,16 +81,25 @@ namespace jet
     };
 
     /**
-     * Represents a relocation entry;
+     * Represents a relocation entry.
+     * Used to re-apply necessary link-time relocations after shared lib is loaded into the memory.
+     * target<smth> - Symbol which contains relocation address, usually a function.
+     * relocation<smth> - Symbol which should be relocated, usually a variable.
+     * original<smth> - Symbol which is the same as relocation<smth>, but it is already in the application.
      */
-    // TODO: docs
     struct Relocation
     {
-        std::string targetSymbolName;
-        uint64_t targetSymbolHash = 0;
-        uintptr_t relocationOffsetRelativeTargetSymbolAddress = 0;
-        std::string relocationSymbolName;
-        uint64_t relocationSymbolHash = 0;
+        std::string targetSymbolName;                              /** Target symbol name. */
+        uint64_t targetSymbolHash = 0;                             /** Target symbol hash. */
+        uintptr_t relocationOffsetRelativeTargetSymbolAddress = 0; /** The offset of relocation address relative to the
+                                                                      target symbol address. */
+
+        std::string relocationSymbolName;  /** Relocation symbol name. */
+        uint64_t relocationSymbolHash = 0; /** Relocation symbol hash. */
+
+        uint8_t size = 0; /** Size of relocation entry, in bytes (4, 8). */
+
+        void apply(const LiveContext* context); /** Applies relocation. */
     };
 
     // Mach-O specific structures
