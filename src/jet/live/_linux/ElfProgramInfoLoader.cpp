@@ -151,6 +151,7 @@ namespace jet
                     }
 
                     if (context->symbolsFilter->shouldTransferElfSymbol(elfContext, elfSymbol)) {
+                        symbol.checkHash = true;
                         res.variables[symbol.name].push_back(symbol);
                     }
                 }

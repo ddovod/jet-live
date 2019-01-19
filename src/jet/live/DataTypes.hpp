@@ -59,6 +59,7 @@ namespace jet
         size_t size = 0;              /** Size of the symbol. */
         uintptr_t runtimeAddress = 0; /** A pointer to the symbol. */
         uint64_t hash = 0;            /** Connects local symbol to the file it belongs to, 0 for non-locals. */
+        bool checkHash = false;       /** If `true`, one should check `hash` both with name in comparator. */
     };
 
     /**

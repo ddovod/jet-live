@@ -253,7 +253,7 @@ namespace jet
         auto found = symbols.functions.find(name);
         if (found != symbols.functions.end()) {
             for (auto& sym : found->second) {
-                if (sym.hash == hash) {
+                if (!sym.checkHash || sym.hash == hash) {
                     return &sym;
                 }
             }
@@ -266,7 +266,7 @@ namespace jet
         auto found = symbols.variables.find(name);
         if (found != symbols.variables.end()) {
             for (auto& sym : found->second) {
-                if (sym.hash == hash) {
+                if (!sym.checkHash || sym.hash == hash) {
                     return &sym;
                 }
             }

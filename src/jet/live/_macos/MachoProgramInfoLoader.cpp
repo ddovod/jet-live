@@ -245,6 +245,7 @@ namespace jet
                         }
 
                         if (context->symbolsFilter->shouldTransferMachoSymbol(machoContext, machoSymbol)) {
+                            sym.checkHash = true;
                             res.variables[sym.name].push_back(sym);
                         }
                     }
@@ -296,7 +297,7 @@ namespace jet
             int bssSectionIndex = -1;
             int dataSectionIndex = -1;
             std::hash<std::string> stringHasher;
-            uint64_t currentHash = 0;
+            const uint64_t currentHash = stringHasher(filepath);
             std::vector<std::set<uint64_t>> symbolsBounds;
 
             uint32_t sectionIndex = 0;
@@ -353,7 +354,6 @@ namespace jet
                 commandOffset += command->cmdsize;
             }
 
-            std::unordered_map<uintptr_t, uint64_t> addressHashMap;
             commandOffset = sizeof(mach_header_64);
             for (uint32_t iCmd = 0; iCmd < header->ncmds; iCmd++) {
                 auto command = reinterpret_cast<load_command*>(machoPtr + commandOffset);
@@ -369,13 +369,7 @@ namespace jet
                             shortSym.symPtr = &symbolsPtr[i];
                             shortSym.table = table;
                             shortSym.name = stringTable + symbol.n_un.n_strx + 1;
-                            if ((symbol.n_type & N_STAB) && symbol.n_type == N_OSO) {
-                                shortSym.name = stringTable + symbol.n_un.n_strx;
-                                currentHash = stringHasher(shortSym.name);
-                            } else if ((symbol.n_type & N_STAB) && symbol.n_type == N_STSYM) {
-                                addressHashMap[symbol.n_value] = currentHash;
-                            }
-                            shortSym.hash = addressHashMap[symbol.n_value];
+                            shortSym.hash = currentHash;
                             shortSym.sectionIndex = symbol.n_sect;
                             orderedSymbols.push_back(shortSym);
 
@@ -458,13 +452,6 @@ namespace jet
                             // All symbol names starts with '_', so just skipping 1 char
                             machoSymbol.name = stringTable + symbol.n_un.n_strx + 1;
 
-                            if (machoSymbol.type == MachoSymbolType::kOSO) {
-                                currentHash = stringHasher(machoSymbol.name);
-                                continue;
-                            } else if (machoSymbol.type == MachoSymbolType::kSTSYM) {
-                                addressHashMap[machoSymbol.virtualAddress] = currentHash;
-                            }
-
                             if (machoSymbol.type == MachoSymbolType::kSection) {
                                 auto addrFound =
                                     symbolsBounds[machoSymbol.sectionIndex].find(machoSymbol.virtualAddress);
@@ -477,7 +464,7 @@ namespace jet
                                 }
                             }
 
-                            machoSymbol.hash = addressHashMap[machoSymbol.virtualAddress];
+                            machoSymbol.hash = currentHash;
 
                             symbolsInSections[machoSymbol.sectionIndex][machoSymbol.virtualAddress] = machoSymbol;
                         }
