@@ -238,18 +238,14 @@ namespace jet
                         sym.name = machoSymbol.name;
                         sym.runtimeAddress = baseAddress + machoSymbol.virtualAddress;
                         sym.size = machoSymbol.size;
+                        sym.hash = machoSymbol.hash = addressHashMap[machoSymbol.virtualAddress];
 
                         if (context->symbolsFilter->shouldReloadMachoSymbol(machoContext, machoSymbol)) {
                             res.functions[sym.name].push_back(sym);
                         }
 
                         if (context->symbolsFilter->shouldTransferMachoSymbol(machoContext, machoSymbol)) {
-                            sym.hash = addressHashMap[machoSymbol.virtualAddress];
                             res.variables[sym.name].push_back(sym);
-                            if (sym.name == "_ZL25staticVariableWithAddress") {
-                                context->listener->onLog(
-                                    LogSeverity::kDebug, std::to_string(sym.hash) + ": " + hashNameMap[sym.hash]);
-                            }
                         }
                     }
                     break;
@@ -603,7 +599,7 @@ namespace jet
                                         // All symbol names starts with '_', so just skipping 1 char
                                         machoSymbol.name = stringTable + symbol.n_un.n_strx + 1;
 
-                                        s += toString({}, machoSymbol);
+                                        s += toString({}, machoSymbol) + "|\t";
                                     }
 
                                     auto found = symbolsInSections[textSectionIndex].upper_bound(reloc.r_address);
@@ -617,7 +613,7 @@ namespace jet
                                         s += "target: " + found->second.name + "|\t";
                                     }
 
-                                    s += "reloc: " + orderedSymbols[reloc.r_symbolnum].name + "|\t";
+                                    s += "reloc: " + orderedSymbols[reloc.r_symbolnum].name + "|\t" + std::to_string(stringHasher(filepath)) + "|\t";
                                     
                                     context->listener->onLog(LogSeverity::kDebug, s);
                                 }

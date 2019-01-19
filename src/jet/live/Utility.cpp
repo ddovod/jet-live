@@ -58,6 +58,7 @@ namespace jet
         s += std::to_string(elfSymbol.sectionIndex) + "(" + sectionName1 + ")\t| ";
         s += "ADDR " + std::to_string(elfSymbol.virtualAddress) + "\t| ";
         s += "SIZE " + std::to_string(elfSymbol.size) + "\t| ";
+        s += "HASH " + std::to_string(elfSymbol.hash) + "\t| ";
         s += elfSymbol.name;
 
         return s;
@@ -130,6 +131,7 @@ namespace jet
         s += std::to_string(machoSymbol.sectionIndex) + "(" + sectionName1 + ")\t| ";
         s += "ADDR " + std::to_string(machoSymbol.virtualAddress) + "\t| ";
         s += "SIZE " + std::to_string(machoSymbol.size) + "\t| ";
+        s += "HASH " + std::to_string(machoSymbol.hash) + "\t| ";
         s += machoSymbol.name;
 
         return s;
