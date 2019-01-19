@@ -281,31 +281,54 @@ namespace jet
                             continue;
                         }
 
+                        /*
+                         * A: Addend of Elfxx_Rela entries.
+                         * B: Image base where the shared object was loaded in process virtual address space.
+                         * G: Offset to the GOT relative to the address of the correspondent relocation entry’s symbol.
+                         * GOT: Address of the Global Offset Table
+                         * L: Section offset or address of the procedure linkage table (PLT, .got.plt).
+                         * P: The section offset or address of the storage unit being relocated.
+                         *    Retrieved via r_offset.
+                         * S: Relocation entry’s correspondent symbol value. Z: Size of relocations entry’s symbol.
+                         */
                         uintptr_t symRelAddr = 0;
                         switch (type) {
-                            case R_X86_64_PC32: symRelAddr = static_cast<uintptr_t>(addend + 4); break;
-                            case R_X86_64_32S: symRelAddr = static_cast<uintptr_t>(addend); break;
-                            case R_X86_64_GOTPCREL:
-                            case R_X86_64_PC8:
-                            case R_X86_64_PC16:
-                            case R_X86_64_PC64:
-                            case R_X86_64_GOTPC32:
-                            case R_X86_64_RELATIVE:
-                            case R_X86_64_GLOB_DAT:
-                            case R_X86_64_NONE:
-                            case R_X86_64_8:
-                            case R_X86_64_16:
-                            case R_X86_64_32:
-                            case R_X86_64_64:
-                            case R_X86_64_GOT32:
-                            case R_X86_64_PLT32:
-                            case R_X86_64_COPY:
-                            case R_X86_64_JUMP_SLOT:
-                            case R_X86_64_GOTOFF64:
-                            case R_X86_64_SIZE32:
-                            case R_X86_64_SIZE64:
+                            // Link-time relocations, we should fix it by ourself
+                            case R_X86_64_PC32:  // 32,      S + A – P
+                                symRelAddr = static_cast<uintptr_t>(addend + 4);
+                                break;
+
+                            // Load time relocations, will be fixed by dynamic linker
+                            case R_X86_64_GOTPCREL:  // 32,      G + GOT + A – P
+                                continue;
+
+                            // Not yet supported relocations
+                            case R_X86_64_PC8:       // 8,       S + A – P
+                            case R_X86_64_PC16:      // 16,      S + A – P
+                            case R_X86_64_PC64:      // 64,      S + A – P
+                            case R_X86_64_GOTPC32:   // 32,      GOT + A – P
+                            case R_X86_64_RELATIVE:  // 64,      B + A
                                 context->listener->onLog(
                                     LogSeverity::kError, "Relocation " + relToString(type) + " is not implemented");
+                                continue;
+
+                            // Non-PIC relocations
+                            case R_X86_64_GLOB_DAT:   // 64,      S
+                            case R_X86_64_NONE:       // None,    None
+                            case R_X86_64_8:          // 8,       S + A
+                            case R_X86_64_16:         // 16,      S + A
+                            case R_X86_64_32:         // 32,      S + A
+                            case R_X86_64_32S:        // 32,      S + A
+                            case R_X86_64_64:         // 64,      S + A
+                            case R_X86_64_GOT32:      // 32,      G + A
+                            case R_X86_64_PLT32:      // 32,      L + A – P
+                            case R_X86_64_COPY:       // None,    Value is copied directly from shared object
+                            case R_X86_64_JUMP_SLOT:  // 64,      S
+                            case R_X86_64_GOTOFF64:   // 64,      S + A – GOT
+                            case R_X86_64_SIZE32:     // 32,      Z + A
+                            case R_X86_64_SIZE64:     // 64,      Z + A
+                                context->listener->onLog(LogSeverity::kError,
+                                    "Relocation " + relToString(type) + " is not possible in PIC code");
                                 continue;
                         }
 
@@ -339,37 +362,3 @@ namespace jet
         return res;
     }
 }
-
-/*
- * A: Addend of Elfxx_Rela entries.
- * B: Image base where the shared object was loaded in process virtual address space.
- * G: Offset to the GOT relative to the address of the correspondent relocation entry’s symbol.
- * GOT: Address of the Global Offset Table
- * L: Section offset or address of the procedure linkage table (PLT, .got.plt).
- * P: The section offset or address of the storage unit being relocated. retrieved via r_offset relocation entry’s
- * field. S: Relocation entry’s correspondent symbol value. Z: Size of Relocations entry’s symbol.
- */
-
-/*
- * R_X86_64_NONE	None	None
- * R_X86_64_64  	qword	S + A
- * R_X86_64_PC32	dword	S + A – P
- * R_X86_64_GOT32	dword	G + A
- * R_X86_64_PLT32	dword	L + A – P
- * R_X86_64_COPY	None	Value is copied directly from shared object
- * R_X86_64_GLOB_DAT	qword	S
- * R_X86_64_JUMP_SLOT	qword	S
- * R_X86_64_RELATIVE	qword	B + A
- * R_X86_64_GOTPCREL	dword	G + GOT + A – P
- * R_X86_64_32  	dword	S + A
- * R_X86_64_32S 	dword	S + A
- * R_X86_64_16  	word	S + A
- * R_X86_64_PC16	word	S + A – P
- * R_X86_64_8   	word8	S + A
- * R_X86_64_PC8 	word8	S + A – P
- * R_X86_64_PC64	qword	S + A – P
- * R_X86_64_GOTOFF64	qword	S + A – GOT
- * R_X86_64_GOTPC32	dword	GOT + A – P
- * R_X86_64_SIZE32	dword	Z + A
- * R_X86_64_SIZE64	qword	Z + A
- */
