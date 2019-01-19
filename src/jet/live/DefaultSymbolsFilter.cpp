@@ -31,7 +31,7 @@ namespace jet
         static const std::string bssSectionName = "__bss";
         static const std::string dataSectionName = "__data";
         const auto& sectionName = getStringOr(context.sectionNames, symbol.sectionIndex, "?");
-        return (symbol.type == MachoSymbolType::kSection && !symbol.privateExternal && !symbol.weakDef
+        return (symbol.type == MachoSymbolType::kSection && !symbol.weakDef
                 && (sectionName == bssSectionName || sectionName == dataSectionName));
     }
 
