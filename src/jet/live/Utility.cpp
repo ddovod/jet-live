@@ -234,9 +234,9 @@ namespace jet
                 context->listener->onLog(LogSeverity::kWarning,
                     "You're using LLD 6.0, it has bugs and some features could work bad. Please update lld.");
                 return LinkerType::kLLVM_lld6;
-            } else {
-                return LinkerType::kLLVM_lld;
             }
+            return LinkerType::kLLVM_lld;
+
         } else if (procOut.find("GNU") != std::string::npos) {
             return LinkerType::kGNU_ld;
         } else if (procError.find("PROGRAM:ld") != std::string::npos) {
@@ -299,8 +299,7 @@ namespace jet
         address = (void*)((long)address & ~(pagesize - 1));
         if (mprotect(address, size, PROT_READ | PROT_WRITE | PROT_EXEC) == 0) {
             return address;
-        } else {
-            return NULL;
         }
+        return nullptr;
     }
 }

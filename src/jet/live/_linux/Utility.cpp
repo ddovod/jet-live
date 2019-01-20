@@ -23,21 +23,20 @@ namespace jet
         while (std::getline(f, line)) {
             MemoryRegion region;
 
-            auto addrDelim = line.find("-");
-            auto addrEnd = line.find(" ");
+            auto addrDelim = line.find('-');
+            auto addrEnd = line.find(' ');
             if (addrDelim == std::string::npos || addrEnd == std::string::npos) {
                 continue;
             }
             size_t nameBegin = addrEnd;
             for (int i = 0; i < 4; i++) {
-                nameBegin = line.find(" ", nameBegin + 1);
+                nameBegin = line.find(' ', nameBegin + 1);
             }
             while (line[nameBegin] == ' ') {
                 if (nameBegin == line.size() - 1) {
                     break;
-                } else {
-                    nameBegin++;
                 }
+                nameBegin++;
             }
             if (nameBegin != line.size() - 1) {
                 region.name = line.substr(nameBegin);
