@@ -113,9 +113,6 @@ namespace jet
 
             TeenyPath::path objFilePath{cu.objFilePath};
             cu.objFilePath = (TeenyPath::path{cu.compilationDirStr} / objFilePath).string();
-            // if (!objFilePath.is_absolute()) {
-            //     cu.objFilePath = (TeenyPath::path{cu.compilationDirStr} / objFilePath).resolve_absolute().string();
-            // }
 
             cu.compilerPath = parser[0];
             res[cu.sourceFilePath] = cu;
