@@ -137,6 +137,30 @@ namespace jet
         }
     }
 
+    void Compiler::remove(const std::string& compilationUnitPath)
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+
+        auto found = m_runningCompilationTasks.find(compilationUnitPath);
+        if (found != m_runningCompilationTasks.end()) {
+            found->second.process->kill();
+            m_runningCompilationTasks.erase(found);
+        }
+
+        auto newEnd = std::remove_if(m_pendingCompilationTasks.begin(),
+            m_pendingCompilationTasks.end(),
+            [&compilationUnitPath](
+                const PendingCompilationTask& t) { return t.cu.sourceFilePath == compilationUnitPath; });
+        m_pendingCompilationTasks.erase(newEnd, m_pendingCompilationTasks.end());
+
+        for (const auto& readyCu : m_readyCompilationUnits) {
+            if (readyCu.second.sourceFilepath == compilationUnitPath) {
+                m_readyCompilationUnits.erase(readyCu.first);
+                break;
+            }
+        }
+    }
+
     void Compiler::doCompile(const CompilationUnit& cu,
         std::function<void(int, const std::string&, const std::string&)>&& finishCallback)
     {

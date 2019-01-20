@@ -14,26 +14,76 @@ namespace jet
     std::unordered_map<std::string, CompilationUnit> CompileCommandsCompilationUnitsParser::parseCompilationUnits(
         const LiveContext* context)
     {
+        auto probablyDbPath = getCompileCommandsPath(context);
+        if (!probablyDbPath.exists()) {
+            context->listener->onLog(
+                LogSeverity::kError, "Cannot find 'compile_commands.json' path at " + probablyDbPath.string());
+            return {};
+        }
+
+        return parseCompilationUnitsInternal(context, probablyDbPath);
+    }
+
+    void CompileCommandsCompilationUnitsParser::updateCompilationUnits(LiveContext* context,
+        const std::string& filepath,
+        std::vector<std::string>* addedCompilationUnits,
+        std::vector<std::string>* modifiedCompilationUnits,
+        std::vector<std::string>* removedCompilationUnits)
+    {
+        TeenyPath::path path{filepath};
+        if (!path.exists() || !(m_compileCommandsPath == path.resolve_absolute())) {
+            return;
+        }
+
+        context->listener->onLog(LogSeverity::kInfo, "Updating compilation units...");
+
+        auto oldCompilationUnits = context->compilationUnits;
+        auto newCompilationUnits = parseCompilationUnitsInternal(context, m_compileCommandsPath);
+        for (const auto& oldCu : oldCompilationUnits) {
+            auto found = newCompilationUnits.find(oldCu.first);
+            if (found == newCompilationUnits.end()) {
+                removedCompilationUnits->push_back(oldCu.first);
+            } else {
+                if (oldCu.second.compilationCommandStr != found->second.compilationCommandStr) {
+                    modifiedCompilationUnits->push_back(oldCu.first);
+                }
+            }
+        }
+
+        for (const auto& newCu : newCompilationUnits) {
+            if (oldCompilationUnits.find(newCu.first) == oldCompilationUnits.end()) {
+                addedCompilationUnits->push_back(newCu.first);
+            }
+        }
+
+        context->compilationUnits = newCompilationUnits;
+
+        context->listener->onLog(LogSeverity::kInfo,
+            "ADDED: " + std::to_string(addedCompilationUnits->size())
+                + ", MODIFIED: " + std::to_string(modifiedCompilationUnits->size())
+                + ", REMOVED: " + std::to_string(removedCompilationUnits->size()));
+    }
+
+    std::unordered_map<std::string, CompilationUnit>
+        CompileCommandsCompilationUnitsParser::parseCompilationUnitsInternal(const LiveContext* context,
+            const TeenyPath::path& filepath)
+    {
         using nlohmann::json;
 
         std::unordered_map<std::string, CompilationUnit> res;
 
-        TeenyPath::path probablyDbPath = getCompileCommandsPath(context);
-        if (!probablyDbPath.exists()) {
-            context->listener->onLog(
-                LogSeverity::kError, "Cannot find 'compile_commands.json' path at " + probablyDbPath.string());
-            return res;
-        }
-
         // Parsing `compile_commands.json`
-        context->listener->onLog(
-            LogSeverity::kInfo, "Reading `compile_commands.json` from " + probablyDbPath.resolve_absolute().string());
-        std::ifstream f{probablyDbPath.resolve_absolute().string()};
+        auto probablyDbPath = filepath;
+        context->listener->onLog(LogSeverity::kInfo, "Reading `compile_commands.json` from " + probablyDbPath.string());
+        std::ifstream f{probablyDbPath.string()};
         if (!f.is_open()) {
             context->listener->onLog(
                 LogSeverity::kError, "Cannot open 'compile_commands.json' at " + probablyDbPath.string());
             return res;
         }
+
+        m_compileCommandsPath = probablyDbPath;
+
         json dbJson;
         f >> dbJson;
         for (const auto& cmdJson : dbJson) {
@@ -62,13 +112,12 @@ namespace jet
             cu.hasColorDiagnosticsFlag = parser[{"-fcolor-diagnostics"}];
 
             TeenyPath::path objFilePath{cu.objFilePath};
-            if (!objFilePath.is_absolute()) {
-                cu.objFilePath = (TeenyPath::path{cu.compilationDirStr} / objFilePath).resolve_absolute().string();
-            }
-            assert(TeenyPath::path{cu.objFilePath}.exists());
+            cu.objFilePath = (TeenyPath::path{cu.compilationDirStr} / objFilePath).string();
+            // if (!objFilePath.is_absolute()) {
+            //     cu.objFilePath = (TeenyPath::path{cu.compilationDirStr} / objFilePath).resolve_absolute().string();
+            // }
 
             cu.compilerPath = parser[0];
-
             res[cu.sourceFilePath] = cu;
         }
 
@@ -77,14 +126,17 @@ namespace jet
             // This flag is needed to distinguish the "style" of depfile naming only once
             // to prevent 2 filesystem probes for each cu
             bool useObjFileNameAsABaseOfDepFile = true;
-            {
-                const auto& someCu = res.begin()->second;
+            for (const auto& cu : res) {
+                const auto& someCu = cu.second;
                 TeenyPath::path depfilePath{std::string().append(someCu.objFilePath).append(".d")};
-                if (!depfilePath.exists()) {
+                if (depfilePath.exists()) {
+                    break;
+                } else {
                     auto anotherDepFilePath = someCu.objFilePath;
                     anotherDepFilePath.back() = 'd';
                     if (TeenyPath::path{anotherDepFilePath}.exists()) {
                         useObjFileNameAsABaseOfDepFile = false;
+                        break;
                     }
                 }
             }
@@ -108,13 +160,13 @@ namespace jet
         return res;
     }
 
-    std::string CompileCommandsCompilationUnitsParser::getCompileCommandsPath(const LiveContext* context) const
+    TeenyPath::path CompileCommandsCompilationUnitsParser::getCompileCommandsPath(const LiveContext* context) const
     {
         // Trying to find `compile_commands.json` in current and parent directories
         auto dbPath = TeenyPath::path{context->thisExecutablePath}.parent_path() / "compile_commands.json";
         while (!dbPath.exists() && !dbPath.is_empty()) {
             dbPath = dbPath.parent_path().parent_path() / "compile_commands.json";
         }
-        return dbPath.string();
+        return dbPath.resolve_absolute();
     }
 }
