@@ -10,9 +10,9 @@ TEST_CASE("Relocation of static variable, comparing address", "[variable]")
 {
     auto oldVariableAddress = getStaticVariableAddress();
 
-    std::cout << "JET_TEST: disable(16:1)" << std::endl;
+    std::cout << "JET_TEST: disable(st_var_addr:1)" << std::endl;
     waitForReload();
 
     auto newVariableAddress = getStaticVariableAddress();
-    REQUIRE_FALSE(oldVariableAddress == newVariableAddress); // note REQUIRE_FALSE
+    REQUIRE(oldVariableAddress == newVariableAddress);
 }

@@ -16,7 +16,7 @@ TEST_CASE("Reload of lambda function with captured data and another lamda in thi
 
     REQUIRE(lambda(v1, v2) == sum);
 
-    std::cout << "JET_TEST: disable(10:1); enable(10:2)" << std::endl;
+    std::cout << "JET_TEST: disable(lamb_capt_good:1); enable(lamb_capt_good:2)" << std::endl;
     waitForReload();
 
     REQUIRE(lambda(v1, v2) == mul);

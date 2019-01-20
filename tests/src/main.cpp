@@ -18,6 +18,7 @@ int main(int argc, char* argv[])
     g_testListenerPtr = testListener.get();
 
     auto live = jet::make_unique<jet::Live>(std::move(testListener));
+    live->printInfo();
     g_live = live.get();
 
     return Catch::Session().run(argc, argv);

@@ -4,7 +4,9 @@
 void* getStaticFunctionLocalVariableAddress()
 {
     static int variable = 0;
+    variable += 1;
+    variable -= 1;
     // Just to touch the file
-    (void)variable; // <jet_tag: 14:1>
+    (void)variable; // <jet_tag: st_func_loc_var_addr:1>
     return reinterpret_cast<void*>(&variable);
 }

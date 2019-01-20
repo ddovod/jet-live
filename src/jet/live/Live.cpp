@@ -1,13 +1,15 @@
 
 #include "Live.hpp"
-#include <cstring>
 #include <dlfcn.h>
-#include <subhook.h>
 #include <teenypath.h>
+#include "jet/live/CodeReloadPipeline.hpp"
 #include "jet/live/CompileCommandsCompilationUnitsParser.hpp"
 #include "jet/live/DefaultProgramInfoLoader.hpp"
 #include "jet/live/DefaultSymbolsFilter.hpp"
 #include "jet/live/DepfileDependenciesHandler.hpp"
+#include "jet/live/FunctionsHookingStep.hpp"
+#include "jet/live/LinkTimeRelocationsStep.hpp"
+#include "jet/live/StaticsCopyStep.hpp"
 #include "jet/live/Utility.hpp"
 
 namespace jet
@@ -16,16 +18,18 @@ namespace jet
         : m_context(jet::make_unique<LiveContext>())
     {
         m_context->liveConfig = config;
-        if (listener) {
-            m_context->listener = std::move(listener);
-        } else {
-            m_context->listener = jet::make_unique<ILiveListener>();
-        }
+        m_context->listener = listener ? std::move(listener) : jet::make_unique<ILiveListener>();
         m_context->thisExecutablePath = getExecutablePath();
+        m_context->linkerType = getSystemLinkerType(m_context.get());
         m_context->compilationUnitsParser = jet::make_unique<CompileCommandsCompilationUnitsParser>();
         m_context->dependenciesHandler = jet::make_unique<DepfileDependenciesHandler>();
         m_context->programInfoLoader = jet::make_unique<DefaultProgramInfoLoader>();
         m_context->symbolsFilter = jet::make_unique<DefaultSymbolsFilter>();
+        m_context->codeReloadPipeline = jet::make_unique<CodeReloadPipeline>();
+
+        m_context->codeReloadPipeline->addStep(jet::make_unique<LinkTimeRelocationsStep>());
+        m_context->codeReloadPipeline->addStep(jet::make_unique<FunctionsHookingStep>());
+        m_context->codeReloadPipeline->addStep(jet::make_unique<StaticsCopyStep>());
 
         for (const auto& el : m_context->programInfoLoader->getAllLoadedProgramsPaths(m_context.get())) {
             Program program;
@@ -156,7 +160,10 @@ namespace jet
     void Live::tryReload()
     {
         m_context->listener->onLog(LogSeverity::kInfo, "Trying to reload code...");
-        m_compiler->link([this](int status, const std::string& libPath, const std::string&) {
+        m_compiler->link([this](int status,
+                             const std::string& libPath,
+                             const std::vector<std::string>& objFilePaths,
+                             const std::string&) {
             if (status != 0) {
                 return;
             }
@@ -171,94 +178,21 @@ namespace jet
                 m_context->listener->onCodePostLoad();
                 return;
             }
-            m_context->listener->onLog(LogSeverity::kInfo, "Library opene successfully");
+            m_context->listener->onLog(LogSeverity::kInfo, "Library opened successfully");
 
             m_context->listener->onLog(LogSeverity::kInfo, "Loading symbols from " + libPath + "...");
             auto libSymbols = m_context->programInfoLoader->getProgramSymbols(m_context.get(), libPath);
-            m_context->listener->onLog(LogSeverity::kInfo,
-                "Symbols loaded: funcs " + std::to_string(libSymbols.functions.size()) + ", vars "
-                    + std::to_string(libSymbols.variables.size()) + ", " + libPath);
-
-            m_context->listener->onLog(LogSeverity::kInfo, "Reloading old code with new one...");
-            int functionsReloaded = 0;
-            for (const auto& syms : libSymbols.functions) {
-                for (const auto& sym : syms.second) {
-                    void* oldFuncPtr = nullptr;
-                    bool found = false;
-                    const auto& progs = m_context->programs;
-                    for (auto it = progs.rbegin(); it != progs.rend() && !found; it++) {
-                        auto foundSyms = it->symbols.functions.find(sym.name);
-                        if (foundSyms != it->symbols.functions.end()) {
-                            for (const auto& foundSym : foundSyms->second) {
-                                if (foundSym.hash == sym.hash) {
-                                    oldFuncPtr = reinterpret_cast<void*>(foundSym.runtimeAddress);
-                                    found = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    if (!found) {
-                        continue;
-                    }
-
-                    auto newFuncPtr = reinterpret_cast<void*>(sym.runtimeAddress);
-
-                    auto hook = subhook_new(oldFuncPtr, newFuncPtr, SUBHOOK_64BIT_OFFSET);
-                    if (auto subhookStatus = subhook_install(hook)) {
-                        m_context->listener->onLog(LogSeverity::kError,
-                            "Cannot hook function: " + sym.name + ", status " + std::to_string(subhookStatus));
-                    } else {
-                        functionsReloaded++;
-                    }
-                }
-            }
-
-            int variablesTransferred = 0;
-            for (const auto& syms : libSymbols.variables) {
-                for (const auto& sym : syms.second) {
-                    void* oldVarPtr = nullptr;
-                    size_t oldVarSize = 0;
-                    bool found = false;
-                    const auto& progs = m_context->programs;
-                    for (auto it = progs.rbegin(); it != progs.rend() && !found; it++) {
-                        auto foundSyms = it->symbols.variables.find(sym.name);
-                        if (foundSyms != it->symbols.variables.end()) {
-                            for (const auto& foundSym : foundSyms->second) {
-                                if (sym.hash == foundSym.hash) {
-                                    oldVarSize = foundSym.size;
-                                    oldVarPtr = reinterpret_cast<void*>(foundSym.runtimeAddress);
-                                    found = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    if (!found) {
-                        continue;
-                    }
-
-                    auto newVarPtr = reinterpret_cast<void*>(sym.runtimeAddress);
-
-                    // Trying to do our best
-                    memcpy(newVarPtr, oldVarPtr, std::min(sym.size, oldVarSize));
-                    variablesTransferred++;
-                }
-            }
+            m_context->listener->onLog(LogSeverity::kInfo, "Symbols loaded");
 
             Program libProgram;
             libProgram.path = libPath;
             libProgram.symbols = libSymbols;
-            m_context->programs.push_back(std::move(libProgram));
+            libProgram.objFilePaths = objFilePaths;
 
+            m_context->codeReloadPipeline->reload(m_context.get(), &libProgram);
+
+            m_context->programs.emplace_back(std::move(libProgram));
             m_context->listener->onCodePostLoad();
-
-            m_context->listener->onLog(LogSeverity::kInfo,
-                "Code reloaded successfully: funcs " + std::to_string(functionsReloaded) + "/"
-                    + std::to_string(libSymbols.functions.size()) + ", vars " + std::to_string(variablesTransferred)
-                    + "/" + std::to_string(libSymbols.variables.size()));
         });
     }
 
@@ -273,4 +207,6 @@ namespace jet
         }
         m_context->dependencies[cu.sourceFilePath] = std::move(cuDeps);
     }
+
+    void Live::printInfo() { m_context->listener->onLog(LogSeverity::kDebug, toString(m_context->linkerType)); }
 }

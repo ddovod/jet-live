@@ -8,6 +8,34 @@
 
 namespace jet
 {
+    struct LiveContext;
+
+    /**
+     * The type of a linker.
+     * Different linkers have different capabilities, so we should
+     * know which linker we are using.
+     */
+    enum class LinkerType : uint8_t
+    {
+        kUnknown,   /** Unknown linker. */
+        kLLVM_lld,  /** LLVM LLD linker. */
+        kLLVM_lld6, /** This version of lld is broken. https://reviews.llvm.org/D45261 */
+        kGNU_ld,    /** GNU ld linker. */
+        kApple_ld,  /** Apple ld linker. */
+    };
+
+    /**
+     * Represents a region of virtual memory.
+     * Used to find free region to place shared library into.
+     */
+    struct MemoryRegion
+    {
+        std::string name;
+        uintptr_t regionBegin = 0;
+        uintptr_t regionEnd = 0;
+        bool isInUse = false;
+    };
+
     /**
      * Represents compilation unit.
      */
@@ -31,6 +59,7 @@ namespace jet
         size_t size = 0;              /** Size of the symbol. */
         uintptr_t runtimeAddress = 0; /** A pointer to the symbol. */
         uint64_t hash = 0;            /** Connects local symbol to the file it belongs to, 0 for non-locals. */
+        bool checkHash = false;       /** If `true`, one should check `hash` both with name in comparator. */
     };
 
     /**
@@ -47,8 +76,31 @@ namespace jet
      */
     struct Program
     {
-        std::string path; /** Program filepath. Empty for this executable. */
-        Symbols symbols;  /** Sybmols of the program. */
+        std::string path;                      /** Program filepath. Empty for this executable. */
+        std::vector<std::string> objFilePaths; /** File paths to obj files of the program. Empty for this executable. */
+        Symbols symbols;                       /** Sybmols of the program. */
+    };
+
+    /**
+     * Represents a relocation entry.
+     * Used to re-apply necessary link-time relocations after shared lib is loaded into the memory.
+     * target<smth> - Symbol which contains relocation address, usually a function.
+     * relocation<smth> - Symbol which should be relocated, usually a variable.
+     * original<smth> - Symbol which is the same as relocation<smth>, but it is already in the application.
+     */
+    struct Relocation
+    {
+        std::string targetSymbolName;                              /** Target symbol name. */
+        uint64_t targetSymbolHash = 0;                             /** Target symbol hash. */
+        uintptr_t relocationOffsetRelativeTargetSymbolAddress = 0; /** The offset of relocation address relative to the
+                                                                      target symbol address. */
+
+        std::string relocationSymbolName;  /** Relocation symbol name. */
+        uint64_t relocationSymbolHash = 0; /** Relocation symbol hash. */
+
+        uint8_t size = 0; /** Size of relocation entry, in bytes (4, 8). */
+
+        void apply(const LiveContext* context); /** Applies relocation. */
     };
 
     // Mach-O specific structures
@@ -108,6 +160,7 @@ namespace jet
     struct MachoSymbol
     {
         std::string name;
+        uint64_t hash = 0;
         MachoSymbolType type;
         MachoSymbolReferenceType referenceType;
         bool referencedDynamically = false;
@@ -159,6 +212,7 @@ namespace jet
     struct ElfSymbol
     {
         std::string name;
+        uint64_t hash = 0;
         ElfSymbolType type;
         ElfSymbolBinding binding;
         ElfSymbolVisibility visibility;

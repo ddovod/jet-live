@@ -16,7 +16,7 @@ TEST_CASE("Reload of class instance method", "[function]")
 
     REQUIRE(ins.computeResult(v1, v2) == sum);
 
-    std::cout << "JET_TEST: disable(3:1); enable(3:2)" << std::endl;
+    std::cout << "JET_TEST: disable(cls_ins_meth:1); enable(cls_ins_meth:2)" << std::endl;
     waitForReload();
 
     REQUIRE(ins.computeResult(v1, v2) == mul);

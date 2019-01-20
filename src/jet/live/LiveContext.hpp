@@ -4,6 +4,7 @@
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
+#include "jet/live/CodeReloadPipeline.hpp"
 #include "jet/live/ICompilationUnitsParser.hpp"
 #include "jet/live/IDependenciesHandler.hpp"
 #include "jet/live/ILiveListener.hpp"
@@ -36,6 +37,9 @@ namespace jet
         /** Current symbols filter. */
         std::unique_ptr<ISymbolsFilter> symbolsFilter;
 
+        /** Current code reload pipeline. */
+        std::unique_ptr<CodeReloadPipeline> codeReloadPipeline;
+
         /**
          * All programs which are living in the address space if this process (executables
          * and shared libraries) in order of loading.
@@ -44,6 +48,9 @@ namespace jet
 
         /** This executable file path. */
         std::string thisExecutablePath;
+
+        /** Current linker type. */
+        LinkerType linkerType;
 
         /** Directories which are monitored for changes. */
         std::vector<std::string> dirsToMonitor;

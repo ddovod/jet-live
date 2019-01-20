@@ -36,6 +36,11 @@ namespace jet
          */
         void update();
 
+        /**
+         * Prints some info, used mostly for debugging.
+         */
+        void printInfo();
+
     private:
         std::unique_ptr<LiveContext> m_context;
         std::unique_ptr<FileWatcher> m_fileWatcher;

@@ -24,5 +24,14 @@ namespace jet
          * \param filepath Path to the program file. Empty string for this executable.
          */
         virtual Symbols getProgramSymbols(const LiveContext* context, const std::string& filepath) const = 0;
+
+        /**
+         * Retrieves a link-time relocations in the `text`
+         * section which use symbols from `bss` and `data` sections.
+         * Used to fix static/global variable addresses in new code to
+         * make them pointing to corresponding variables in old code.
+         */
+        virtual std::vector<Relocation> getLinkTimeRelocations(const LiveContext* context,
+            const std::vector<std::string>& objFilePaths) = 0;
     };
 }

@@ -12,7 +12,7 @@ TEST_CASE("Relocation of static internal variable", "[variable]")
     REQUIRE(beforeReload.first == 0);
     REQUIRE(beforeReload.second == 0);
 
-    std::cout << "JET_TEST: disable(12:1); enable(12:2)" << std::endl;
+    std::cout << "JET_TEST: disable(st_intern_var:1); enable(st_intern_var:2)" << std::endl;
     waitForReload();
 
     auto afterReload = getNext1();

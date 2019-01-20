@@ -10,9 +10,9 @@ TEST_CASE("Relocation of function local static variable, comparing address", "[v
 {
     auto beforeReload = getStaticFunctionLocalVariableAddress();
 
-    std::cout << "JET_TEST: disable(14:1)" << std::endl;
+    std::cout << "JET_TEST: disable(st_func_loc_var_addr:1)" << std::endl;
     waitForReload();
 
     auto afterReload = getStaticFunctionLocalVariableAddress();
-    REQUIRE_FALSE(beforeReload == afterReload); // note REQUIRE_FALSE
+    REQUIRE(beforeReload == afterReload);
 }

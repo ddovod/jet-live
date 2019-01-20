@@ -1,6 +1,13 @@
 
 #include "Utility.hpp"
+#include <fstream>
+#include <iomanip>
+#include <process.hpp>
+#include <sstream>
+#include <unistd.h>
 #include <whereami.h>
+#include <sys/mman.h>
+#include "jet/live/LiveContext.hpp"
 
 namespace jet
 {
@@ -51,6 +58,7 @@ namespace jet
         s += std::to_string(elfSymbol.sectionIndex) + "(" + sectionName1 + ")\t| ";
         s += "ADDR " + std::to_string(elfSymbol.virtualAddress) + "\t| ";
         s += "SIZE " + std::to_string(elfSymbol.size) + "\t| ";
+        s += "HASH " + std::to_string(elfSymbol.hash) + "\t| ";
         s += elfSymbol.name;
 
         return s;
@@ -123,8 +131,176 @@ namespace jet
         s += std::to_string(machoSymbol.sectionIndex) + "(" + sectionName1 + ")\t| ";
         s += "ADDR " + std::to_string(machoSymbol.virtualAddress) + "\t| ";
         s += "SIZE " + std::to_string(machoSymbol.size) + "\t| ";
+        s += "HASH " + std::to_string(machoSymbol.hash) + "\t| ";
         s += machoSymbol.name;
 
         return s;
+    }
+
+    std::string toString(LinkerType linkerType)
+    {
+        switch (linkerType) {
+            case LinkerType::kLLVM_lld: return "LLVM lld";
+            case LinkerType::kGNU_ld: return "GNU ld";
+            case LinkerType::kApple_ld: return "Apple ld";
+            default: return "Unknown";
+        }
+    }
+
+    std::string createLinkCommand(const std::string& libName,
+        const std::string& compilerPath,
+        uintptr_t baseAddress,
+        LinkerType linkerType,
+        const std::vector<std::string>& objectFilePaths)
+    {
+        std::string res = compilerPath + " -fPIC -shared -g";
+        std::stringstream ss;
+        ss << std::hex << baseAddress;
+
+        switch (linkerType) {
+            case LinkerType::kGNU_ld: {
+                res.append(" -Wl,-Ttext-segment,0x")
+                    .append(ss.str())
+                    .append(" -Wl,-z,max-page-size=0x1000")
+                    .append(" -Wl,-export-dynamic")
+                    .append(" -Wl,-soname,")
+                    .append(libName);
+                break;
+            }
+            case LinkerType::kLLVM_lld6:
+            case LinkerType::kLLVM_lld: {
+                res.append(" -Wl,--image-base,0x")
+                    .append(ss.str())
+                    .append(" -Wl,-export-dynamic")
+                    .append(" -Wl,-soname,")
+                    .append(libName);
+                break;
+            }
+            case LinkerType::kApple_ld: {
+                res.append(" -Wl,-image_base,0x")
+                    .append(ss.str())
+                    .append(" -Wl,-export_dynamic")
+                    .append(" -Wl,-install_name,")
+                    .append(libName)
+                    .append(" -undefined dynamic_lookup");
+                break;
+            }
+            case LinkerType::kUnknown: {
+                return "INVALID_LINKER_TYPE";
+                break;
+            }
+        }
+
+        res.append(" -o ").append(libName).append(" ");
+        for (const auto& oFile : objectFilePaths) {
+            res.append("\"" + oFile + "\" ");
+        }
+
+        return res;
+    }
+
+    uintptr_t findPrefferedBaseAddressForLibrary(const std::vector<std::string>& objectFilePaths)
+    {
+        // Estimating size of the future shared library
+        size_t libSize = 0;
+        for (const auto& el : objectFilePaths) {
+            std::ifstream f{el, std::ifstream::ate | std::ifstream::binary};
+            libSize += static_cast<size_t>(f.tellg());
+        }
+
+        // Trying to find empty space for it
+        for (const auto& el : getMemoryRegions()) {
+            if (!el.isInUse && (el.regionEnd - el.regionBegin) > libSize) {
+                return el.regionBegin;
+            }
+        }
+
+        // Or just using default relocation
+        return 0;
+    }
+
+    LinkerType getSystemLinkerType(const LiveContext* context)
+    {
+        std::string procOut;
+        std::string procError;
+        TinyProcessLib::Process{"ld -v",
+            "",
+            [&procOut](const char* bytes, size_t n) { procOut += std::string(bytes, n); },
+            [&procError](const char* bytes, size_t n) { procError += std::string(bytes, n); }}
+            .get_exit_status();
+
+        if (procOut.find("LLD") != std::string::npos) {
+            if (procOut.find("6.0") != std::string::npos) {
+                context->listener->onLog(LogSeverity::kWarning,
+                    "You're using LLD 6.0, it has bugs and some features could work bad. Please update lld.");
+                return LinkerType::kLLVM_lld6;
+            } else {
+                return LinkerType::kLLVM_lld;
+            }
+        } else if (procOut.find("GNU") != std::string::npos) {
+            return LinkerType::kGNU_ld;
+        } else if (procError.find("PROGRAM:ld") != std::string::npos) {
+            // For some reason apple ld prints this info to stderr
+            return LinkerType::kApple_ld;
+        }
+
+        context->listener->onLog(LogSeverity::kError, "Cannot find out linker type: \n" + procOut);
+        return LinkerType::kUnknown;
+    }
+
+    const Symbol* findFunction(const Symbols& symbols, const std::string& name, uint64_t hash)
+    {
+        auto found = symbols.functions.find(name);
+        if (found != symbols.functions.end()) {
+            for (auto& sym : found->second) {
+                if (!sym.checkHash || sym.hash == hash) {
+                    return &sym;
+                }
+            }
+        }
+        return nullptr;
+    }
+
+    const Symbol* findVariable(const Symbols& symbols, const std::string& name, uint64_t hash)
+    {
+        auto found = symbols.variables.find(name);
+        if (found != symbols.variables.end()) {
+            for (auto& sym : found->second) {
+                if (!sym.checkHash || sym.hash == hash) {
+                    return &sym;
+                }
+            }
+        }
+        return nullptr;
+    }
+
+    size_t getTotalFunctions(const Symbols& symbols)
+    {
+        size_t res = 0;
+        for (const auto& el : symbols.functions) {
+            res += el.second.size();
+        }
+        return res;
+    }
+
+    size_t getTotalVariables(const Symbols& symbols)
+    {
+        size_t res = 0;
+        for (const auto& el : symbols.variables) {
+            res += el.second.size();
+        }
+        return res;
+    }
+
+    void* unprotect(void* address, size_t size)
+    {
+        long pagesize;
+        pagesize = sysconf(_SC_PAGESIZE);
+        address = (void*)((long)address & ~(pagesize - 1));
+        if (mprotect(address, size, PROT_READ | PROT_WRITE | PROT_EXEC) == 0) {
+            return address;
+        } else {
+            return NULL;
+        }
     }
 }
