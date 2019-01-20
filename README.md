@@ -74,10 +74,10 @@ Implemented:
 - Tracking dependencies
 - Working with code from this executable and loaded shared libraries
 - Linux and macOS implementation
+- Ability to add new compilations units on the fly (just invoke cmake to recreate `compile_commands.json` file after new .cpp file was created)
 
 Will be implemented:
 - Code reload in multithreaded app (right now reloading of code in multithreaded app is not reliable)
-- Ability to add new compilations units on the fly (see "How it works")
 
 Will not be implemented at all:
 - Reliable reload of lambda functions with non-empty captures. Lambdas with empty capture list are ok since they are just a plain functions at the lowest level (at least they are implemented this way). There's only 1 case where we can handle lambdas with non-empty capture list properly - if old and new code has lambda with exactly same signature and exactly same lambdas **before this lambda** within this file, in other cases the reload of lambdas is not reliable. The reason for this is mangled name of lambda type depends on the arguments and position of this lambda relative to another lambdas in this compilation unit. Moreover different compilers use different name mangling of lambda types. Please refer to tests to see good and bad cases.
@@ -99,8 +99,6 @@ Apart from that **jet-live** tries to find `compile_commands.json` near your exe
 - compiler path
 - working directory - directory from which the compiler was run
 - some compiler flags for further processing.
-
-Right now if you create new `.cpp` file and even recreate `compile_commands.json` (i.e. by running cmake after that), library will not find it (see Will be implemented).
 
 When all compilation units are parsed, it distinguishes the most common directory for all source files and starts watching it recursively using filesystem watcher. This path can be configured if you want to reduce your filesystem load. If your project is not very big (say less than 2000 files), just do nothing, default behaviour is fine.
 
