@@ -2,6 +2,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <unordered_map>
 #include <vector>
 #include "jet/live/Compiler.hpp"
@@ -48,5 +49,6 @@ namespace jet
 
         void setupFileWatcher();
         void updateDependencies(const CompilationUnit& cu);
+        std::vector<std::string> getDirectoriesToMonitor();
     };
 }

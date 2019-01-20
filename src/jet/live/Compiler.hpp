@@ -46,6 +46,11 @@ namespace jet
         void link(std::function<void(int, const std::string&, const std::vector<std::string>&, const std::string&)>&&
                 finishCallback);
 
+        /**
+         * Removes given compilation unit from the compilation queue and ready obj files list.
+         */
+        void remove(const std::string& compilationUnitPath);
+
     private:
         const LiveContext* m_context;
         struct Task
