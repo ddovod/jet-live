@@ -53,7 +53,7 @@ def processCommand(cmdStr):
                     fileWasModified = True
                     newFileLines.append(uncommentedLine)
                 else:
-                    newFileLines.append(uncommentedLine)
+                    newFileLines.append(line)
             if fileWasModified:
                 print("RUNNER: Patching source file: " + filepath)
                 with open(filepath, "w") as f:

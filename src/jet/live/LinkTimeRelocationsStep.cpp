@@ -32,9 +32,11 @@ namespace jet
 
             const Symbol* oldVar = nullptr;
             auto& progs = context->programs;
-            for (size_t i = progs.size(); i > 0 && !oldVar; i--) {
-                auto& prog = progs[i - 1];
+            for (const auto& prog : progs) {
                 oldVar = findVariable(prog.symbols, reloc.relocationSymbolName, reloc.relocationSymbolHash);
+                if (oldVar) {
+                    break;
+                }
             }
             if (!oldVar) {
                 continue;

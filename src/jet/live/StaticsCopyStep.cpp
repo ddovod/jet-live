@@ -17,8 +17,8 @@ namespace jet
                 void* oldVarPtr = nullptr;
                 size_t oldVarSize = 0;
                 const auto& progs = context->programs;
-                for (auto it = progs.rbegin(); it != progs.rend(); it++) {
-                    if (auto foundSym = findVariable(it->symbols, sym.name, sym.hash)) {
+                for (const auto& prog : progs) {
+                    if (auto foundSym = findVariable(prog.symbols, sym.name, sym.hash)) {
                         oldVarSize = foundSym->size;
                         oldVarPtr = reinterpret_cast<void*>(foundSym->runtimeAddress);
                         break;
