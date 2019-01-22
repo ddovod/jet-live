@@ -524,14 +524,15 @@ namespace jet
                                 }
 
                                 switch (reloc.r_type) {
-                                    case X86_64_RELOC_SIGNED:  // for signed 32-bit displacement
+                                    case X86_64_RELOC_SIGNED:    // for signed 32-bit displacement
+                                    case X86_64_RELOC_SIGNED_1:  // for signed 32-bit displacement with a -1 addend
+                                    case X86_64_RELOC_SIGNED_2:  // for signed 32-bit displacement with a -2 addend
+                                    case X86_64_RELOC_SIGNED_4:  // for signed 32-bit displacement with a -4 addend
                                         break;
 
-                                    case X86_64_RELOC_GOT_LOAD: continue;
+                                    case X86_64_RELOC_GOT_LOAD:  // a MOVQ load of a GOT entry
+                                        continue;
 
-                                    case X86_64_RELOC_SIGNED_1:    // for signed 32-bit displacement with a -1 addend
-                                    case X86_64_RELOC_SIGNED_2:    // for signed 32-bit displacement with a -2 addend
-                                    case X86_64_RELOC_SIGNED_4:    // for signed 32-bit displacement with a -4 addend
                                     case X86_64_RELOC_UNSIGNED:    // for absolute addresses
                                     case X86_64_RELOC_BRANCH:      // a CALL/JMP instruction with 32-bit displacement
                                     case X86_64_RELOC_GOT:         // other GOT references
