@@ -300,6 +300,7 @@ namespace jet
             int textSectionIndex = -1;
             int bssSectionIndex = -1;
             int dataSectionIndex = -1;
+            int commonSectionIndex = -1;
             std::hash<std::string> stringHasher;
             const uint64_t currentHash = stringHasher(filepath);
             std::vector<std::set<uint64_t>> symbolsBounds;
@@ -330,6 +331,8 @@ namespace jet
                                 dataSectionIndex = static_cast<int>(sectionIndex);
                             } else if (section.sectname == std::string("__bss")) {
                                 bssSectionIndex = static_cast<int>(sectionIndex);
+                            } else if (section.sectname == std::string("__common")) {
+                                commonSectionIndex = static_cast<int>(sectionIndex);
                             }
                         }
                         break;
@@ -499,7 +502,8 @@ namespace jet
                                 const auto& reloc = relocs[j];
                                 const auto& shortSymbol = orderedSymbols[reloc.r_symbolnum];
                                 if (shortSymbol.sectionIndex != bssSectionIndex
-                                    && shortSymbol.sectionIndex != dataSectionIndex) {
+                                    && shortSymbol.sectionIndex != dataSectionIndex
+                                    && shortSymbol.sectionIndex != commonSectionIndex) {
                                     continue;
                                 }
 

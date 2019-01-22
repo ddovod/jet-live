@@ -30,9 +30,11 @@ namespace jet
     {
         static const std::string bssSectionName = "__bss";
         static const std::string dataSectionName = "__data";
+        static const std::string commonSectionName = "__common";
         const auto& sectionName = getStringOr(context.sectionNames, symbol.sectionIndex, "?");
-        return (symbol.type == MachoSymbolType::kSection && !symbol.privateExternal && !symbol.weakDef
-                && (sectionName == bssSectionName || sectionName == dataSectionName));
+        return (
+            symbol.type == MachoSymbolType::kSection && !symbol.privateExternal && !symbol.weakDef
+            && (sectionName == bssSectionName || sectionName == dataSectionName || sectionName == commonSectionName));
     }
 
     bool DefaultSymbolsFilter::shouldTransferElfSymbol(const ElfContext& context, const ElfSymbol& symbol)
