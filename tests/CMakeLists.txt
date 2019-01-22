@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.6)
 project(tests)
 
-file(GLOB_RECURSE TEST_SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+file(GLOB_RECURSE TEST_SOURCES ${PROJECT_SOURCE_DIR}/src/*.c ${PROJECT_SOURCE_DIR}/src/*.cpp)
 add_executable(tests "")
 target_sources(tests
   PRIVATE
