@@ -325,11 +325,11 @@ namespace jet
                             sectionNames[sectionIndex] = std::string(section.sectname);
                             symbolsBounds[sectionIndex].insert(section.addr + section.size);
                             if (section.sectname == std::string("__text")) {
-                                textSectionIndex = sectionIndex;
+                                textSectionIndex = static_cast<int>(sectionIndex);
                             } else if (section.sectname == std::string("__data")) {
-                                dataSectionIndex = sectionIndex;
+                                dataSectionIndex = static_cast<int>(sectionIndex);
                             } else if (section.sectname == std::string("__bss")) {
-                                bssSectionIndex = sectionIndex;
+                                bssSectionIndex = static_cast<int>(sectionIndex);
                             }
                         }
                         break;
@@ -495,7 +495,7 @@ namespace jet
                             }
 
                             relocation_info* relocs = reinterpret_cast<relocation_info*>(machoPtr + section.reloff);
-                            for (int j = 0; j < section.nreloc; j++) {
+                            for (uint32_t j = 0; j < section.nreloc; j++) {
                                 const auto& reloc = relocs[j];
                                 const auto& shortSymbol = orderedSymbols[reloc.r_symbolnum];
                                 if (shortSymbol.sectionIndex != bssSectionIndex
@@ -538,20 +538,20 @@ namespace jet
                                         continue;
                                 }
 
-                                auto found = symbolsInSections[textSectionIndex].upper_bound(reloc.r_address);
-                                if (found != symbolsInSections[textSectionIndex].begin()) {
+                                auto relocAddr = static_cast<uintptr_t>(reloc.r_address);
+                                auto found = symbolsInSections[static_cast<size_t>(textSectionIndex)].upper_bound(relocAddr);
+                                if (found != symbolsInSections[static_cast<size_t>(textSectionIndex)].begin()) {
                                     found--;
                                 }
-                                if (found->second.virtualAddress > reloc.r_address
-                                    || reloc.r_address >= found->second.virtualAddress + found->second.size) {
+                                if (found->second.virtualAddress > relocAddr
+                                    || relocAddr >= found->second.virtualAddress + found->second.size) {
                                     context->listener->onLog(LogSeverity::kError, "WTF1");
                                     continue;
                                 }
 
                                 rel.targetSymbolName = found->second.name;
                                 rel.targetSymbolHash = found->second.hash;
-                                rel.relocationOffsetRelativeTargetSymbolAddress =
-                                    reloc.r_address - found->second.virtualAddress;
+                                rel.relocationOffsetRelativeTargetSymbolAddress = relocAddr - found->second.virtualAddress;
                                 rel.relocationSymbolName = shortSymbol.name;
                                 rel.relocationSymbolHash = shortSymbol.hash;
                                 res.push_back(rel);
