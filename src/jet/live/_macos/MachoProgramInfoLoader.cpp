@@ -539,7 +539,8 @@ namespace jet
                                 }
 
                                 auto relocAddr = static_cast<uintptr_t>(reloc.r_address);
-                                auto found = symbolsInSections[static_cast<size_t>(textSectionIndex)].upper_bound(relocAddr);
+                                auto found =
+                                    symbolsInSections[static_cast<size_t>(textSectionIndex)].upper_bound(relocAddr);
                                 if (found != symbolsInSections[static_cast<size_t>(textSectionIndex)].begin()) {
                                     found--;
                                 }
@@ -551,7 +552,8 @@ namespace jet
 
                                 rel.targetSymbolName = found->second.name;
                                 rel.targetSymbolHash = found->second.hash;
-                                rel.relocationOffsetRelativeTargetSymbolAddress = relocAddr - found->second.virtualAddress;
+                                rel.relocationOffsetRelativeTargetSymbolAddress =
+                                    relocAddr - found->second.virtualAddress;
                                 rel.relocationSymbolName = shortSymbol.name;
                                 rel.relocationSymbolHash = shortSymbol.hash;
                                 res.push_back(rel);
