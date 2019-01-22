@@ -3,7 +3,7 @@
 
 static int undefinedSomeStaticVariable2 = 42;
 
-int undefinedGetValue2()
+int UndefinedSomeClass::undefinedGetValue2()
 {
     return undefinedSomeStaticVariable2++;
 }

@@ -1,4 +1,8 @@
 
 #pragma once
 
-int undefinedGetValue2();
+class UndefinedSomeClass
+{
+public:
+    int undefinedGetValue2();
+};
