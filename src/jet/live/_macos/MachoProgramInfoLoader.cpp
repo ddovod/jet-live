@@ -497,8 +497,9 @@ namespace jet
                             relocation_info* relocs = reinterpret_cast<relocation_info*>(machoPtr + section.reloff);
                             for (int j = 0; j < section.nreloc; j++) {
                                 const auto& reloc = relocs[j];
-                                auto sectionIndex = orderedSymbols[reloc.r_symbolnum].sectionIndex;
-                                if (sectionIndex != bssSectionIndex && sectionIndex != dataSectionIndex) {
+                                const auto& shortSymbol = orderedSymbols[reloc.r_symbolnum];
+                                if (shortSymbol.sectionIndex != bssSectionIndex
+                                    && shortSymbol.sectionIndex != dataSectionIndex) {
                                     continue;
                                 }
 
@@ -522,12 +523,13 @@ namespace jet
                                     case X86_64_RELOC_SIGNED:  // for signed 32-bit displacement
                                         break;
 
+                                    case X86_64_RELOC_GOT_LOAD: continue;
+
                                     case X86_64_RELOC_SIGNED_1:    // for signed 32-bit displacement with a -1 addend
                                     case X86_64_RELOC_SIGNED_2:    // for signed 32-bit displacement with a -2 addend
                                     case X86_64_RELOC_SIGNED_4:    // for signed 32-bit displacement with a -4 addend
                                     case X86_64_RELOC_UNSIGNED:    // for absolute addresses
                                     case X86_64_RELOC_BRANCH:      // a CALL/JMP instruction with 32-bit displacement
-                                    case X86_64_RELOC_GOT_LOAD:    // a MOVQ load of a GOT entry
                                     case X86_64_RELOC_GOT:         // other GOT references
                                     case X86_64_RELOC_SUBTRACTOR:  // must be followed by a X86_64_RELOC_UNSIGNED
                                     case X86_64_RELOC_TLV:         // for thread local variables
@@ -550,8 +552,8 @@ namespace jet
                                 rel.targetSymbolHash = found->second.hash;
                                 rel.relocationOffsetRelativeTargetSymbolAddress =
                                     reloc.r_address - found->second.virtualAddress;
-                                rel.relocationSymbolName = orderedSymbols[reloc.r_symbolnum].name;
-                                rel.relocationSymbolHash = orderedSymbols[reloc.r_symbolnum].hash;
+                                rel.relocationSymbolName = shortSymbol.name;
+                                rel.relocationSymbolHash = shortSymbol.hash;
                                 res.push_back(rel);
                             }
                         }

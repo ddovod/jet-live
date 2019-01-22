@@ -19,14 +19,17 @@ namespace jet
             const Symbol* targetSymbol =
                 findFunction(newProgram->symbols, reloc.targetSymbolName, reloc.targetSymbolHash);
             if (!targetSymbol) {
-                context->listener->onLog(LogSeverity::kError, "targetSymbol not fount: " + reloc.targetSymbolName);
+                context->listener->onLog(LogSeverity::kError,
+                    "targetSymbol not found: " + reloc.targetSymbolName + " " + std::to_string(reloc.targetSymbolHash));
                 continue;
             }
 
             const Symbol* relocSymbol =
                 findVariable(newProgram->symbols, reloc.relocationSymbolName, reloc.relocationSymbolHash);
             if (!relocSymbol) {
-                context->listener->onLog(LogSeverity::kError, "relocSymbol not found: " + reloc.relocationSymbolName);
+                context->listener->onLog(LogSeverity::kError,
+                    "relocSymbol not found: " + reloc.relocationSymbolName + " "
+                        + std::to_string(reloc.relocationSymbolHash));
                 continue;
             }
 

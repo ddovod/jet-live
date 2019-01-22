@@ -182,7 +182,8 @@ namespace jet
                     .append(" -Wl,-export_dynamic")
                     .append(" -Wl,-install_name,")
                     .append(libName)
-                    .append(" -undefined dynamic_lookup");
+                    .append(" -Wl,-undefined,dynamic_lookup")
+                    .append(" -Wl,-flat_namespace");
                 break;
             }
             case LinkerType::kUnknown: {
