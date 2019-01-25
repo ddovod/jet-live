@@ -34,8 +34,15 @@ namespace jet
         virtual std::vector<Relocation> getLinkTimeRelocations(const LiveContext* context,
             const std::vector<std::string>& objFilePaths) = 0;
 
+        /**
+         * Retrieves a list of undefined symbol names of the given program.
+         */
         virtual std::vector<std::string> getUndefinedSymbolNames(const LiveContext* context,
             const std::string filepath) = 0;
+
+        /**
+         * Retrieves a list of exported symbol names of the given program.
+         */
         virtual std::vector<std::string> getExportedSymbolNames(const LiveContext* context,
             const std::string filepath) = 0;
     };
