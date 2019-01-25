@@ -586,7 +586,7 @@ namespace jet
         std::vector<std::string> res;
 
         // Parsing mach-o binary
-        auto f = fopen(realFilepath.c_str(), "r");
+        auto f = fopen(filepath.c_str(), "r");
         fseek(f, 0, SEEK_END);
         auto length = static_cast<size_t>(ftell(f));
         fseek(f, 0, SEEK_SET);
@@ -613,7 +613,7 @@ namespace jet
                     res.reserve(table->nsyms);
                     for (uint32_t i = 0; i < table->nsyms; i++) {
                         auto& symbol = symbolsPtr[i];
-                        if ((symbol.n_type & N_EXT) && symbol.n_sect == NO_SECT) {
+                        if ((symbol.n_type & N_EXT) && symbol.n_sect == NO_SECT && (symbol.n_type & N_TYPE) == N_UNDF) {
                             res.push_back(std::string(stringTable + symbol.n_un.n_strx + 1));
                         }
                     }
@@ -633,7 +633,7 @@ namespace jet
         std::vector<std::string> res;
 
         // Parsing mach-o binary
-        auto f = fopen(realFilepath.c_str(), "r");
+        auto f = fopen(filepath.c_str(), "r");
         fseek(f, 0, SEEK_END);
         auto length = static_cast<size_t>(ftell(f));
         fseek(f, 0, SEEK_SET);
