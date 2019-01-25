@@ -15,5 +15,9 @@ namespace jet
         Symbols getProgramSymbols(const LiveContext* context, const std::string& filepath) const override;
         std::vector<Relocation> getLinkTimeRelocations(const LiveContext* context,
             const std::vector<std::string>& objFilePaths) override;
+        std::vector<std::string> getUndefinedSymbolNames(const LiveContext* context,
+            const std::string filepath) override;
+        std::vector<std::string> getExportedSymbolNames(const LiveContext* context,
+            const std::string filepath) override;
     };
 }

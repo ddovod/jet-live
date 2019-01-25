@@ -3,6 +3,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utils.hpp>
 #include <vector>
 
@@ -69,6 +70,7 @@ namespace jet
     {
         std::unordered_map<std::string, small_vector<Symbol, 1>> functions; /** Hookable function symbols. */
         std::unordered_map<std::string, small_vector<Symbol, 1>> variables; /** Transferrable variable symbols. */
+        std::unordered_set<std::string> exportedSymbolNames;                /** Exported symbol names. */
     };
 
     /**
