@@ -57,6 +57,22 @@ namespace jet
             "Success parsing compilation commands, total " + std::to_string(m_context->compilationUnits.size())
                 + " compilation units");
 
+        m_context->listener->onLog(LogSeverity::kInfo, "Loading exported symbols list...");
+        int totalExportedSymbols = 0;
+        int totalFiles = 0;
+        for (const auto& cu : m_context->compilationUnits) {
+            const auto& symNames =
+                m_context->programInfoLoader->getExportedSymbolNames(m_context.get(), cu.second.objFilePath);
+            totalExportedSymbols += symNames.size();
+            totalFiles++;
+            for (const auto& el : symNames) {
+                m_context->exportedSymbolNamesInObjectFiles[el] = cu.second.objFilePath;
+            }
+        }
+        m_context->listener->onLog(LogSeverity::kInfo,
+            "Done, total exported symbols: " + std::to_string(totalExportedSymbols) + " in "
+                + std::to_string(totalFiles) + " files");
+
         setupFileWatcher();
 
         m_compiler = jet::make_unique<Compiler>(m_context.get());
@@ -148,6 +164,7 @@ namespace jet
                              const std::vector<std::string>& objFilePaths,
                              const std::string&) {
             if (status != 0) {
+                m_context->listener->onCodePostLoad();
                 return;
             }
 
@@ -166,6 +183,21 @@ namespace jet
             m_context->listener->onLog(LogSeverity::kInfo, "Loading symbols from " + libPath + "...");
             auto libSymbols = m_context->programInfoLoader->getProgramSymbols(m_context.get(), libPath);
             m_context->listener->onLog(LogSeverity::kInfo, "Symbols loaded");
+
+            m_context->listener->onLog(LogSeverity::kInfo, "Loading exported symbols list...");
+            int totalExportedSymbols = 0;
+            int totalFiles = 0;
+            for (const auto& filepath : objFilePaths) {
+                const auto& symNames = m_context->programInfoLoader->getExportedSymbolNames(m_context.get(), filepath);
+                totalExportedSymbols += symNames.size();
+                totalFiles++;
+                for (const auto& el : symNames) {
+                    m_context->exportedSymbolNamesInObjectFiles[el] = filepath;
+                }
+            }
+            m_context->listener->onLog(LogSeverity::kInfo,
+                "Done, total exported symbols: " + std::to_string(totalExportedSymbols) + " in "
+                    + std::to_string(totalFiles) + " files");
 
             Program libProgram;
             libProgram.path = libPath;

@@ -100,6 +100,10 @@ namespace jet
                     unsigned char other = 0;
                     symbols.get_symbol(j, name, value, size, bind, type, sectionIndex, other);
 
+                    if ((bind == STB_GLOBAL || bind == STB_WEAK) && sectionIndex != STN_UNDEF) {
+                        res.exportedSymbolNames.insert(name);
+                    }
+
                     ElfSymbol elfSymbol;
                     elfSymbol.name = name;
                     elfSymbol.sectionIndex = sectionIndex;
@@ -362,6 +366,82 @@ namespace jet
                 }
             }
         }
+        return res;
+    }
+
+    std::vector<std::string> ElfProgramInfoLoader::getUndefinedSymbolNames(const LiveContext* context,
+        const std::string filepath)
+    {
+        std::vector<std::string> res;
+
+        // This executable has empty string name on linux
+        ELFIO::elfio elfFile;
+        std::string realFilepath = filepath.empty() ? context->thisExecutablePath : filepath;
+        if (!elfFile.load(realFilepath)) {
+            context->listener->onLog(LogSeverity::kError, "Cannot load " + realFilepath + " file");
+            return res;
+        }
+
+        for (uint32_t i = 0; i < elfFile.sections.size(); i++) {
+            const auto& section = elfFile.sections[i];
+            if (section->get_type() == SHT_SYMTAB) {
+                const ELFIO::symbol_section_accessor symbols{elfFile, section};
+                res.reserve(symbols.get_symbols_num());
+                for (uint32_t j = 0; j < symbols.get_symbols_num(); j++) {
+                    std::string name;
+                    ElfW(Addr) value = 0;
+                    ElfW(Xword) size = 0;
+                    unsigned char bind = 0;
+                    unsigned char type = 0;
+                    ElfW(Half) sectionIndex = 0;
+                    unsigned char other = 0;
+                    symbols.get_symbol(j, name, value, size, bind, type, sectionIndex, other);
+
+                    if (sectionIndex == STN_UNDEF && !name.empty()) {
+                        res.push_back(name);
+                    }
+                }
+            }
+        }
+
+        return res;
+    }
+
+    std::vector<std::string> ElfProgramInfoLoader::getExportedSymbolNames(const LiveContext* context,
+        const std::string filepath)
+    {
+        std::vector<std::string> res;
+
+        // This executable has empty string name on linux
+        ELFIO::elfio elfFile;
+        std::string realFilepath = filepath.empty() ? context->thisExecutablePath : filepath;
+        if (!elfFile.load(realFilepath)) {
+            context->listener->onLog(LogSeverity::kError, "Cannot load " + realFilepath + " file");
+            return res;
+        }
+
+        for (uint32_t i = 0; i < elfFile.sections.size(); i++) {
+            const auto& section = elfFile.sections[i];
+            if (section->get_type() == SHT_SYMTAB) {
+                const ELFIO::symbol_section_accessor symbols{elfFile, section};
+                res.reserve(symbols.get_symbols_num());
+                for (uint32_t j = 0; j < symbols.get_symbols_num(); j++) {
+                    std::string name;
+                    ElfW(Addr) value = 0;
+                    ElfW(Xword) size = 0;
+                    unsigned char bind = 0;
+                    unsigned char type = 0;
+                    ElfW(Half) sectionIndex = 0;
+                    unsigned char other = 0;
+                    symbols.get_symbol(j, name, value, size, bind, type, sectionIndex, other);
+
+                    if ((bind == STB_GLOBAL || bind == STB_WEAK) && sectionIndex != STN_UNDEF) {
+                        res.push_back(name);
+                    }
+                }
+            }
+        }
+
         return res;
     }
 }

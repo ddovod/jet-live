@@ -201,8 +201,41 @@ namespace jet
         }
         m_context->listener->onLog(LogSeverity::kInfo, "Linking...");
 
-        std::string libName = "lib_reload" + std::to_string(m_currentLibIndex++) + ".so";
         std::vector<std::string> objectFilePaths;
+        std::string libName = "lib_reload" + std::to_string(m_currentLibIndex++) + ".so";
+
+        // First, we have to check if there will be unresolved symbols
+        std::unordered_set<std::string> undefinedSymbolNames;
+        for (const auto& cu : m_readyCompilationUnits) {
+            auto symNames = m_context->programInfoLoader->getUndefinedSymbolNames(m_context, cu.second.objFilepath);
+            undefinedSymbolNames.insert(symNames.begin(), symNames.end());
+        }
+        std::unordered_set<std::string> additionalObjectFilePaths;
+        for (const auto& undefSymName : undefinedSymbolNames) {
+            // Checking if this symbol can be resolved in load-time
+            bool found = false;
+            for (const auto& program : m_context->programs) {
+                auto foundSym = program.symbols.exportedSymbolNames.find(undefSymName);
+                if (foundSym != program.symbols.exportedSymbolNames.end()) {
+                    found = true;
+                    break;
+                }
+            }
+
+            // If not, trying to find object file which defines this symbol
+            if (!found) {
+                auto foundObjectFilepath = m_context->exportedSymbolNamesInObjectFiles.find(undefSymName);
+                if (foundObjectFilepath != m_context->exportedSymbolNamesInObjectFiles.end()) {
+                    // If so, adding this object file in linkage list.
+                    // Otherwise, lets hope for the best :/
+                    additionalObjectFilePaths.insert(foundObjectFilepath->second);
+                }
+            }
+        }
+        objectFilePaths.insert(
+            objectFilePaths.end(), additionalObjectFilePaths.begin(), additionalObjectFilePaths.end());
+
+        // Then adding newly compiled object files
         for (const auto& cu : m_readyCompilationUnits) {
             objectFilePaths.push_back(cu.second.objFilepath);
         }
