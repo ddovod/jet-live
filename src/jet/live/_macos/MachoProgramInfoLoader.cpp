@@ -136,6 +136,11 @@ namespace jet
                     auto stringTable = machoPtr + table->stroff;
                     for (uint32_t i = 0; i < table->nsyms; i++) {
                         auto& symbol = symbolsPtr[i];
+
+                        if ((symbol.n_type & N_EXT) && symbol.n_sect != NO_SECT) {
+                            res.exportedSymbolNames.insert(std::string(stringTable + symbol.n_un.n_strx + 1));
+                        }
+
                         MachoSymbol machoSymbol;
                         if (symbol.n_type & N_STAB) {
                             switch (symbol.n_type) {
@@ -570,6 +575,100 @@ namespace jet
                 }
                 commandOffset += command->cmdsize;
             }
+        }
+
+        return res;
+    }
+
+    std::vector<std::string> MachoProgramInfoLoader::getUndefinedSymbolNames(const LiveContext* context,
+        const std::string filepath)
+    {
+        std::vector<std::string> res;
+
+        // Parsing mach-o binary
+        auto f = fopen(realFilepath.c_str(), "r");
+        fseek(f, 0, SEEK_END);
+        auto length = static_cast<size_t>(ftell(f));
+        fseek(f, 0, SEEK_SET);
+        auto content = std::unique_ptr<char[]>(new char[length]);
+        fread(content.get(), 1, length, f);
+        fclose(f);
+
+        auto header = reinterpret_cast<mach_header_64*>(content.get());
+        if (header->magic != MH_MAGIC_64) {
+            // Probably it is some system "fat" library, we're not interested in it
+            // context->listener->onLog(LogSeverity::kError, "Cannot read symbols, not a Mach-O 64 binary");
+            return res;
+        }
+
+        auto machoPtr = content.get();
+        auto commandOffset = sizeof(mach_header_64);
+        for (uint32_t iCmd = 0; iCmd < header->ncmds; iCmd++) {
+            auto command = reinterpret_cast<load_command*>(machoPtr + commandOffset);
+            switch (command->cmd) {
+                case LC_SYMTAB: {
+                    auto table = reinterpret_cast<symtab_command*>(machoPtr + commandOffset);
+                    auto symbolsPtr = reinterpret_cast<nlist_64*>(machoPtr + table->symoff);
+                    auto stringTable = machoPtr + table->stroff;
+                    res.reserve(table->nsyms);
+                    for (uint32_t i = 0; i < table->nsyms; i++) {
+                        auto& symbol = symbolsPtr[i];
+                        if ((symbol.n_type & N_EXT) && symbol.n_sect == NO_SECT) {
+                            res.push_back(std::string(stringTable + symbol.n_un.n_strx + 1));
+                        }
+                    }
+                    break;
+                }
+                default: break;
+            }
+            commandOffset += command->cmdsize;
+        }
+
+        return res;
+    }
+
+    std::vector<std::string> MachoProgramInfoLoader::getExportedSymbolNames(const LiveContext* context,
+        const std::string filepath)
+    {
+        std::vector<std::string> res;
+
+        // Parsing mach-o binary
+        auto f = fopen(realFilepath.c_str(), "r");
+        fseek(f, 0, SEEK_END);
+        auto length = static_cast<size_t>(ftell(f));
+        fseek(f, 0, SEEK_SET);
+        auto content = std::unique_ptr<char[]>(new char[length]);
+        fread(content.get(), 1, length, f);
+        fclose(f);
+
+        auto header = reinterpret_cast<mach_header_64*>(content.get());
+        if (header->magic != MH_MAGIC_64) {
+            // Probably it is some system "fat" library, we're not interested in it
+            // context->listener->onLog(LogSeverity::kError, "Cannot read symbols, not a Mach-O 64 binary");
+            return res;
+        }
+
+        auto machoPtr = content.get();
+        auto commandOffset = sizeof(mach_header_64);
+        for (uint32_t iCmd = 0; iCmd < header->ncmds; iCmd++) {
+            auto command = reinterpret_cast<load_command*>(machoPtr + commandOffset);
+            switch (command->cmd) {
+                case LC_SYMTAB: {
+                    auto table = reinterpret_cast<symtab_command*>(machoPtr + commandOffset);
+                    auto symbolsPtr = reinterpret_cast<nlist_64*>(machoPtr + table->symoff);
+                    auto stringTable = machoPtr + table->stroff;
+                    res.reserve(table->nsyms);
+                    for (uint32_t i = 0; i < table->nsyms; i++) {
+                        auto& symbol = symbolsPtr[i];
+                        if ((symbol.n_type & N_EXT) && symbol.n_sect != NO_SECT) {
+                            res.push_back(std::string(stringTable + symbol.n_un.n_strx + 1));
+                        }
+                    }
+                    break;
+                }
+                default: break;
+            }
+            commandOffset += command->cmdsize;
         }
 
         return res;
