@@ -9,14 +9,19 @@
 #include "jet/live/DepfileDependenciesHandler.hpp"
 #include "jet/live/FunctionsHookingStep.hpp"
 #include "jet/live/LinkTimeRelocationsStep.hpp"
+#include "jet/live/SignalReloader.hpp"
 #include "jet/live/StaticsCopyStep.hpp"
 #include "jet/live/Utility.hpp"
 
 namespace jet
 {
+    Live::~Live() { onLiveDestroyed(); }
+
     Live::Live(std::unique_ptr<ILiveListener>&& listener, const LiveConfig& config)
         : m_context(jet::make_unique<LiveContext>())
     {
+        onLiveCreated(this, config.reloadOnSignal);
+
         m_context->liveConfig = config;
         m_context->listener = listener ? std::move(listener) : jet::make_unique<ILiveListener>();
         m_context->thisExecutablePath = getExecutablePath();

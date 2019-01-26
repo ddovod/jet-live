@@ -23,6 +23,7 @@ namespace jet
     {
     public:
         Live(std::unique_ptr<ILiveListener>&& listener = {}, const LiveConfig& config = {});
+        ~Live();
 
         /**
          * Tries to reload changed code.

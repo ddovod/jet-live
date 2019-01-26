@@ -20,6 +20,9 @@ add_executable(tests "")
 target_sources(tests
   PRIVATE
   src/main.cpp
+  src/TestListener.cpp
+  src/WaitForReload.cpp
+
   src/utility/LambdaFunctionWithCapturesBadCase2.cpp
   src/utility/LambdaFunctionWithCapturesGoodCase.cpp
   src/utility/LambdaFunctionWithCaptures.cpp
@@ -45,6 +48,8 @@ target_sources(tests
   src/utility/StaticFunctionLocalVariable.cpp
   src/utility/ExternGlobalVariableAddress.cpp
   src/utility/CommonSection.c
+  src/utility/ReloadOnSignal.cpp
+
   src/good/ClassInstanceMethod_test.cpp
   src/good/CommonSection_test.cpp
   src/good/StaticInternalVariable_test.cpp
@@ -67,10 +72,10 @@ target_sources(tests
   src/good/ClassStaticMethod_test.cpp
   src/good/ExternGlobalVariable_test.cpp
   src/good/StaticFunctionLocalVariable_test.cpp
+  src/good/ReloadOnSignal_test.cpp
+
   src/bad/LambdaFunctionWithCapturesBadCase2_test.cpp
   src/bad/LambdaFunctionWithCapturesBadCase_test.cpp
-  src/TestListener.cpp
-  src/WaitForReload.cpp
   )
 target_include_directories(tests
   PRIVATE

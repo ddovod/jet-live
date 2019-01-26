@@ -177,6 +177,7 @@ target_sources(jet-live
   src/jet/live/LinkTimeRelocationsStep.cpp
   src/jet/live/FunctionsHookingStep.cpp
   src/jet/live/StaticsCopyStep.cpp
+  src/jet/live/SignalReloader.cpp
   )
 if (UNIX AND NOT APPLE)
   target_sources(jet-live
