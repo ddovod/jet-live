@@ -22,5 +22,10 @@ namespace jet
          * If empty, the most common directory for all found compilation units will be used.
          */
         std::vector<std::string> directoriesToMonitor;
+
+        /**
+         * If `true`, also reload code when app receives `SIGUSR1`.
+         */
+        bool reloadOnSignal = true;
     };
 }
