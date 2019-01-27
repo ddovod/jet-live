@@ -24,7 +24,7 @@ namespace jet
         return parseCompilationUnitsInternal(context, probablyDbPath);
     }
 
-    void CompileCommandsCompilationUnitsParser::updateCompilationUnits(LiveContext* context,
+    bool CompileCommandsCompilationUnitsParser::updateCompilationUnits(LiveContext* context,
         const std::string& filepath,
         std::vector<std::string>* addedCompilationUnits,
         std::vector<std::string>* modifiedCompilationUnits,
@@ -32,7 +32,7 @@ namespace jet
     {
         TeenyPath::path path{filepath};
         if (!path.exists() || !(m_compileCommandsPath == path.resolve_absolute())) {
-            return;
+            return false;
         }
 
         context->listener->onLog(LogSeverity::kInfo, "Updating compilation units...");
@@ -62,6 +62,9 @@ namespace jet
             "ADDED: " + std::to_string(addedCompilationUnits->size())
                 + ", MODIFIED: " + std::to_string(modifiedCompilationUnits->size())
                 + ", REMOVED: " + std::to_string(removedCompilationUnits->size()));
+
+        return !addedCompilationUnits->empty() || !modifiedCompilationUnits->empty()
+               || !removedCompilationUnits->empty();
     }
 
     std::unordered_map<std::string, CompilationUnit>
@@ -116,42 +119,6 @@ namespace jet
 
             cu.compilerPath = parser[0];
             res[cu.sourceFilePath] = cu;
-        }
-
-        // Trying deal with "filename.cpp.o.d" vs "filename.cpp.d" depfile names
-        if (!res.empty()) {
-            // This flag is needed to distinguish the "style" of depfile naming only once
-            // to prevent 2 filesystem probes for each cu
-            bool useObjFileNameAsABaseOfDepFile = true;
-            for (const auto& cu : res) {
-                const auto& someCu = cu.second;
-                TeenyPath::path depfilePath{std::string().append(someCu.objFilePath).append(".d")};
-                if (depfilePath.exists()) {
-                    break;
-                } else {
-                    auto anotherDepFilePath = someCu.objFilePath;
-                    anotherDepFilePath.back() = 'd';
-                    if (TeenyPath::path{anotherDepFilePath}.exists()) {
-                        useObjFileNameAsABaseOfDepFile = false;
-                        break;
-                    }
-                }
-            }
-
-            for (auto& el : res) {
-                if (useObjFileNameAsABaseOfDepFile) {
-                    TeenyPath::path depfilePath{std::string().append(el.second.objFilePath).append(".d")};
-                    if (depfilePath.exists()) {
-                        el.second.depFilePath = depfilePath.string();
-                    }
-                } else {
-                    auto anotherDepFilePath = el.second.objFilePath;
-                    anotherDepFilePath.back() = 'd';
-                    if (TeenyPath::path{anotherDepFilePath}.exists()) {
-                        el.second.depFilePath = anotherDepFilePath;
-                    }
-                }
-            }
         }
 
         return res;

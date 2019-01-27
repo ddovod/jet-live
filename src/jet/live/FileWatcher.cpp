@@ -103,6 +103,7 @@ namespace jet
 
     FileWatcher::~FileWatcher()
     {
+        std::lock_guard<std::mutex> lock(m_fileEventsMutex);
         for (auto watchId : m_watchIds) {
             m_fileWatcher->removeWatch(watchId);
         }

@@ -47,9 +47,10 @@ namespace jet
         std::unique_ptr<LiveContext> m_context;
         std::unique_ptr<FileWatcher> m_fileWatcher;
         std::unique_ptr<Compiler> m_compiler;
+        int m_recreateFileWatcherAfterTicks = 0;
 
         void setupFileWatcher();
-        void updateDependencies(const CompilationUnit& cu);
+        void updateDependencies(CompilationUnit& cu);
         std::vector<std::string> getDirectoriesToMonitor();
     };
 }

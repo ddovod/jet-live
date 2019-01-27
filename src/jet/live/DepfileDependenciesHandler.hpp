@@ -12,6 +12,6 @@ namespace jet
     class DepfileDependenciesHandler : public IDependenciesHandler
     {
     public:
-        std::unordered_set<std::string> getDependencies(const LiveContext* context, const CompilationUnit& cu) override;
+        std::unordered_set<std::string> getDependencies(const LiveContext* context, CompilationUnit& cu) override;
     };
 }

@@ -13,7 +13,7 @@ namespace jet
     {
     public:
         std::unordered_map<std::string, CompilationUnit> parseCompilationUnits(const LiveContext* context) override;
-        void updateCompilationUnits(LiveContext* context,
+        bool updateCompilationUnits(LiveContext* context,
             const std::string& filepath,
             std::vector<std::string>* addedCompilationUnits,
             std::vector<std::string>* modifiedCompilationUnits,

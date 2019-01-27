@@ -9,10 +9,26 @@
 namespace jet
 {
     std::unordered_set<std::string> DepfileDependenciesHandler::getDependencies(const LiveContext* context,
-        const CompilationUnit& cu)
+        CompilationUnit& cu)
     {
         std::unordered_set<std::string> deps;
         deps.insert(cu.sourceFilePath);
+
+        // Trying deal with "filename.cpp.o.d" vs "filename.cpp.d" depfile names
+        if (cu.depFilePath.empty()) {
+            TeenyPath::path depfilePath{std::string(cu.objFilePath).append(".d")};
+            if (depfilePath.exists()) {
+                cu.depFilePath = depfilePath.string();
+            }
+        }
+
+        if (cu.depFilePath.empty()) {
+            auto depfilePath = cu.objFilePath;
+            depfilePath.back() = 'd';
+            if (TeenyPath::path{depfilePath}.exists()) {
+                cu.depFilePath = depfilePath;
+            }
+        }
 
         if (cu.depFilePath.empty()) {
             context->listener->onLog(LogSeverity::kWarning, "Empty depfile path for cu: " + cu.sourceFilePath);

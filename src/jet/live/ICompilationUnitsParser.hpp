@@ -25,8 +25,9 @@ namespace jet
         /**
          * Updates compilation units list inside `context` using `filepath`, if this `filepath` is a source of
          * compilation units. Fills output vectors with added, modified and removed compilation units.
+         * \return `true` if update was made, `false` if CU list was not touched.
          */
-        virtual void updateCompilationUnits(LiveContext* context,
+        virtual bool updateCompilationUnits(LiveContext* context,
             const std::string& filepath,
             std::vector<std::string>* addedCompilationUnits,
             std::vector<std::string>* modifiedCompilationUnits,

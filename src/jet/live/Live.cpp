@@ -83,7 +83,7 @@ namespace jet
         m_compiler = jet::make_unique<Compiler>(m_context.get());
 
         m_context->listener->onLog(LogSeverity::kInfo, "Parsing dependencies...");
-        for (const auto& cu : m_context->compilationUnits) {
+        for (auto& cu : m_context->compilationUnits) {
             updateDependencies(cu.second);
         }
         m_context->listener->onLog(LogSeverity::kInfo, "Success parsing dependencies");
@@ -91,6 +91,15 @@ namespace jet
 
     void Live::update()
     {
+        if (m_recreateFileWatcherAfterTicks == 10) {
+            m_fileWatcher.reset();
+        }
+        if (m_recreateFileWatcherAfterTicks > 0) {
+            m_recreateFileWatcherAfterTicks--;
+        }
+        if (m_recreateFileWatcherAfterTicks == 1) {
+            setupFileWatcher();
+        }
         if (m_fileWatcher) {
             m_fileWatcher->update();
         }
@@ -110,14 +119,15 @@ namespace jet
                 }
 
                 auto fullPath = event.directory + event.filename;
+                m_context->listener->onLog(LogSeverity::kDebug, fullPath);
                 auto foundDeps = m_context->inverseDependencies.find(fullPath);
                 if (foundDeps != m_context->inverseDependencies.end()) {
                     for (const auto& filepath : foundDeps->second) {
                         auto foundCu = m_context->compilationUnits.find(filepath);
                         if (foundCu != m_context->compilationUnits.end()) {
-                            const auto& cu = foundCu->second;
+                            auto& cu = foundCu->second;
                             m_compiler->compile(cu,
-                                [this, cu](int, const std::string&, const std::string&) { updateDependencies(cu); });
+                                [this, &cu](int, const std::string&, const std::string&) { updateDependencies(cu); });
                         } else {
                             m_context->listener->onLog(
                                 LogSeverity::kError, "Cannot find dependency cu for " + filepath);
@@ -127,35 +137,43 @@ namespace jet
                     std::vector<std::string> addedCompilationUnits;
                     std::vector<std::string> modifiedCompilationUnits;
                     std::vector<std::string> removedCompilationUnits;
-                    m_context->compilationUnitsParser->updateCompilationUnits(m_context.get(),
+                    auto changed = m_context->compilationUnitsParser->updateCompilationUnits(m_context.get(),
                         fullPath,
                         &addedCompilationUnits,
                         &modifiedCompilationUnits,
                         &removedCompilationUnits);
 
-                    // Compiling all new and modified CUs
-                    for (const auto& cuList : {addedCompilationUnits, modifiedCompilationUnits}) {
-                        for (const auto& cuPath : cuList) {
-                            auto foundCu = m_context->compilationUnits.find(cuPath);
-                            if (foundCu != m_context->compilationUnits.end()) {
-                                const auto& cu = foundCu->second;
-                                m_compiler->compile(cu, [this, cu](int, const std::string&, const std::string&) {
-                                    updateDependencies(cu);
-                                });
-                            } else {
-                                m_context->listener->onLog(LogSeverity::kError, "Cannot find cu for " + cuPath);
+                    if (changed) {
+                        // Compiling all new and modified CUs
+                        for (const auto& cuList : {addedCompilationUnits, modifiedCompilationUnits}) {
+                            for (const auto& cuPath : cuList) {
+                                auto foundCu = m_context->compilationUnits.find(cuPath);
+                                if (foundCu != m_context->compilationUnits.end()) {
+                                    auto& cu = foundCu->second;
+                                    m_compiler->compile(cu, [this, &cu](int, const std::string&, const std::string&) {
+                                        updateDependencies(cu);
+                                    });
+                                } else {
+                                    m_context->listener->onLog(LogSeverity::kError, "Cannot find cu for " + cuPath);
+                                }
                             }
                         }
-                    }
 
-                    // Removing removed CUs from everywhere
-                    for (const auto& cuPath : removedCompilationUnits) {
-                        m_compiler->remove(cuPath);
+                        // Removing removed CUs from everywhere
+                        for (const auto& cuPath : removedCompilationUnits) {
+                            m_compiler->remove(cuPath);
 
-                        for (const auto& oldDep : m_context->dependencies[cuPath]) {
-                            m_context->inverseDependencies[oldDep].erase(cuPath);
+                            for (const auto& oldDep : m_context->dependencies[cuPath]) {
+                                m_context->inverseDependencies[oldDep].erase(cuPath);
+                            }
+                            m_context->dependencies.erase(cuPath);
                         }
-                        m_context->dependencies.erase(cuPath);
+
+                        // Setting up file watcher from scratch
+                        // We should do it after some time to let current file watcher
+                        // to release its' stuff
+                        // TODO(ddovod): need better runloop
+                        m_recreateFileWatcherAfterTicks = 10;
                     }
                 }
             });
@@ -216,7 +234,7 @@ namespace jet
         });
     }
 
-    void Live::updateDependencies(const CompilationUnit& cu)
+    void Live::updateDependencies(CompilationUnit& cu)
     {
         for (const auto& oldDep : m_context->dependencies[cu.sourceFilePath]) {
             m_context->inverseDependencies[oldDep].erase(cu.sourceFilePath);
