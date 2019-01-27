@@ -119,7 +119,6 @@ namespace jet
                 }
 
                 auto fullPath = event.directory + event.filename;
-                m_context->listener->onLog(LogSeverity::kDebug, fullPath);
                 auto foundDeps = m_context->inverseDependencies.find(fullPath);
                 if (foundDeps != m_context->inverseDependencies.end()) {
                     for (const auto& filepath : foundDeps->second) {
