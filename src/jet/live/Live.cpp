@@ -160,7 +160,7 @@ namespace jet
             }
             directoriesStr.pop_back();  // last '\n' char
             m_context->listener->onLog(
-                LogSeverity::kInfo, "Watching directories provided by delegate: \n" + directoriesStr);
+                LogSeverity::kDebug, "Watching directories provided by delegate: \n" + directoriesStr);
             dirs = configDirs;
         } else {
             std::string commonDir;
@@ -183,7 +183,7 @@ namespace jet
                 }
             }
             m_context->listener->onLog(
-                LogSeverity::kInfo, "Watching directory substituted from compilation commands: \n  " + commonDir);
+                LogSeverity::kDebug, "Watching directory substituted from compilation commands: " + commonDir);
             dirs.push_back(commonDir);
         }
 
@@ -192,38 +192,41 @@ namespace jet
 
     void Live::loadCompilationUnits()
     {
-        m_context->listener->onLog(LogSeverity::kInfo, "Parsing compilation commands...");
+        m_context->listener->onLog(LogSeverity::kDebug, "Parsing compilation commands...");
         m_context->compilationUnits = m_context->compilationUnitsParser->parseCompilationUnits(m_context.get());
         if (m_context->compilationUnits.empty()) {
             m_context->listener->onLog(LogSeverity::kError, "There're no compilation units");
             return;
         }
-        m_context->listener->onLog(LogSeverity::kInfo,
+        m_context->listener->onLog(LogSeverity::kDebug,
             "Success parsing compilation commands, total " + std::to_string(m_context->compilationUnits.size())
                 + " compilation units");
+        m_context->listener->onLog(LogSeverity::kInfo, "Load CUs: done");
     }
 
     void Live::loadSymbols()
     {
         for (const auto& el : m_context->programInfoLoader->getAllLoadedProgramsPaths(m_context.get())) {
+            m_context->listener->onLog(LogSeverity::kDebug, "Loading symbols for " + el + " ...");
             Program program;
             program.path = el;
             program.symbols = m_context->programInfoLoader->getProgramSymbols(m_context.get(), program.path);
             if (program.symbols.functions.empty() && program.symbols.variables.empty()) {
-                // Program has no symbols, skipping
+                m_context->listener->onLog(LogSeverity::kDebug, el + " has no symbols, skipping");
                 continue;
             }
-            m_context->listener->onLog(LogSeverity::kInfo,
+            m_context->listener->onLog(LogSeverity::kDebug,
                 "Symbols loaded: funcs " + std::to_string(program.symbols.functions.size()) + ", vars "
                     + std::to_string(program.symbols.variables.size()) + ", "
                     + (el.empty() ? std::string("Self") : el));
             m_context->programs.push_back(std::move(program));
         }
+        m_context->listener->onLog(LogSeverity::kInfo, "Load symbols: done");
     }
 
     void Live::loadExportedSymbols()
     {
-        m_context->listener->onLog(LogSeverity::kInfo, "Loading exported symbols list...");
+        m_context->listener->onLog(LogSeverity::kDebug, "Loading exported symbols list...");
         int totalExportedSymbols = 0;
         int totalFiles = 0;
         for (const auto& cu : m_context->compilationUnits) {
@@ -235,18 +238,20 @@ namespace jet
                 m_context->exportedSymbolNamesInObjectFiles[el] = cu.second.objFilePath;
             }
         }
-        m_context->listener->onLog(LogSeverity::kInfo,
+        m_context->listener->onLog(LogSeverity::kDebug,
             "Done, total exported symbols: " + std::to_string(totalExportedSymbols) + " in "
                 + std::to_string(totalFiles) + " files");
+        m_context->listener->onLog(LogSeverity::kInfo, "Load exported symbols: done");
     }
 
     void Live::loadDependencies()
     {
-        m_context->listener->onLog(LogSeverity::kInfo, "Parsing dependencies...");
+        m_context->listener->onLog(LogSeverity::kDebug, "Parsing dependencies...");
         for (auto& cu : m_context->compilationUnits) {
             updateDependencies(cu.second);
         }
-        m_context->listener->onLog(LogSeverity::kInfo, "Success parsing dependencies");
+        m_context->listener->onLog(LogSeverity::kDebug, "Success parsing dependencies");
+        m_context->listener->onLog(LogSeverity::kInfo, "Load dependencies: done");
     }
 
     void Live::setupFileWatcher()
@@ -317,5 +322,6 @@ namespace jet
                     }
                 }
             });
+        m_context->listener->onLog(LogSeverity::kInfo, "Setup file watcher: done");
     }
 }
