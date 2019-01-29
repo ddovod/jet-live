@@ -49,6 +49,10 @@ namespace jet
         std::unique_ptr<Compiler> m_compiler;
         int m_recreateFileWatcherAfterTicks = 0;
 
+        void loadCompilationUnits();
+        void loadSymbols();
+        void loadExportedSymbols();
+        void loadDependencies();
         void setupFileWatcher();
         void updateDependencies(CompilationUnit& cu);
         std::vector<std::string> getDirectoriesToMonitor();

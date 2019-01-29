@@ -36,57 +36,13 @@ namespace jet
         m_context->codeReloadPipeline->addStep(jet::make_unique<FunctionsHookingStep>());
         m_context->codeReloadPipeline->addStep(jet::make_unique<StaticsCopyStep>());
 
-        for (const auto& el : m_context->programInfoLoader->getAllLoadedProgramsPaths(m_context.get())) {
-            Program program;
-            program.path = el;
-            program.symbols = m_context->programInfoLoader->getProgramSymbols(m_context.get(), program.path);
-            if (program.symbols.functions.empty() && program.symbols.variables.empty()) {
-                // Program has no symbols, skipping
-                continue;
-            }
-            m_context->listener->onLog(LogSeverity::kInfo,
-                "Symbols loaded: funcs " + std::to_string(program.symbols.functions.size()) + ", vars "
-                    + std::to_string(program.symbols.variables.size()) + ", "
-                    + (el.empty() ? std::string("Self") : el));
-            m_context->programs.push_back(std::move(program));
-        }
-
-        m_context->listener->onLog(LogSeverity::kInfo, "Parsing compilation commands...");
-        m_context->compilationUnits = m_context->compilationUnitsParser->parseCompilationUnits(m_context.get());
-        if (m_context->compilationUnits.empty()) {
-            m_context->listener->onLog(LogSeverity::kError, "There're no compilation units");
-            return;
-        }
-
-        m_context->listener->onLog(LogSeverity::kInfo,
-            "Success parsing compilation commands, total " + std::to_string(m_context->compilationUnits.size())
-                + " compilation units");
-
-        m_context->listener->onLog(LogSeverity::kInfo, "Loading exported symbols list...");
-        int totalExportedSymbols = 0;
-        int totalFiles = 0;
-        for (const auto& cu : m_context->compilationUnits) {
-            const auto& symNames =
-                m_context->programInfoLoader->getExportedSymbolNames(m_context.get(), cu.second.objFilePath);
-            totalExportedSymbols += symNames.size();
-            totalFiles++;
-            for (const auto& el : symNames) {
-                m_context->exportedSymbolNamesInObjectFiles[el] = cu.second.objFilePath;
-            }
-        }
-        m_context->listener->onLog(LogSeverity::kInfo,
-            "Done, total exported symbols: " + std::to_string(totalExportedSymbols) + " in "
-                + std::to_string(totalFiles) + " files");
-
-        setupFileWatcher();
-
         m_compiler = jet::make_unique<Compiler>(m_context.get());
 
-        m_context->listener->onLog(LogSeverity::kInfo, "Parsing dependencies...");
-        for (auto& cu : m_context->compilationUnits) {
-            updateDependencies(cu.second);
-        }
-        m_context->listener->onLog(LogSeverity::kInfo, "Success parsing dependencies");
+        loadCompilationUnits();  // 0.070
+        loadSymbols();           // 0.200
+        loadExportedSymbols();   // 1.200
+        setupFileWatcher();      // 0.150
+        loadDependencies();      // 0.600
     }
 
     void Live::update()
@@ -106,76 +62,6 @@ namespace jet
         if (m_compiler) {
             m_compiler->update();
         }
-    }
-
-    void Live::setupFileWatcher()
-    {
-        m_context->dirsToMonitor = getDirectoriesToMonitor();
-        m_fileWatcher =
-            jet::make_unique<FileWatcher>(m_context->dirsToMonitor, [this](const FileWatcher::Event& event) {
-                // Some IDEs doesn't 'modify' files, they 'move' it, so listening for both actions
-                if (event.action != FileWatcher::Action::kModified && event.action != FileWatcher::Action::kMoved) {
-                    return;
-                }
-
-                auto fullPath = event.directory + event.filename;
-                auto foundDeps = m_context->inverseDependencies.find(fullPath);
-                if (foundDeps != m_context->inverseDependencies.end()) {
-                    for (const auto& filepath : foundDeps->second) {
-                        auto foundCu = m_context->compilationUnits.find(filepath);
-                        if (foundCu != m_context->compilationUnits.end()) {
-                            auto& cu = foundCu->second;
-                            m_compiler->compile(cu,
-                                [this, &cu](int, const std::string&, const std::string&) { updateDependencies(cu); });
-                        } else {
-                            m_context->listener->onLog(
-                                LogSeverity::kError, "Cannot find dependency cu for " + filepath);
-                        }
-                    }
-                } else {
-                    std::vector<std::string> addedCompilationUnits;
-                    std::vector<std::string> modifiedCompilationUnits;
-                    std::vector<std::string> removedCompilationUnits;
-                    auto changed = m_context->compilationUnitsParser->updateCompilationUnits(m_context.get(),
-                        fullPath,
-                        &addedCompilationUnits,
-                        &modifiedCompilationUnits,
-                        &removedCompilationUnits);
-
-                    if (changed) {
-                        // Compiling all new and modified CUs
-                        for (const auto& cuList : {addedCompilationUnits, modifiedCompilationUnits}) {
-                            for (const auto& cuPath : cuList) {
-                                auto foundCu = m_context->compilationUnits.find(cuPath);
-                                if (foundCu != m_context->compilationUnits.end()) {
-                                    auto& cu = foundCu->second;
-                                    m_compiler->compile(cu, [this, &cu](int, const std::string&, const std::string&) {
-                                        updateDependencies(cu);
-                                    });
-                                } else {
-                                    m_context->listener->onLog(LogSeverity::kError, "Cannot find cu for " + cuPath);
-                                }
-                            }
-                        }
-
-                        // Removing removed CUs from everywhere
-                        for (const auto& cuPath : removedCompilationUnits) {
-                            m_compiler->remove(cuPath);
-
-                            for (const auto& oldDep : m_context->dependencies[cuPath]) {
-                                m_context->inverseDependencies[oldDep].erase(cuPath);
-                            }
-                            m_context->dependencies.erase(cuPath);
-                        }
-
-                        // Setting up file watcher from scratch
-                        // We should do it after some time to let current file watcher
-                        // to release its' stuff
-                        // TODO(ddovod): need better runloop
-                        m_recreateFileWatcherAfterTicks = 10;
-                    }
-                }
-            });
     }
 
     void Live::tryReload()
@@ -302,5 +188,134 @@ namespace jet
         }
 
         return dirs;
+    }
+
+    void Live::loadCompilationUnits()
+    {
+        m_context->listener->onLog(LogSeverity::kInfo, "Parsing compilation commands...");
+        m_context->compilationUnits = m_context->compilationUnitsParser->parseCompilationUnits(m_context.get());
+        if (m_context->compilationUnits.empty()) {
+            m_context->listener->onLog(LogSeverity::kError, "There're no compilation units");
+            return;
+        }
+        m_context->listener->onLog(LogSeverity::kInfo,
+            "Success parsing compilation commands, total " + std::to_string(m_context->compilationUnits.size())
+                + " compilation units");
+    }
+
+    void Live::loadSymbols()
+    {
+        for (const auto& el : m_context->programInfoLoader->getAllLoadedProgramsPaths(m_context.get())) {
+            Program program;
+            program.path = el;
+            program.symbols = m_context->programInfoLoader->getProgramSymbols(m_context.get(), program.path);
+            if (program.symbols.functions.empty() && program.symbols.variables.empty()) {
+                // Program has no symbols, skipping
+                continue;
+            }
+            m_context->listener->onLog(LogSeverity::kInfo,
+                "Symbols loaded: funcs " + std::to_string(program.symbols.functions.size()) + ", vars "
+                    + std::to_string(program.symbols.variables.size()) + ", "
+                    + (el.empty() ? std::string("Self") : el));
+            m_context->programs.push_back(std::move(program));
+        }
+    }
+
+    void Live::loadExportedSymbols()
+    {
+        m_context->listener->onLog(LogSeverity::kInfo, "Loading exported symbols list...");
+        int totalExportedSymbols = 0;
+        int totalFiles = 0;
+        for (const auto& cu : m_context->compilationUnits) {
+            const auto& symNames =
+                m_context->programInfoLoader->getExportedSymbolNames(m_context.get(), cu.second.objFilePath);
+            totalExportedSymbols += symNames.size();
+            totalFiles++;
+            for (const auto& el : symNames) {
+                m_context->exportedSymbolNamesInObjectFiles[el] = cu.second.objFilePath;
+            }
+        }
+        m_context->listener->onLog(LogSeverity::kInfo,
+            "Done, total exported symbols: " + std::to_string(totalExportedSymbols) + " in "
+                + std::to_string(totalFiles) + " files");
+    }
+
+    void Live::loadDependencies()
+    {
+        m_context->listener->onLog(LogSeverity::kInfo, "Parsing dependencies...");
+        for (auto& cu : m_context->compilationUnits) {
+            updateDependencies(cu.second);
+        }
+        m_context->listener->onLog(LogSeverity::kInfo, "Success parsing dependencies");
+    }
+
+    void Live::setupFileWatcher()
+    {
+        m_context->dirsToMonitor = getDirectoriesToMonitor();
+        m_fileWatcher =
+            jet::make_unique<FileWatcher>(m_context->dirsToMonitor, [this](const FileWatcher::Event& event) {
+                // Some IDEs doesn't 'modify' files, they 'move' it, so listening for both actions
+                if (event.action != FileWatcher::Action::kModified && event.action != FileWatcher::Action::kMoved) {
+                    return;
+                }
+
+                auto fullPath = event.directory + event.filename;
+                auto foundDeps = m_context->inverseDependencies.find(fullPath);
+                if (foundDeps != m_context->inverseDependencies.end()) {
+                    for (const auto& filepath : foundDeps->second) {
+                        auto foundCu = m_context->compilationUnits.find(filepath);
+                        if (foundCu != m_context->compilationUnits.end()) {
+                            auto& cu = foundCu->second;
+                            m_compiler->compile(cu,
+                                [this, &cu](int, const std::string&, const std::string&) { updateDependencies(cu); });
+                        } else {
+                            m_context->listener->onLog(
+                                LogSeverity::kError, "Cannot find dependency cu for " + filepath);
+                        }
+                    }
+                } else {
+                    std::vector<std::string> addedCompilationUnits;
+                    std::vector<std::string> modifiedCompilationUnits;
+                    std::vector<std::string> removedCompilationUnits;
+                    auto changed = m_context->compilationUnitsParser->updateCompilationUnits(m_context.get(),
+                        fullPath,
+                        &addedCompilationUnits,
+                        &modifiedCompilationUnits,
+                        &removedCompilationUnits);
+
+                    if (changed) {
+                        // Compiling all new and modified CUs
+                        for (const auto& cuList : {addedCompilationUnits, modifiedCompilationUnits}) {
+                            for (const auto& cuPath : cuList) {
+                                auto foundCu = m_context->compilationUnits.find(cuPath);
+                                if (foundCu != m_context->compilationUnits.end()) {
+                                    auto& cu = foundCu->second;
+                                    m_compiler->compile(cu, [this, &cu](int, const std::string&, const std::string&) {
+                                        updateDependencies(cu);
+                                    });
+                                } else {
+                                    m_context->listener->onLog(LogSeverity::kError, "Cannot find cu for " + cuPath);
+                                }
+                            }
+                        }
+
+                        // Removing removed CUs from everywhere
+                        for (const auto& cuPath : removedCompilationUnits) {
+                            m_compiler->remove(cuPath);
+
+                            for (const auto& oldDep : m_context->dependencies[cuPath]) {
+                                m_context->inverseDependencies[oldDep].erase(cuPath);
+                            }
+                            m_context->dependencies.erase(cuPath);
+                        }
+
+                        // Setting up file watcher from scratch
+                        // We should do it after some time to let current file watcher
+                        // to release its' stuff
+                        // TODO(ddovod): need better runloop
+                        m_recreateFileWatcherAfterTicks = 10;
+                    }
+                }
+            });
     }
 }
