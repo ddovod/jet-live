@@ -185,12 +185,12 @@ namespace jet
                              const std::string& libPath,
                              const std::vector<std::string>& objFilePaths,
                              const std::string&) {
+            m_context->listener->onCodePreLoad();
+
             if (status != 0) {
                 m_context->listener->onCodePostLoad();
                 return;
             }
-
-            m_context->listener->onCodePreLoad();
 
             m_context->listener->onLog(LogSeverity::kInfo, "Opening " + libPath + "...");
             auto libHandle = dlopen(libPath.c_str(), RTLD_NOW | RTLD_GLOBAL);  // NOLINT
