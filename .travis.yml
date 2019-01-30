@@ -40,5 +40,5 @@ script:
   - mkdir build && cd build
   - if [ "$BUILD_TOOL" == "xcodebuild" ]; then cmake -DCMAKE_BUILD_TYPE=Debug -DJET_LIVE_BUILD_TESTS=ON -G Xcode ..; else cmake -DCMAKE_BUILD_TYPE=Debug -DJET_LIVE_BUILD_TESTS=ON ..; fi
   - if [ "$BUILD_TOOL" == "xcodebuild" ]; then xcodebuild -alltargets CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO; else make -j4; fi
-  - ../tools/tests/test_runner.py -b . -s ../tests/src/
+  - if [ "$BUILD_TOOL" == "xcodebuild" ]; then ../tools/tests/test_runner.py -b tests/Debug -s ../tests/src/; else ../tools/tests/test_runner.py -b tests -s ../tests/src/; fi
 

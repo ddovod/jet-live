@@ -113,6 +113,7 @@ namespace jet
                 continue;
             }
             cu.hasColorDiagnosticsFlag = parser[{"-fcolor-diagnostics"}];
+            cu.depFilePath = parser({"-MF"}).str();
 
             TeenyPath::path objFilePath{cu.objFilePath};
             cu.objFilePath = (TeenyPath::path{cu.compilationDirStr} / objFilePath).string();

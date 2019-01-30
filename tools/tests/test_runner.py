@@ -71,7 +71,7 @@ parser.add_argument('-s', '--source_directory',
 args = parser.parse_args()
 sourceDir = os.path.realpath(os.path.expanduser(args.source_directory))
 
-testCmd = [os.path.join(args.build_directory, "tests/tests"),
+testCmd = [os.path.join(args.build_directory, "tests"),
            "--use-colour=yes"]
 print("RUNNER: Running '" + " ".join(testCmd) + "'")
 proc = subprocess.Popen(testCmd,
