@@ -65,7 +65,18 @@ namespace jet
                 line.pop_back();
             }
 
-            deps.insert(TeenyPath::path{line}.resolve_absolute().string());
+            auto found = line.find(' ');
+            if (found == std::string::npos) {
+                deps.insert(TeenyPath::path{line}.resolve_absolute().string());
+            } else {
+                std::size_t prev = 0;
+                while (found != std::string::npos) {
+                    deps.insert(TeenyPath::path{line.substr(prev, found - prev)}.resolve_absolute().string());
+                    prev = found + 1;
+                    found = line.find(' ', prev);
+                }
+                deps.insert(TeenyPath::path{line.substr(prev, found - prev)}.resolve_absolute().string());
+            }
         }
 
         return deps;

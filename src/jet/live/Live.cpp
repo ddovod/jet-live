@@ -38,15 +38,29 @@ namespace jet
 
         m_compiler = jet::make_unique<Compiler>(m_context.get());
 
-        loadCompilationUnits();  // 0.070
-        loadSymbols();           // 0.200
-        loadExportedSymbols();   // 1.200
-        setupFileWatcher();      // 0.150
-        loadDependencies();      // 0.600
+        m_context->listener->onLog(LogSeverity::kInfo, "Initializing...");
+        // The most dumb way to perform initialization in background thread.
+        // TODO(ddovod): rework this pls
+        m_initThread = std::thread([this] {
+            loadCompilationUnits();  // 0.070
+            loadSymbols();           // 0.200
+            loadExportedSymbols();   // 1.200
+            loadDependencies();      // 0.600
+            setupFileWatcher();      // 0.150
+            m_initialized.store(true);
+        });
     }
 
     void Live::update()
     {
+        if (!isInitialized()) {
+            return;
+        }
+        if (m_initThread.joinable()) {
+            m_initThread.join();
+            m_context->listener->onLog(LogSeverity::kInfo, "Ready");
+        }
+
         if (m_recreateFileWatcherAfterTicks == 10) {
             m_fileWatcher.reset();
         }
@@ -56,6 +70,7 @@ namespace jet
         if (m_recreateFileWatcherAfterTicks == 1) {
             setupFileWatcher();
         }
+
         if (m_fileWatcher) {
             m_fileWatcher->update();
         }
@@ -64,8 +79,15 @@ namespace jet
         }
     }
 
+    bool Live::isInitialized() const { return m_initialized; }
+
     void Live::tryReload()
     {
+        if (!isInitialized()) {
+            m_context->listener->onLog(LogSeverity::kWarning, "Initialization is not completed yet");
+            return;
+        }
+
         m_context->listener->onLog(LogSeverity::kInfo, "Trying to reload code...");
         m_compiler->link([this](int status,
                              const std::string& libPath,
@@ -130,8 +152,6 @@ namespace jet
         }
         m_context->dependencies[cu.sourceFilePath] = std::move(cuDeps);
     }
-
-    void Live::printInfo() { m_context->listener->onLog(LogSeverity::kDebug, toString(m_context->linkerType)); }
 
     std::vector<std::string> Live::getDirectoriesToMonitor()
     {

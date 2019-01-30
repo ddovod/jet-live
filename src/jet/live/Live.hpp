@@ -1,8 +1,10 @@
 
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 #include "jet/live/Compiler.hpp"
@@ -22,6 +24,10 @@ namespace jet
     class Live
     {
     public:
+        /**
+         * Initialization is performed in a background thread.
+         *
+         */
         Live(std::unique_ptr<ILiveListener>&& listener = {}, const LiveConfig& config = {});
         ~Live();
 
@@ -39,15 +45,17 @@ namespace jet
         void update();
 
         /**
-         * Prints some info, used mostly for debugging.
+         * Checks if initialization is finished.
          */
-        void printInfo();
+        bool isInitialized() const;
 
     private:
         std::unique_ptr<LiveContext> m_context;
         std::unique_ptr<FileWatcher> m_fileWatcher;
         std::unique_ptr<Compiler> m_compiler;
         int m_recreateFileWatcherAfterTicks = 0;
+        std::thread m_initThread;
+        std::atomic_bool m_initialized{false};
 
         void loadCompilationUnits();
         void loadSymbols();
