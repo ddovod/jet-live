@@ -45,8 +45,7 @@ namespace jet
         // First line is a path to the .o file
         std::getline(f, line);
         while (std::getline(f, line)) {
-            // Moving 2 whitespaces to the end
-            std::rotate(line.begin(), line.begin() + 2, line.end());
+            line.erase(0, line.find_first_not_of(' '));
             bool skip = false;
             for (const auto& dir : context->dirsToMonitor) {
                 if (line.find(dir) == std::string::npos) {
@@ -58,12 +57,7 @@ namespace jet
                 continue;
             }
 
-            line.pop_back();
-            line.pop_back();
-            if (line.back() == '\\') {
-                line.pop_back();
-                line.pop_back();
-            }
+            line.erase(line.find_last_not_of(" \\") + 1);
 
             auto found = line.find(' ');
             if (found == std::string::npos) {
