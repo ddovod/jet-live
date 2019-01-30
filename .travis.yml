@@ -16,6 +16,7 @@ matrix:
         - echo "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main" | sudo tee -a /etc/apt/sources.list
         - sudo apt-get update -qq
         - sudo apt-get install clang-7 lld-7 -y
+
     - os: linux
       compiler: gcc
       dist: xenial
@@ -25,13 +26,19 @@ matrix:
         - CC_FOR_BUILD=gcc
         - CXX_FOR_BUILD=g++
         - LD=ld
+
     - os: osx
       compiler: clang
+
+    - os: osx
+      compiler: clang
+      env:
+        - BUILD_TOOL=xcodebuild
 
 script:
   - if [ "$LD" == "lld-7" ]; then sudo mv /usr/bin/ld /usr/bin/ld.old && sudo ln -s /usr/bin/lld-7 /usr/bin/ld; fi
   - mkdir build && cd build
-  - cmake -DCMAKE_BUILD_TYPE=Debug -DJET_LIVE_BUILD_TESTS=ON ..
-  - make -j4
+  - if [ "$BUILD_TOOL" == "xcodebuild" ]; then cmake -DCMAKE_BUILD_TYPE=Debug -DJET_LIVE_BUILD_TESTS=ON -G Xcode ..; else cmake -DCMAKE_BUILD_TYPE=Debug -DJET_LIVE_BUILD_TESTS=ON ..; fi
+  - if [ "$BUILD_TOOL" == "xcodebuild" ]; then xcodebuild -alltargets CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO; else make -j4; fi
   - ../tools/tests/test_runner.py -b . -s ../tests/src/
 
