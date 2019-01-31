@@ -115,7 +115,7 @@ namespace jet
             m_context->listener->onLog(LogSeverity::kInfo, "Symbols loaded");
 
             m_context->listener->onLog(LogSeverity::kInfo, "Loading exported symbols list...");
-            int totalExportedSymbols = 0;
+            size_t totalExportedSymbols = 0;
             int totalFiles = 0;
             for (const auto& filepath : objFilePaths) {
                 const auto& symNames = m_context->programInfoLoader->getExportedSymbolNames(m_context.get(), filepath);
@@ -247,7 +247,7 @@ namespace jet
     void Live::loadExportedSymbols()
     {
         m_context->listener->onLog(LogSeverity::kDebug, "Loading exported symbols list...");
-        int totalExportedSymbols = 0;
+        size_t totalExportedSymbols = 0;
         int totalFiles = 0;
         for (const auto& cu : m_context->compilationUnits) {
             const auto& symNames =
