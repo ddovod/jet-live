@@ -178,6 +178,7 @@ target_sources(jet-live
   src/jet/live/FunctionsHookingStep.cpp
   src/jet/live/StaticsCopyStep.cpp
   src/jet/live/SignalReloader.cpp
+  src/jet/live/AsyncEventQueue.cpp
   )
 if (UNIX AND NOT APPLE)
   target_sources(jet-live

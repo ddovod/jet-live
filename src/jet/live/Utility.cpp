@@ -232,7 +232,7 @@ namespace jet
 
         if (procOut.find("LLD") != std::string::npos) {
             if (procOut.find("6.0") != std::string::npos) {
-                context->listener->onLog(LogSeverity::kWarning,
+                context->events->addLog(LogSeverity::kWarning,
                     "You're using LLD 6.0, it has bugs and some features could work bad. Please update lld.");
                 return LinkerType::kLLVM_lld6;
             }
@@ -245,7 +245,7 @@ namespace jet
             return LinkerType::kApple_ld;
         }
 
-        context->listener->onLog(LogSeverity::kError, "Cannot find out linker type: \n" + procOut);
+        context->events->addLog(LogSeverity::kError, "Cannot find out linker type: \n" + procOut);
         return LinkerType::kUnknown;
     }
 

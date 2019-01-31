@@ -8,7 +8,7 @@ namespace jet
 {
     void FunctionsHookingStep::reload(LiveContext* context, Program* newProgram)
     {
-        context->listener->onLog(LogSeverity::kInfo, "Hooking functions...");
+        context->events->addLog(LogSeverity::kDebug, "Hooking functions...");
 
         auto totalFunctions = getTotalFunctions(newProgram->symbols);
         size_t hookedFunctions = 0;
@@ -29,7 +29,7 @@ namespace jet
                 auto newFuncPtr = reinterpret_cast<void*>(sym.runtimeAddress);
                 auto hook = subhook_new(oldFuncPtr, newFuncPtr, SUBHOOK_64BIT_OFFSET);
                 if (auto subhookStatus = subhook_install(hook)) {
-                    context->listener->onLog(LogSeverity::kError,
+                    context->events->addLog(LogSeverity::kError,
                         "Cannot hook function: " + sym.name + ", status " + std::to_string(subhookStatus));
                 } else {
                     hookedFunctions++;
@@ -37,7 +37,7 @@ namespace jet
             }
         }
 
-        context->listener->onLog(LogSeverity::kInfo,
+        context->events->addLog(LogSeverity::kDebug,
             "Done, hooked: " + std::to_string(hookedFunctions) + "/" + std::to_string(totalFunctions));
     }
 }

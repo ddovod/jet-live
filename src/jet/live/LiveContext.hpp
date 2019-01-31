@@ -4,6 +4,7 @@
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
+#include "jet/live/AsyncEventQueue.hpp"
 #include "jet/live/CodeReloadPipeline.hpp"
 #include "jet/live/ICompilationUnitsParser.hpp"
 #include "jet/live/IDependenciesHandler.hpp"
@@ -39,6 +40,9 @@ namespace jet
 
         /** Current code reload pipeline. */
         std::unique_ptr<CodeReloadPipeline> codeReloadPipeline;
+
+        /** Event queue. */
+        std::unique_ptr<AsyncEventQueue> events;
 
         /**
          * All programs which are living in the address space if this process (executables

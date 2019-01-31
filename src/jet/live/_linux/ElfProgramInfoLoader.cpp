@@ -77,7 +77,7 @@ namespace jet
         ELFIO::elfio elfFile;
         std::string realFilepath = filepath.empty() ? context->thisExecutablePath : filepath;
         if (!elfFile.load(realFilepath)) {
-            context->listener->onLog(LogSeverity::kError, "Cannot load " + realFilepath + " file");
+            context->events->addLog(LogSeverity::kError, "Cannot load " + realFilepath + " file");
             return res;
         }
 
@@ -173,7 +173,7 @@ namespace jet
         for (const auto& el : objFilePaths) {
             ELFIO::elfio elfFile;
             if (!elfFile.load(el)) {
-                context->listener->onLog(LogSeverity::kError, "Cannot load " + el + " file");
+                context->events->addLog(LogSeverity::kError, "Cannot load " + el + " file");
                 continue;
             }
 
@@ -316,7 +316,7 @@ namespace jet
                             case R_X86_64_PC16:     // 16,      S + A – P
                             case R_X86_64_GOTPC32:  // 32,      GOT + A – P
                             case R_X86_64_PLT32:    // 32,      L + A – P
-                                context->listener->onLog(
+                                context->events->addLog(
                                     LogSeverity::kError, "Relocation " + relToString(type) + " is not implemented");
                                 continue;
 
@@ -335,14 +335,14 @@ namespace jet
                             case R_X86_64_GOTOFF64:   // 64,      S + A – GOT
                             case R_X86_64_SIZE32:     // 32,      Z + A
                             case R_X86_64_SIZE64:     // 64,      Z + A
-                                context->listener->onLog(LogSeverity::kError,
+                                context->events->addLog(LogSeverity::kError,
                                     "Relocation " + relToString(type) + " is not possible in PIC code");
                                 continue;
                         }
 
                         auto symFound = symbolsInSections[sectionIndex].find(symRelAddr);
                         if (symFound == symbolsInSections[sectionIndex].end()) {
-                            context->listener->onLog(LogSeverity::kError, "WTF");
+                            context->events->addLog(LogSeverity::kError, "WTF");
                             continue;
                         }
 
@@ -352,7 +352,7 @@ namespace jet
                         }
                         if (found->second.virtualAddress > offset
                             || offset >= found->second.virtualAddress + found->second.size) {
-                            context->listener->onLog(LogSeverity::kError, "WTF1");
+                            context->events->addLog(LogSeverity::kError, "WTF1");
                             continue;
                         }
 
@@ -378,7 +378,7 @@ namespace jet
         ELFIO::elfio elfFile;
         std::string realFilepath = filepath.empty() ? context->thisExecutablePath : filepath;
         if (!elfFile.load(realFilepath)) {
-            context->listener->onLog(LogSeverity::kError, "Cannot load " + realFilepath + " file");
+            context->events->addLog(LogSeverity::kError, "Cannot load " + realFilepath + " file");
             return res;
         }
 
@@ -416,7 +416,7 @@ namespace jet
         ELFIO::elfio elfFile;
         std::string realFilepath = filepath.empty() ? context->thisExecutablePath : filepath;
         if (!elfFile.load(realFilepath)) {
-            context->listener->onLog(LogSeverity::kError, "Cannot load " + realFilepath + " file");
+            context->events->addLog(LogSeverity::kError, "Cannot load " + realFilepath + " file");
             return res;
         }
 
