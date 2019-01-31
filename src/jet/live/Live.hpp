@@ -64,5 +64,7 @@ namespace jet
         void setupFileWatcher();
         void updateDependencies(CompilationUnit& cu);
         std::vector<std::string> getDirectoriesToMonitor();
+
+        void onFileChanged(const std::string& filepath);
     };
 }

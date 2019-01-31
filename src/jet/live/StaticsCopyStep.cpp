@@ -8,7 +8,7 @@ namespace jet
 {
     void StaticsCopyStep::reload(LiveContext* context, Program* newProgram)
     {
-        context->listener->onLog(LogSeverity::kInfo, "Copying statics from old code to new one...");
+        context->events->addLog(LogSeverity::kDebug, "Copying statics from old code to new one...");
 
         auto totalVars = getTotalVariables(newProgram->symbols);
         size_t copiedVars = 0;
@@ -36,7 +36,7 @@ namespace jet
             }
         }
 
-        context->listener->onLog(
-            LogSeverity::kInfo, "Done, copied: " + std::to_string(copiedVars) + "/" + std::to_string(totalVars));
+        context->events->addLog(
+            LogSeverity::kDebug, "Done, copied: " + std::to_string(copiedVars) + "/" + std::to_string(totalVars));
     }
 }

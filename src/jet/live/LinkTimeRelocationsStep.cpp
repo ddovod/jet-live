@@ -9,7 +9,7 @@ namespace jet
 {
     void LinkTimeRelocationsStep::reload(LiveContext* context, Program* newProgram)
     {
-        context->listener->onLog(LogSeverity::kInfo, "Loading link-time relocations...");
+        context->events->addLog(LogSeverity::kDebug, "Loading link-time relocations...");
 
         const auto& relocs = context->programInfoLoader->getLinkTimeRelocations(context, newProgram->objFilePaths);
         auto totalRelocs = relocs.size();
@@ -19,7 +19,7 @@ namespace jet
             const Symbol* targetSymbol =
                 findFunction(newProgram->symbols, reloc.targetSymbolName, reloc.targetSymbolHash);
             if (!targetSymbol) {
-                context->listener->onLog(LogSeverity::kError,
+                context->events->addLog(LogSeverity::kError,
                     "targetSymbol not found: " + reloc.targetSymbolName + " " + std::to_string(reloc.targetSymbolHash));
                 continue;
             }
@@ -27,7 +27,7 @@ namespace jet
             const Symbol* relocSymbol =
                 findVariable(newProgram->symbols, reloc.relocationSymbolName, reloc.relocationSymbolHash);
             if (!relocSymbol) {
-                context->listener->onLog(LogSeverity::kError,
+                context->events->addLog(LogSeverity::kError,
                     "relocSymbol not found: " + reloc.relocationSymbolName + " "
                         + std::to_string(reloc.relocationSymbolHash));
                 continue;
@@ -53,11 +53,11 @@ namespace jet
             } else if (reloc.size == 8) {
                 maxAllowedDistance = std::numeric_limits<int64_t>::max();
             } else {
-                context->listener->onLog(LogSeverity::kError, "LinkTimeRelocationsStep: WTF");
+                context->events->addLog(LogSeverity::kError, "LinkTimeRelocationsStep: WTF");
                 continue;
             }
             if (distance > maxAllowedDistance) {
-                context->listener->onLog(LogSeverity::kWarning,
+                context->events->addLog(LogSeverity::kWarning,
                     "Cannot apply relocation for " + relocSymbol->name
                         + ", distance doesn't fit into max allowed distance");
                 continue;
@@ -65,7 +65,7 @@ namespace jet
 
             auto relocAddress = reinterpret_cast<void*>(relocAddressVal);
             if (!unprotect(relocAddress, reloc.size)) {
-                context->listener->onLog(LogSeverity::kError, "'unprotect' failed");
+                context->events->addLog(LogSeverity::kError, "'unprotect' failed");
                 continue;
             }
             if (reloc.size == 4) {
@@ -73,7 +73,7 @@ namespace jet
             } else if (reloc.size == 8) {
                 *reinterpret_cast<int64_t*>(relocAddress) += oldVar->runtimeAddress - relocSymbol->runtimeAddress;
             }
-            context->listener->onLog(LogSeverity::kInfo, relocSymbol->name + " was relocated");
+            context->events->addLog(LogSeverity::kDebug, relocSymbol->name + " was relocated");
 
             relocatedSymbols.push_back(*relocSymbol);
             appliedRelocs++;
@@ -92,7 +92,7 @@ namespace jet
             }
         }
 
-        context->listener->onLog(LogSeverity::kInfo,
+        context->events->addLog(LogSeverity::kDebug,
             "Done, relocated: " + std::to_string(appliedRelocs) + "/" + std::to_string(totalRelocs));
     }
 }

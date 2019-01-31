@@ -48,7 +48,7 @@ namespace jet
             }
         }
         if (!found) {
-            context->listener->onLog(LogSeverity::kError, "Cannot find address slide of image " + realFilepath);
+            context->events->addLog(LogSeverity::kError, "Cannot find address slide of image " + realFilepath);
             return res;
         }
 
@@ -66,7 +66,7 @@ namespace jet
         auto header = reinterpret_cast<mach_header_64*>(content.get());
         if (header->magic != MH_MAGIC_64) {
             // Probably it is some system "fat" library, we're not interested in it
-            // context->listener->onLog(LogSeverity::kError, "Cannot read symbols, not a Mach-O 64 binary");
+            // context->events->addLog(LogSeverity::kError, "Cannot read symbols, not a Mach-O 64 binary");
             return res;
         }
 
@@ -237,7 +237,7 @@ namespace jet
                             if (addrFound != symbolsBounds[machoSymbol.sectionIndex].end()) {
                                 machoSymbol.size = *addrFound - machoSymbol.virtualAddress;
                             } else {
-                                context->listener->onLog(LogSeverity::kDebug, "wtf?");
+                                context->events->addLog(LogSeverity::kDebug, "wtf?");
                             }
                         }
 
@@ -285,7 +285,7 @@ namespace jet
             auto header = reinterpret_cast<mach_header_64*>(content.get());
             if (header->magic != MH_MAGIC_64) {
                 // Probably it is some system "fat" library, we're not interested in it
-                // context->listener->onLog(LogSeverity::kError, "Cannot read symbols, not a Mach-O 64 binary");
+                // context->events->addLog(LogSeverity::kError, "Cannot read symbols, not a Mach-O 64 binary");
                 return res;
             }
 
@@ -472,7 +472,7 @@ namespace jet
                                 if (addrFound != symbolsBounds[machoSymbol.sectionIndex].end()) {
                                     machoSymbol.size = *addrFound - machoSymbol.virtualAddress;
                                 } else {
-                                    context->listener->onLog(LogSeverity::kDebug, "wtf?");
+                                    context->events->addLog(LogSeverity::kDebug, "wtf?");
                                 }
                             }
 
@@ -518,13 +518,13 @@ namespace jet
                                     case 2: rel.size = 4; break;
                                     case 3: rel.size = 8; break;
                                     default:
-                                        context->listener->onLog(LogSeverity::kError,
+                                        context->events->addLog(LogSeverity::kError,
                                             "Unsupported relocation length: " + std::to_string(reloc.r_length));
                                         continue;
                                 }
 
                                 if (!reloc.r_pcrel) {
-                                    context->listener->onLog(LogSeverity::kDebug, "reloc.r_pcrel == 0");
+                                    context->events->addLog(LogSeverity::kDebug, "reloc.r_pcrel == 0");
                                     continue;
                                 }
 
@@ -543,7 +543,7 @@ namespace jet
                                     case X86_64_RELOC_GOT:         // other GOT references
                                     case X86_64_RELOC_SUBTRACTOR:  // must be followed by a X86_64_RELOC_UNSIGNED
                                     case X86_64_RELOC_TLV:         // for thread local variables
-                                        context->listener->onLog(LogSeverity::kError,
+                                        context->events->addLog(LogSeverity::kError,
                                             "Unsupported relocation type: " + relToString(reloc.r_type));
                                         continue;
                                 }
@@ -556,7 +556,7 @@ namespace jet
                                 }
                                 if (found->second.virtualAddress > relocAddr
                                     || relocAddr >= found->second.virtualAddress + found->second.size) {
-                                    context->listener->onLog(LogSeverity::kError, "WTF1");
+                                    context->events->addLog(LogSeverity::kError, "WTF1");
                                     continue;
                                 }
 
@@ -597,7 +597,7 @@ namespace jet
         auto header = reinterpret_cast<mach_header_64*>(content.get());
         if (header->magic != MH_MAGIC_64) {
             // Probably it is some system "fat" library, we're not interested in it
-            // context->listener->onLog(LogSeverity::kError, "Cannot read symbols, not a Mach-O 64 binary");
+            // context->events->addLog(LogSeverity::kError, "Cannot read symbols, not a Mach-O 64 binary");
             return res;
         }
 
@@ -644,7 +644,7 @@ namespace jet
         auto header = reinterpret_cast<mach_header_64*>(content.get());
         if (header->magic != MH_MAGIC_64) {
             // Probably it is some system "fat" library, we're not interested in it
-            // context->listener->onLog(LogSeverity::kError, "Cannot read symbols, not a Mach-O 64 binary");
+            // context->events->addLog(LogSeverity::kError, "Cannot read symbols, not a Mach-O 64 binary");
             return res;
         }
 

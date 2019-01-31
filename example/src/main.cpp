@@ -48,7 +48,9 @@ int main()
 
     while (!live->isInitialized()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        live->update();
     }
+    live->update();
 
     // Polling input in background
     std::thread inputThread{[] {

@@ -31,13 +31,13 @@ namespace jet
         }
 
         if (cu.depFilePath.empty()) {
-            context->listener->onLog(LogSeverity::kWarning, "Empty depfile path for cu: " + cu.sourceFilePath);
+            context->events->addLog(LogSeverity::kWarning, "Empty depfile path for cu: " + cu.sourceFilePath);
             return deps;
         }
 
         std::ifstream f{cu.depFilePath};
         if (!f.is_open()) {
-            context->listener->onLog(LogSeverity::kWarning, "Cannot open depfile: " + cu.depFilePath);
+            context->events->addLog(LogSeverity::kWarning, "Cannot open depfile: " + cu.depFilePath);
             return deps;
         }
 
