@@ -12,7 +12,7 @@ TEST_CASE("Bug caused by modifying some source file during code reload process",
     int v2 = 7;
     int sum = v1 + v2;
     int mul = v1 * v2;
-    int diff = v1 * v2;
+    int diff = v1 - v2;
     int div = v1 / v2;
 
     REQUIRE(mfdrComputeResult(v1, v2) == sum);
