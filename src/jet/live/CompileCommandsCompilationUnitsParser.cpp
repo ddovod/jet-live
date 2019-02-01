@@ -16,7 +16,7 @@ namespace jet
     {
         auto probablyDbPath = getCompileCommandsPath(context);
         if (!probablyDbPath.exists()) {
-            context->listener->onLog(
+            context->events->addLog(
                 LogSeverity::kError, "Cannot find 'compile_commands.json' path at " + probablyDbPath.string());
             return {};
         }
@@ -35,7 +35,7 @@ namespace jet
             return false;
         }
 
-        context->listener->onLog(LogSeverity::kInfo, "Updating compilation units...");
+        context->events->addLog(LogSeverity::kInfo, "Updating compilation units...");
 
         auto oldCompilationUnits = context->compilationUnits;
         auto newCompilationUnits = parseCompilationUnitsInternal(context, m_compileCommandsPath);
@@ -58,7 +58,7 @@ namespace jet
 
         context->compilationUnits = newCompilationUnits;
 
-        context->listener->onLog(LogSeverity::kInfo,
+        context->events->addLog(LogSeverity::kInfo,
             "ADDED: " + std::to_string(addedCompilationUnits->size())
                 + ", MODIFIED: " + std::to_string(modifiedCompilationUnits->size())
                 + ", REMOVED: " + std::to_string(removedCompilationUnits->size()));
@@ -77,10 +77,10 @@ namespace jet
 
         // Parsing `compile_commands.json`
         auto probablyDbPath = filepath;
-        context->listener->onLog(LogSeverity::kInfo, "Reading `compile_commands.json` from " + probablyDbPath.string());
+        context->events->addLog(LogSeverity::kDebug, "Reading `compile_commands.json` from " + probablyDbPath.string());
         std::ifstream f{probablyDbPath.string()};
         if (!f.is_open()) {
-            context->listener->onLog(
+            context->events->addLog(
                 LogSeverity::kError, "Cannot open 'compile_commands.json' at " + probablyDbPath.string());
             return res;
         }
@@ -108,7 +108,7 @@ namespace jet
                 static_cast<int>(result.we_wordc), result.we_wordv, argh::parser::PREFER_PARAM_FOR_UNREG_OPTION);
             cu.objFilePath = parser({"-o", "--output"}).str();
             if (cu.objFilePath.empty()) {
-                context->listener->onLog(
+                context->events->addLog(
                     LogSeverity::kWarning, "Cannot find object file path, skipping: " + cu.sourceFilePath);
                 continue;
             }

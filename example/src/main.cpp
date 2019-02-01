@@ -46,6 +46,12 @@ int main()
     config.workerThreadsCount = 2;
     auto live = jet::make_unique<jet::Live>(std::move(listener), config);
 
+    while (!live->isInitialized()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        live->update();
+    }
+    live->update();
+
     // Polling input in background
     std::thread inputThread{[] {
         std::string command;
@@ -61,6 +67,9 @@ int main()
     // Simple 60hz runloop
     std::cout << "Enter command" << std::endl << "Available commands: 'exit', 'reload', 'hello'" << std::endl;
     while (g_runloopContinue) {
+        live->update();
+        std::this_thread::sleep_for(std::chrono::milliseconds(16));
+
         auto cmd = getNextCommand();
         if (!cmd.empty()) {
             if (cmd == "reload") {
@@ -71,9 +80,6 @@ int main()
                 std::cout << g_commandInterpreter->runCommand(cmd) << std::endl;
             }
         }
-
-        live->update();
-        std::this_thread::sleep_for(std::chrono::milliseconds(16));
     }
 
     std::cout << "Press enter" << std::endl;

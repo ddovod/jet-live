@@ -32,7 +32,7 @@ namespace jet
                 if (status == 0) {
                     m_readyCompilationUnits[el.second.cuOrLibFilepath] = {
                         el.second.cuOrLibFilepath, el.second.objFilepath};
-                    m_context->listener->onLog(LogSeverity::kInfo, "Success: " + el.second.filename);
+                    m_context->events->addLog(LogSeverity::kInfo, "Success: " + el.second.filename);
                 } else {
                     std::string message = "Failed: " + el.second.filename;
                     if (el.second.hasColorDiagnosticsFlag) {
@@ -42,7 +42,7 @@ namespace jet
                         message += "\n";
                     }
                     message += el.second.errMessage;
-                    m_context->listener->onLog(LogSeverity::kWarning, message);
+                    m_context->events->addLog(LogSeverity::kWarning, std::move(message));
                 }
 
                 tasksToRemove.push_back(el.first);
@@ -72,10 +72,10 @@ namespace jet
             int status = 0;
             if (m_runningLinkTask->process->try_get_exit_status(status)) {
                 if (status != 0) {
-                    m_context->listener->onLog(LogSeverity::kWarning,
+                    m_context->events->addLog(LogSeverity::kWarning,
                         "Link failed: " + m_runningLinkTask->cuOrLibFilepath + "\n" + m_runningLinkTask->errMessage);
                 } else {
-                    m_context->listener->onLog(LogSeverity::kInfo, "Linked successfully");
+                    m_context->events->addLog(LogSeverity::kInfo, "Linked successfully");
                 }
 
                 std::vector<std::string> objFilePaths;
@@ -165,7 +165,7 @@ namespace jet
         std::function<void(int, const std::string&, const std::string&)>&& finishCallback)
     {
         auto filename = TeenyPath::path{cu.sourceFilePath}.filename();
-        m_context->listener->onLog(LogSeverity::kInfo, "Compiling: " + filename);
+        m_context->events->addLog(LogSeverity::kInfo, "Compiling: " + filename);
 
         Task task;
         task.filename = filename;
@@ -196,10 +196,10 @@ namespace jet
             finishCallback)
     {
         if (m_readyCompilationUnits.empty()) {
-            m_context->listener->onLog(LogSeverity::kInfo, "Nothing to reload.");
+            m_context->events->addLog(LogSeverity::kInfo, "Nothing to reload.");
             return;
         }
-        m_context->listener->onLog(LogSeverity::kInfo, "Linking...");
+        m_context->events->addLog(LogSeverity::kInfo, "Linking...");
 
         std::vector<std::string> objectFilePaths;
         std::string libName = "lib_reload" + std::to_string(m_currentLibIndex++) + ".so";
@@ -255,4 +255,6 @@ namespace jet
         assert(!m_runningLinkTask);
         m_runningLinkTask = jet::make_unique<Task>(std::move(task));
     }
+
+    bool Compiler::isLinking() const { return static_cast<bool>(m_runningLinkTask); }
 }

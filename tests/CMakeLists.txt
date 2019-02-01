@@ -49,6 +49,7 @@ target_sources(tests
   src/utility/ExternGlobalVariableAddress.cpp
   src/utility/CommonSection.c
   src/utility/ReloadOnSignal.cpp
+  src/utility/ModifyFileDuringReload.cpp
 
   src/good/ClassInstanceMethod_test.cpp
   src/good/CommonSection_test.cpp
@@ -73,6 +74,7 @@ target_sources(tests
   src/good/ExternGlobalVariable_test.cpp
   src/good/StaticFunctionLocalVariable_test.cpp
   src/good/ReloadOnSignal_test.cpp
+  src/good/ModifyFileDuringReload_test.cpp
 
   src/bad/LambdaFunctionWithCapturesBadCase2_test.cpp
   src/bad/LambdaFunctionWithCapturesBadCase_test.cpp

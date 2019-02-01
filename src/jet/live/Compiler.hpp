@@ -51,6 +51,11 @@ namespace jet
          */
         void remove(const std::string& compilationUnitPath);
 
+        /**
+         * Checks if a linking process is running now.
+         */
+        bool isLinking() const;
+
     private:
         const LiveContext* m_context;
         struct Task

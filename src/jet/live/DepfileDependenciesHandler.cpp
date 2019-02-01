@@ -31,13 +31,13 @@ namespace jet
         }
 
         if (cu.depFilePath.empty()) {
-            context->listener->onLog(LogSeverity::kWarning, "Empty depfile path for cu: " + cu.sourceFilePath);
+            context->events->addLog(LogSeverity::kWarning, "Empty depfile path for cu: " + cu.sourceFilePath);
             return deps;
         }
 
         std::ifstream f{cu.depFilePath};
         if (!f.is_open()) {
-            context->listener->onLog(LogSeverity::kWarning, "Cannot open depfile: " + cu.depFilePath);
+            context->events->addLog(LogSeverity::kWarning, "Cannot open depfile: " + cu.depFilePath);
             return deps;
         }
 
@@ -45,8 +45,7 @@ namespace jet
         // First line is a path to the .o file
         std::getline(f, line);
         while (std::getline(f, line)) {
-            // Moving 2 whitespaces to the end
-            std::rotate(line.begin(), line.begin() + 2, line.end());
+            line.erase(0, line.find_first_not_of(' '));
             bool skip = false;
             for (const auto& dir : context->dirsToMonitor) {
                 if (line.find(dir) == std::string::npos) {
@@ -58,14 +57,20 @@ namespace jet
                 continue;
             }
 
-            line.pop_back();
-            line.pop_back();
-            if (line.back() == '\\') {
-                line.pop_back();
-                line.pop_back();
-            }
+            line.erase(line.find_last_not_of(" \\") + 1);
 
-            deps.insert(TeenyPath::path{line}.resolve_absolute().string());
+            auto found = line.find(' ');
+            if (found == std::string::npos) {
+                deps.insert(TeenyPath::path{line}.resolve_absolute().string());
+            } else {
+                std::size_t prev = 0;
+                while (found != std::string::npos) {
+                    deps.insert(TeenyPath::path{line.substr(prev, found - prev)}.resolve_absolute().string());
+                    prev = found + 1;
+                    found = line.find(' ', prev);
+                }
+                deps.insert(TeenyPath::path{line.substr(prev, found - prev)}.resolve_absolute().string());
+            }
         }
 
         return deps;

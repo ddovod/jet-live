@@ -13,7 +13,8 @@ void ExampleListener::onLog(jet::LogSeverity severity, const std::string& messag
 {
     std::string severityString;
     switch (severity) {
-        case jet::LogSeverity::kDebug: severityString.append("[D]"); break;
+        // Skipping debug messages, they are too verbose
+        case jet::LogSeverity::kDebug: return;  // severityString.append("[D]"); break;
         case jet::LogSeverity::kInfo: severityString.append("[I]"); break;
         case jet::LogSeverity::kWarning: severityString.append("[W]"); break;
         case jet::LogSeverity::kError: severityString.append("[E]"); break;
