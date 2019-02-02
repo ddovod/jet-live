@@ -48,6 +48,11 @@ Personally I use it like this. I have a `Ctrl+r` shortcut to which `tryReload` i
 
 **jet-live** will monitor for file changes, recompile changed files and only when `tryReload` is called it will wait for all current compilation processes to finish and reload new code. Please don't call `tryReload` on each update, it will not work as you're expecting, call it only when your source code is ready to be reloaded.
 
+On macOS you can use `cmake -G Xcode` generator apart from make and ninja. In this case please install `xcpretty` gem:
+```
+gem install xcpretty
+```
+
 ### Example
 There's a simple example app, just run:
 ```sh
