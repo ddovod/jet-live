@@ -23,6 +23,7 @@ namespace jet
 
     protected:
         TeenyPath::path m_compileCommandsPath;
+        TeenyPath::path m_pbxProjPath;
         std::unique_ptr<TinyProcessLib::Process> m_runningProcess;
 
         std::unordered_map<std::string, CompilationUnit> parseCompilationUnitsInternal(const LiveContext* context,

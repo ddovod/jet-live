@@ -41,15 +41,11 @@ namespace jet
             return false;
         }
 
-        if (isXcodeProject()) {
-            // Not supported yet
-            // TODO(ddovod)
-            context->events->addLog(LogSeverity::kDebug, "New CUs for Xcode projects are not supported");
+        if (isXcodeProject() && m_pbxProjPath == path.resolve_absolute()) {
+            createCompileCommandsJsonFromXcodeProject(context, false);
             return false;
-        } else {
-            if (!(m_compileCommandsPath == path.resolve_absolute())) {
-                return false;
-            }
+        } else if (!(m_compileCommandsPath == path.resolve_absolute())) {
+            return false;
         }
 
         context->events->addLog(LogSeverity::kInfo, "Updating compilation units...");
@@ -184,6 +180,7 @@ namespace jet
             return;
         }
 
+        m_pbxProjPath = xcodeProjectPath / "project.pbxproj";
         auto xcodeProjectName = xcodeProjectPath.filename();
         auto xcodeProjectDir = xcodeProjectPath.parent_path().string();
 
