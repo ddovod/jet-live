@@ -148,6 +148,21 @@ target_include_directories(lib_argh
   libs/argh/include
   )
 
+########## lib_xxhash
+add_library(lib_xxhash STATIC "")
+target_sources(lib_xxhash
+  PRIVATE
+  libs/xxHash/xxhash.c
+  )
+target_include_directories(lib_xxhash
+  PUBLIC
+  libs/xxHash
+  )
+set_target_properties(lib_xxhash
+  PROPERTIES
+  CXX_STANDARD 11
+  )
+
 if (UNIX AND NOT APPLE)
   ########## lib_elfio
   add_library(lib_elfio INTERFACE)
@@ -166,6 +181,7 @@ if (JET_LIVE_SHARED)
   target_compile_options(lib_efsw PRIVATE $<$<COMPILE_LANGUAGE:C>:-fPIC> $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
   target_compile_options(lib_tiny-process-library PRIVATE $<$<COMPILE_LANGUAGE:C>:-fPIC> $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
   target_compile_options(lib_teenypath PRIVATE $<$<COMPILE_LANGUAGE:C>:-fPIC> $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
+  target_compile_options(lib_xxhash PRIVATE $<$<COMPILE_LANGUAGE:C>:-fPIC> $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
 else()
   add_library(jet-live STATIC "")
 endif()
@@ -212,6 +228,7 @@ target_link_libraries(jet-live
   lib_teenypath
   lib_json
   lib_argh
+  lib_xxhash
   dl
   Threads::Threads
   )

@@ -12,15 +12,7 @@ Tested on Ubuntu 18.04 with clang 6.0.1/7.0.1, lld-7, gcc 6.4.0/7.3.0, GNU ld 2.
 If you need something similar for windows, please try [blink](https://github.com/crosire/blink), I have no plans to support windows.
 
 ### Prerequisites
-You need `c++11` compliant compiler. Also there're several dependencies which are bundled in:
-- `nlohmann json` (header only): needed to parse `compile_commands.json` file
-- `argh` (header only): needed to parse compilation options
-- `teenypath` (1 .h/1 .cpp): needed to deal with filesystem
-- `tiny-process-library` (1 .h/2 .cpp): needed to run compilation processes
-- `efsw` (the only big dependency): needed to watch for source file changes
-- `whereami` (1 .h/1 .cpp): needed to find path to this executable
-- `subhook` (1 .h/2 .c): needed for function hooking
-- `ELFIO` (header only, for linux): needed to parse elf headers and sections data
+You need `c++11` compliant compiler. Also there're several dependencies which are bundled in, most of them are header-only or single h/cpp pair library. Please refer to the `lib` directory for details.
 
 ### Getting started
 This library is best suited for projects based on cmake and make or ninja build systems, defaults are fine-tuned for these tools. The CMakeLists.txt will add `set(CMAKE_EXPORT_COMPILE_COMMANDS ON)` option for `compile_commands.json` and alter compiler and linker flags. This is important and not avoidable. For details please see CMakeLists.txt. if you use ninja, add `-d keepdepfile` ninja flag when running ninja, this is needed to track dependencies between source and header files

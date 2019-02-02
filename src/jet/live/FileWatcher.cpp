@@ -1,8 +1,14 @@
 
 #include "FileWatcher.hpp"
 #include <cassert>
+#include <fcntl.h>
 #include <map>
 #include <memory>
+#include <unistd.h>
+#include <xxhash.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "jet/live/Utility.hpp"
 
 namespace jet
@@ -25,8 +31,10 @@ namespace jet
 namespace jet
 {
     FileWatcher::FileWatcher(const std::vector<std::string>& directoriesToWatch,
-        std::function<void(const Event&)>&& callback)
+        std::function<void(const Event&)>&& callback,
+        std::function<bool(const std::string&, const std::string&)>&& filterFunc)
         : m_callback(std::move(callback))
+        , m_filterFunction(std::move(filterFunc))
     {
         m_fileWatcher = jet::make_unique<efsw::FileWatcher>();
         m_fileWatcher->followSymlinks(true);
@@ -38,6 +46,14 @@ namespace jet
                                                             efsw::Action action,
                                                             std::string oldFilename) {
             using namespace std::chrono;
+
+            if (action == efsw::Action::Delete) {
+                return;
+            }
+
+            if (m_filterFunction && !m_filterFunction(dir, filename)) {
+                return;
+            }
 
             static const std::map<efsw::Action, Action> enumMapping = {
                 {efsw::Actions::Add, Action::kAdded},
@@ -56,39 +72,55 @@ namespace jet
             auto now = steady_clock::now();
 
             // Remove obsolete time points
-            struct TimePointKey
-            {
-                Action action;
-                std::string filepath;
-            };
-            std::vector<TimePointKey> timePointsToRemove;
-            for (const auto& el : m_actionTimePoints) {
-                for (const auto& tp : el.second) {
-                    if (now - tp.second > milliseconds(100)) {
-                        timePointsToRemove.push_back({static_cast<Action>(el.first), tp.first});
-                    }
+            std::vector<std::string> timePointsToRemove;
+            for (const auto& tp : m_modificationTimePoints) {
+                if (now - tp.second > milliseconds(100)) {
+                    timePointsToRemove.push_back(tp.first);
                 }
             }
             for (const auto& el : timePointsToRemove) {
-                auto intAction = static_cast<int>(el.action);
-                m_actionTimePoints[intAction].erase(el.filepath);
-                if (m_actionTimePoints[intAction].empty()) {
-                    m_actionTimePoints.erase(intAction);
-                }
+                m_modificationTimePoints.erase(el);
             }
 
             // Checking if new action is "fake" action
             auto fullFilepath = dir + filename;
-            auto found1 = m_actionTimePoints.find(static_cast<int>(foundAction->second));
-            if (found1 != m_actionTimePoints.end()) {
-                auto found2 = found1->second.find(fullFilepath);
-                if (found2 != found1->second.end()) {
-                    // This is a fake action, ignoring
-                    return;
-                }
+            auto found = m_modificationTimePoints.find(fullFilepath);
+            if (found != m_modificationTimePoints.end()) {
+                // This is a fake action, ignoring
+                return;
             }
 
-            m_actionTimePoints[static_cast<int>(foundAction->second)][fullFilepath] = now;
+            // Checking hash of the file
+            int fd = 0;
+            struct stat fdStat;
+            fd = open(fullFilepath.c_str(), O_RDONLY);
+            if (fd != -1) {
+                fstat(fd, &fdStat);
+                auto fileSize = static_cast<size_t>(fdStat.st_size);
+                auto memBlock = mmap(nullptr, fileSize, PROT_READ, MAP_SHARED, fd, 0l);
+                if (memBlock != MAP_FAILED) {
+                    auto hash = XXH64(memBlock, fileSize, 0);
+                    munmap(memBlock, fileSize);
+                    close(fd);
+                    auto hashFound = m_fileHashes.find(fullFilepath);
+                    if (hashFound != m_fileHashes.end() && hashFound->second == hash) {
+                        // File content didn't change
+                        return;
+                    } else if (hashFound == m_fileHashes.end()) {
+                        m_fileHashes[fullFilepath] = hash;
+                    } else {
+                        hashFound->second = hash;
+                    }
+                } else {
+                    // Looks like file doesn't exist right now,
+                    // there will be one more file event, let's wait for it
+                    return;
+                }
+            } else {
+                // Same here, let's wait for the next event
+                return;
+            }
+            m_modificationTimePoints[fullFilepath] = now;
 
             std::lock_guard<std::mutex> lock(m_fileEventsMutex);
             m_fileEvents.push_back({foundAction->second, dir, filename, oldFilename});
