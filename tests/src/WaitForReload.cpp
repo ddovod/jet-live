@@ -12,7 +12,7 @@ void runAfterDelayAndWaitForReload(std::function<void()>&& func, int millisecond
         cont = false;
     });
     while (cont) {
-        if (updatesCount == milliseconds / 10) {
+        if (updatesCount == milliseconds / 100) {
             func();
         }
         g_live->update();
