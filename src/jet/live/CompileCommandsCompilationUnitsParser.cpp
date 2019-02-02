@@ -95,7 +95,13 @@ namespace jet
             cu.compilationDirStr = cmdJson["directory"];
             cu.compilationDirStr = TeenyPath::path(cu.compilationDirStr).resolve_absolute().string();
             cu.sourceFilePath = cmdJson["file"];
-            cu.sourceFilePath = TeenyPath::path(cu.sourceFilePath).resolve_absolute().string();
+            TeenyPath::path sourceFilePath{cu.sourceFilePath};
+            if (!sourceFilePath.is_absolute()) {
+                sourceFilePath = TeenyPath::path{cu.compilationDirStr} / sourceFilePath;
+                cu.sourceFilePath = sourceFilePath.resolve_absolute().string();
+            } else {
+                cu.sourceFilePath = TeenyPath::path(cu.sourceFilePath).resolve_absolute().string();
+            }
 
             wordexp_t result;
             switch (wordexp(cu.compilationCommandStr.c_str(), &result, 0)) {
@@ -116,7 +122,11 @@ namespace jet
             cu.depFilePath = parser({"-MF"}).str();
 
             TeenyPath::path objFilePath{cu.objFilePath};
-            cu.objFilePath = (TeenyPath::path{cu.compilationDirStr} / objFilePath).string();
+            if (objFilePath.is_absolute()) {
+                cu.objFilePath = objFilePath.string();
+            } else {
+                cu.objFilePath = (TeenyPath::path{cu.compilationDirStr} / objFilePath).string();
+            }
 
             cu.compilerPath = parser[0];
             res[cu.sourceFilePath] = cu;
