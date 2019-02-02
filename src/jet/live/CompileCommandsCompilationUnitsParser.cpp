@@ -108,8 +108,8 @@ namespace jet
         for (const auto& cmdJson : dbJson) {
             CompilationUnit cu;
             cu.compilationCommandStr = cmdJson["command"];
-            cu.compilationDirStr = cmdJson["directory"];
-            cu.compilationDirStr = TeenyPath::path(cu.compilationDirStr).resolve_absolute().string();
+            auto dirPath = TeenyPath::path(cmdJson["directory"].get<std::string>()).resolve_absolute();
+            cu.compilationDirStr = dirPath.string();
             cu.sourceFilePath = cmdJson["file"];
             TeenyPath::path sourceFilePath{cu.sourceFilePath};
             if (!sourceFilePath.is_absolute()) {
@@ -172,12 +172,13 @@ namespace jet
     {
         TeenyPath::path xcodeProjectPath;
         for (const auto& el : TeenyPath::ls(TeenyPath::path{getCmakeBuildDirectory()})) {
-            if (el.extension() == "xcodeproj") {
+            auto pathStr = el.string();
+            if (pathStr.substr(pathStr.size() - 9) == "xcodeproj") {
                 xcodeProjectPath = el;
                 break;
             }
         }
-        if (!xcodeProjectPath.exists()) {
+        if (!xcodeProjectPath.string().empty() && !xcodeProjectPath.exists()) {
             context->events->addLog(LogSeverity::kError, "Cannot find Xcode project in " + getCmakeBuildDirectory());
             return;
         }
@@ -193,18 +194,19 @@ namespace jet
 
         // clang-format off
         // A little hack to not "clean" original project
+        const auto fakeXcodeProjectNamePrefix = "ShowMeThatGuyWhoNamesXcodeProjectsLikeThis";
+        const auto fakeXcodeProjectName = fakeXcodeProjectNamePrefix + xcodeProjectName;
         std::string scriptBody;
         scriptBody
-            .append("rm -rf proj_copy && ")
-            .append("mkdir proj_copy && ")
-            .append("cp -R ").append(xcodeProjectName).append(" proj_copy/").append("ShowMeThatGuyWhoNamesXcodeProjectsLikeThis").append(xcodeProjectName).append(" && ")
-            .append("pushd proj_copy && ")
-            .append("xcodebuild -alltargets -dry-run -UseNewBuildSystem=NO | xcpretty -r json-compilation-database -o ../compile_commands.json && ")
-            .append("popd && ")
-            .append("rm -rf proj_copy");
+            .append("rm -rf ").append(fakeXcodeProjectName).append(" && ")
+            .append("cp -R ").append(xcodeProjectName).append(" ").append(fakeXcodeProjectName).append(" && ")
+            .append("xcodebuild -project ").append(fakeXcodeProjectName).append(" -alltargets -dry-run -UseNewBuildSystem=NO | xcpretty -r json-compilation-database -o temp_cdb.json && ")
+            .append("sed 's/").append(fakeXcodeProjectNamePrefix).append("//g' temp_cdb.json > compile_commands.json && ")
+            .append("rm -rf temp_cdb.json ").append(fakeXcodeProjectName);
         // clang-format on
 
-        m_runningProcess = jet::make_unique<TinyProcessLib::Process>(scriptBody, xcodeProjectDir, nullptr, nullptr);
+        m_runningProcess = jet::make_unique<TinyProcessLib::Process>(
+            scriptBody, xcodeProjectDir, [](const char*, size_t) {}, [](const char*, size_t) {});
 
         if (wait) {
             auto exitCode = m_runningProcess->get_exit_status();
