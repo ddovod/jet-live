@@ -44,6 +44,7 @@ namespace jet
         if (isXcodeProject()) {
             // Not supported yet
             // TODO(ddovod)
+            context->events->addLog(LogSeverity::kDebug, "New CUs for Xcode projects are not supported");
             return false;
         } else {
             if (!(m_compileCommandsPath == path.resolve_absolute())) {

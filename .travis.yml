@@ -21,7 +21,7 @@ matrix:
         - mkdir build && cd build
         - cmake -DCMAKE_BUILD_TYPE=Debug -DJET_LIVE_BUILD_TESTS=ON ..
         - make -j4
-        - ../tools/tests/test_runner.py -b tests -s ../tests/src/
+        - ../tools/tests/test_runner.py -b . -d tests -s ../tests
 
 
     - os: linux
@@ -37,7 +37,7 @@ matrix:
         - mkdir build && cd build
         - cmake -DCMAKE_BUILD_TYPE=Debug -DJET_LIVE_BUILD_TESTS=ON ..
         - make -j4
-        - ../tools/tests/test_runner.py -b tests -s ../tests/src/
+        - ../tools/tests/test_runner.py -b . -d tests -s ../tests
 
 
     - os: osx
@@ -46,7 +46,7 @@ matrix:
         - mkdir build && cd build
         - cmake -DCMAKE_BUILD_TYPE=Debug -DJET_LIVE_BUILD_TESTS=ON ..
         - make -j4
-        - ../tools/tests/test_runner.py -b tests -s ../tests/src/
+        - ../tools/tests/test_runner.py -b . -d tests -s ../tests
 
 
     - os: osx
@@ -59,4 +59,4 @@ matrix:
         - mkdir build && cd build
         - cmake -DCMAKE_BUILD_TYPE=Debug -DJET_LIVE_BUILD_TESTS=ON -G Xcode ..
         - xcodebuild -alltargets
-        - ../tools/tests/test_runner.py -b tests/Debug -s ../tests/src/
+        - ../tools/tests/test_runner.py -b . -d tests/Debug -s ../tests
