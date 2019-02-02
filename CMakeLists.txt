@@ -157,6 +157,26 @@ if (UNIX AND NOT APPLE)
     )
 endif()
 
+########## build_config
+add_library(lib_build_config STATIC "")
+target_sources(lib_build_config
+  PRIVATE
+  src/jet/live/BuildConfig.cpp
+  )
+target_include_directories(lib_build_config
+  PUBLIC
+  src/jet/live
+  )
+target_compile_definitions(lib_build_config
+  PRIVATE
+  JET_LIVE_CMAKE_GENERATOR="${CMAKE_GENERATOR}"
+  JET_LIVE_CMAKE_BUILD_DIR="${CMAKE_BINARY_DIR}"
+  )
+set_target_properties(lib_build_config
+  PROPERTIES
+  CXX_STANDARD 11
+  )
+
 ########## jet-live
 if (JET_LIVE_SHARED)
   add_library(jet-live SHARED "")
@@ -166,6 +186,7 @@ if (JET_LIVE_SHARED)
   target_compile_options(lib_efsw PRIVATE $<$<COMPILE_LANGUAGE:C>:-fPIC> $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
   target_compile_options(lib_tiny-process-library PRIVATE $<$<COMPILE_LANGUAGE:C>:-fPIC> $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
   target_compile_options(lib_teenypath PRIVATE $<$<COMPILE_LANGUAGE:C>:-fPIC> $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
+  target_compile_options(lib_build_config PRIVATE $<$<COMPILE_LANGUAGE:C>:-fPIC> $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
 else()
   add_library(jet-live STATIC "")
 endif()
@@ -211,6 +232,7 @@ target_link_libraries(jet-live
   lib_teenypath
   lib_json
   lib_argh
+  lib_build_config
   dl
   Threads::Threads
   )

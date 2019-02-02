@@ -58,6 +58,5 @@ matrix:
       script:
         - mkdir build && cd build
         - cmake -DCMAKE_BUILD_TYPE=Debug -DJET_LIVE_BUILD_TESTS=ON -G Xcode ..
-        - xcodebuild -alltargets -dry-run | xcpretty -r json-compilation-database -o compile_commands.json
         - xcodebuild -alltargets
         - ../tools/tests/test_runner.py -b tests/Debug -s ../tests/src/
