@@ -74,7 +74,7 @@ sourceDir = os.path.realpath(os.path.expanduser(args.source_directory))
 testCmd = [os.path.join(args.build_directory, "tests"),
            "--use-colour=yes"]
 print("RUNNER: Running '" + " ".join(testCmd) + "'")
-proc = subprocess.Popen(testCmd,
+proc = subprocess.Popen(testCmd, shell=True,
                         stdout=subprocess.PIPE)
 
 while proc.poll() is None:
