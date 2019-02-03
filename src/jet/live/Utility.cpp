@@ -298,8 +298,8 @@ namespace jet
     {
         int64_t pagesize;
         pagesize = sysconf(_SC_PAGESIZE);
-        address = reinterpret_cast<void*>(reinterpret_cast<int64_t>(address) & ~(pagesize - 1)); // NOLINT
-        if (mprotect(address, size, PROT_READ | PROT_WRITE | PROT_EXEC) == 0) { // NOLINT
+        address = reinterpret_cast<void*>(reinterpret_cast<int64_t>(address) & ~(pagesize - 1));  // NOLINT
+        if (mprotect(address, size, PROT_READ | PROT_WRITE | PROT_EXEC) == 0) {                   // NOLINT
             return address;
         }
         return nullptr;
