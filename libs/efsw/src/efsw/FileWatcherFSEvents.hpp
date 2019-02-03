@@ -34,8 +34,8 @@ enum FSEventEvents
 	efswFSEventsModified							= efswFSEventStreamEventFlagItemFinderInfoMod	|
 													  efswFSEventStreamEventFlagItemModified		|
 													  efswFSEventStreamEventFlagItemInodeMetaMod	|
-													  efswFSEventStreamEventFlagItemChangeOwner		|
-													  efswFSEventStreamEventFlagItemXattrMod
+                                                                                                          efswFSEventStreamEventFlagItemChangeOwner//		|
+                                                                                                          //efswFSEventStreamEventFlagItemXattrMod
 };
 
 /// Implementation for Win32 based on ReadDirectoryChangesW.
