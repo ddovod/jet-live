@@ -580,7 +580,7 @@ namespace jet
         return res;
     }
 
-    std::vector<std::string> MachoProgramInfoLoader::getUndefinedSymbolNames(const LiveContext* context,
+    std::vector<std::string> MachoProgramInfoLoader::getUndefinedSymbolNames(const LiveContext*,
         const std::string filepath)
     {
         std::vector<std::string> res;
