@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <map>
 #include <memory>
+#include <teenypath.h>
 #include <unistd.h>
 #include <xxhash.h>
 #include <sys/mman.h>
@@ -90,38 +91,37 @@ namespace jet
                 return;
             }
 
-            // Checking hash of the file
-            int fd = 0;
-            struct stat fdStat;
-            fd = open(fullFilepath.c_str(), O_RDONLY);
-            if (fd != -1) {
-                fstat(fd, &fdStat);
-                auto fileSize = static_cast<size_t>(fdStat.st_size);
-                auto memBlock = mmap(nullptr, fileSize, PROT_READ, MAP_SHARED, fd, 0l);
-                if (memBlock != MAP_FAILED) {
-                    auto hash = XXH64(memBlock, fileSize, 0);
-                    munmap(memBlock, fileSize);
-                    close(fd);
-                    auto hashFound = m_fileHashes.find(fullFilepath);
-                    if (hashFound != m_fileHashes.end() && hashFound->second == hash) {
-                        // File content didn't change
-                        return;
-                    } else if (hashFound == m_fileHashes.end()) {
-                        m_fileHashes[fullFilepath] = hash;
-                    } else {
-                        hashFound->second = hash;
-                    }
-                } else {
-                    // Looks like file doesn't exist right now,
-                    // there will be one more file event, let's wait for it
-                    return;
-                }
-            } else {
-                // Same here, let's wait for the next event
-                return;
-            }
-            m_modificationTimePoints[fullFilepath] = now;
+            // // Checking hash of the file
+            // struct stat fdStat;
+            // auto fd = open(fullFilepath.c_str(), O_RDONLY);
+            // if (fd < 0) {
+            //     // Looks like file doesn't exist right now,
+            //     // there will be one more file event, let's wait for it
+            //     return;
+            // } else {
+            //     fstat(fd, &fdStat);
+            //     auto fileSize = static_cast<size_t>(fdStat.st_size);
+            //     auto memBlock = mmap(nullptr, fileSize, PROT_READ, MAP_SHARED, fd, 0l);
+            //     if (memBlock != MAP_FAILED) {
+            //         auto hash = XXH64(memBlock, fileSize, 0);
+            //         munmap(memBlock, fileSize);
+            //         close(fd);
+            //         auto hashFound = m_fileHashes.find(fullFilepath);
+            //         if (hashFound != m_fileHashes.end() && hashFound->second == hash) {
+            //             // File content didn't change
+            //             return;
+            //         } else if (hashFound == m_fileHashes.end()) {
+            //             m_fileHashes[fullFilepath] = hash;
+            //         } else {
+            //             hashFound->second = hash;
+            //         }
+            //     } else {
+            //         // Same here, let's wait for the next event
+            //         return;
+            //     }
+            // }
 
+            m_modificationTimePoints[fullFilepath] = now;
             std::lock_guard<std::mutex> lock(m_fileEventsMutex);
             m_fileEvents.push_back({foundAction->second, dir, filename, oldFilename});
         });
