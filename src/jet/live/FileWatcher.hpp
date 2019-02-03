@@ -34,11 +34,20 @@ namespace jet
             std::string oldFilename;
         };
 
+        /**
+         * \param directoriesToWatch A list of directories to watch.
+         * \param callback Function wich is called when file was modified.
+         * \param filterFunc Function which is called from the background thread,
+         *                   it shoudl check if given file should be processed further.
+         */
         explicit FileWatcher(const std::vector<std::string>& directoriesToWatch,
-            std::function<void(const Event&)>&& callback);
+            std::function<void(const Event&)>&& callback,
+            std::function<bool(const std::string&, const std::string&)>&& filterFunc);
         ~FileWatcher();
 
         void update();
+
+        void setFileFilter(std::function<bool(const std::string&, const std::string&)>&& filterFunc);
 
     private:
         class EfswListener : public efsw::FileWatchListener
@@ -60,7 +69,9 @@ namespace jet
         using time_point_t = std::chrono::time_point<std::chrono::steady_clock>;
 
         std::function<void(const Event&)> m_callback;
-        std::unordered_map<int, std::unordered_map<std::string, time_point_t>> m_actionTimePoints;
+        std::function<bool(const std::string&, const std::string&)> m_filterFunction;
+        std::unordered_map<std::string, time_point_t> m_modificationTimePoints;
+        std::unordered_map<std::string, uint64_t> m_fileHashes;
         std::unique_ptr<efsw::FileWatcher> m_fileWatcher;
         std::unique_ptr<EfswListener> m_efswListener;
         std::mutex m_fileEventsMutex;

@@ -302,12 +302,22 @@ namespace jet
     void Live::setupFileWatcher()
     {
         m_context->dirsToMonitor = getDirectoriesToMonitor();
-        m_fileWatcher =
-            jet::make_unique<FileWatcher>(m_context->dirsToMonitor, [this](const FileWatcher::Event& event) {
-                // Some IDEs doesn't 'modify' files, they 'move' it, so listening for both actions
-                if (event.action == FileWatcher::Action::kModified || event.action == FileWatcher::Action::kMoved) {
-                    m_context->events->addFileChanged(event.directory + event.filename);
-                }
+        m_fileWatcher = jet::make_unique<FileWatcher>(m_context->dirsToMonitor,
+            [this](const FileWatcher::Event& event) {
+                m_context->events->addFileChanged(event.directory + event.filename);
+            },
+            [](const std::string&, const std::string& f) {
+                const auto s = f.size();
+                // clang-format off
+                    return (
+                        // No '.o' object files
+                        !(s > 1 && f[s - 2] == '.' && f[s - 1] == 'o') &&
+                        // No '.tmp' cmake temp files
+                        !(s > 3 && f[s - 4] == '.' && f[s - 3] == 't' && f[s - 2] == 'm' && f[s - 1] == 'p') &&
+                        // No '.d' depfiles
+                        !(s > 1 && f[s - 2] == '.' && f[s - 1] == 'd')
+                        );
+                // clang-format on
             });
         m_context->events->addLog(LogSeverity::kInfo, "Setup file watcher: done");
     }

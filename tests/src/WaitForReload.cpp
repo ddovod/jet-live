@@ -4,7 +4,7 @@
 #include <signal.h>
 #include <unistd.h>
 
-void runAfterDelayAndWaitForReload(std::function<void()>&& func)
+void runAfterDelayAndWaitForReload(std::function<void()>&& func, int milliseconds)
 {
     bool cont = true;
     int updatesCount = 0;
@@ -12,7 +12,7 @@ void runAfterDelayAndWaitForReload(std::function<void()>&& func)
         cont = false;
     });
     while (cont) {
-        if (updatesCount == 10) {
+        if (updatesCount == milliseconds / 100) {
             func();
         }
         g_live->update();
@@ -22,16 +22,16 @@ void runAfterDelayAndWaitForReload(std::function<void()>&& func)
     g_testListenerPtr->setCallbacks(nullptr, nullptr);
 }
 
-void waitForReload()
+void waitForReload(int milliseconds)
 {
     runAfterDelayAndWaitForReload([] {
         g_live->tryReload();
-    });
+    }, milliseconds);
 }
 
-void waitForReloadWithSignal()
+void waitForReloadWithSignal(int milliseconds)
 {
     runAfterDelayAndWaitForReload([] {
         kill(getpid(), SIGUSR1);
-    });
+    }, milliseconds);
 }

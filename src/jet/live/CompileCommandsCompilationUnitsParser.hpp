@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <memory>
+#include <process.hpp>
 #include <teenypath.h>
 #include "jet/live/ICompilationUnitsParser.hpp"
 
@@ -21,6 +23,8 @@ namespace jet
 
     protected:
         TeenyPath::path m_compileCommandsPath;
+        TeenyPath::path m_pbxProjPath;
+        std::unique_ptr<TinyProcessLib::Process> m_runningProcess;
 
         std::unordered_map<std::string, CompilationUnit> parseCompilationUnitsInternal(const LiveContext* context,
             const TeenyPath::path& filepath);
@@ -31,5 +35,8 @@ namespace jet
          * For custom `compile_commands.json` location you can subclass and override this method.
          */
         virtual TeenyPath::path getCompileCommandsPath(const LiveContext* context) const;
+
+        bool isXcodeProject() const;
+        void createCompileCommandsJsonFromXcodeProject(const LiveContext* context, bool wait);
     };
 }

@@ -10,8 +10,12 @@ option(JET_LIVE_BUILD_TESTS "Compile test applications." OFF)
 # -MD                   - needed to generate depfiles to track dependencies between files.
 # -falign-functions=16  - needed to keep enough space between functions to make each function "patchable", so
 #                         with this flag each function size will be not less than 16 bytes.
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -MD ")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -MD ")
+message("Using generator: ${CMAKE_GENERATOR}")
+if (NOT CMAKE_GENERATOR STREQUAL "Xcode")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -MD ")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -MD ")
+endif()
+
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   # Not all recent versions of clang support this flag.
   # But looks like clang already aligns functions on the 16 bytes border by default.
@@ -22,6 +26,7 @@ endif()
 # -Wl,-export-dynamic   - needed to make dynamic linker happy when the shared lib
 #                         with new code will be loaded into the process' address space.
 # -Wl,-export_dynamic   - same semantics, but for macos.
+# -Wl,-flat_namespace   - disables "Two-Level Namespace" feature
 if (UNIX AND NOT APPLE)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export-dynamic ")
 elseif (UNIX AND APPLE)
@@ -143,6 +148,21 @@ target_include_directories(lib_argh
   libs/argh/include
   )
 
+########## lib_xxhash
+add_library(lib_xxhash STATIC "")
+target_sources(lib_xxhash
+  PRIVATE
+  libs/xxHash/xxhash.c
+  )
+target_include_directories(lib_xxhash
+  PUBLIC
+  libs/xxHash
+  )
+set_target_properties(lib_xxhash
+  PROPERTIES
+  CXX_STANDARD 11
+  )
+
 if (UNIX AND NOT APPLE)
   ########## lib_elfio
   add_library(lib_elfio INTERFACE)
@@ -161,6 +181,7 @@ if (JET_LIVE_SHARED)
   target_compile_options(lib_efsw PRIVATE $<$<COMPILE_LANGUAGE:C>:-fPIC> $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
   target_compile_options(lib_tiny-process-library PRIVATE $<$<COMPILE_LANGUAGE:C>:-fPIC> $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
   target_compile_options(lib_teenypath PRIVATE $<$<COMPILE_LANGUAGE:C>:-fPIC> $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
+  target_compile_options(lib_xxhash PRIVATE $<$<COMPILE_LANGUAGE:C>:-fPIC> $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
 else()
   add_library(jet-live STATIC "")
 endif()
@@ -179,6 +200,7 @@ target_sources(jet-live
   src/jet/live/StaticsCopyStep.cpp
   src/jet/live/SignalReloader.cpp
   src/jet/live/AsyncEventQueue.cpp
+  src/jet/live/BuildConfig.cpp
   )
 if (UNIX AND NOT APPLE)
   target_sources(jet-live
@@ -206,6 +228,7 @@ target_link_libraries(jet-live
   lib_teenypath
   lib_json
   lib_argh
+  lib_xxhash
   dl
   Threads::Threads
   )
@@ -246,6 +269,13 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     $<$<COMPILE_LANGUAGE:CXX>:-Wvexing-parse>
     )
 endif()
+set_property(
+  SOURCE src/jet/live/BuildConfig.cpp
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS
+  JET_LIVE_CMAKE_GENERATOR="${CMAKE_GENERATOR}"
+  JET_LIVE_CMAKE_BUILD_DIR="${CMAKE_BINARY_DIR}"
+  )
 
 if (JET_LIVE_BUILD_EXAMPLE)
   add_subdirectory(example)

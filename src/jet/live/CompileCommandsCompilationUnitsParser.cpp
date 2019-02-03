@@ -3,8 +3,10 @@
 #include <argh.h>
 #include <fstream>
 #include <json.hpp>
+#include <process.hpp>
 #include <teenypath.h>
 #include <wordexp.h>
+#include "jet/live/BuildConfig.hpp"
 #include "jet/live/DataTypes.hpp"
 #include "jet/live/LiveContext.hpp"
 #include "jet/live/Utility.hpp"
@@ -14,6 +16,10 @@ namespace jet
     std::unordered_map<std::string, CompilationUnit> CompileCommandsCompilationUnitsParser::parseCompilationUnits(
         const LiveContext* context)
     {
+        if (isXcodeProject()) {
+            createCompileCommandsJsonFromXcodeProject(context, true);
+        }
+
         auto probablyDbPath = getCompileCommandsPath(context);
         if (!probablyDbPath.exists()) {
             context->events->addLog(
@@ -31,7 +37,14 @@ namespace jet
         std::vector<std::string>* removedCompilationUnits)
     {
         TeenyPath::path path{filepath};
-        if (!path.exists() || !(m_compileCommandsPath == path.resolve_absolute())) {
+        if (!path.exists()) {
+            return false;
+        }
+
+        if (isXcodeProject() && m_pbxProjPath == path.resolve_absolute()) {
+            createCompileCommandsJsonFromXcodeProject(context, false);
+            return false;
+        } else if (!(m_compileCommandsPath == path.resolve_absolute())) {
             return false;
         }
 
@@ -92,10 +105,16 @@ namespace jet
         for (const auto& cmdJson : dbJson) {
             CompilationUnit cu;
             cu.compilationCommandStr = cmdJson["command"];
-            cu.compilationDirStr = cmdJson["directory"];
-            cu.compilationDirStr = TeenyPath::path(cu.compilationDirStr).resolve_absolute().string();
+            auto dirPath = TeenyPath::path(cmdJson["directory"].get<std::string>()).resolve_absolute();
+            cu.compilationDirStr = dirPath.string();
             cu.sourceFilePath = cmdJson["file"];
-            cu.sourceFilePath = TeenyPath::path(cu.sourceFilePath).resolve_absolute().string();
+            TeenyPath::path sourceFilePath{cu.sourceFilePath};
+            if (!sourceFilePath.is_absolute()) {
+                sourceFilePath = TeenyPath::path{cu.compilationDirStr} / sourceFilePath;
+                cu.sourceFilePath = sourceFilePath.resolve_absolute().string();
+            } else {
+                cu.sourceFilePath = TeenyPath::path(cu.sourceFilePath).resolve_absolute().string();
+            }
 
             wordexp_t result;
             switch (wordexp(cu.compilationCommandStr.c_str(), &result, 0)) {
@@ -113,9 +132,14 @@ namespace jet
                 continue;
             }
             cu.hasColorDiagnosticsFlag = parser[{"-fcolor-diagnostics"}];
+            cu.depFilePath = parser({"-MF"}).str();
 
             TeenyPath::path objFilePath{cu.objFilePath};
-            cu.objFilePath = (TeenyPath::path{cu.compilationDirStr} / objFilePath).string();
+            if (objFilePath.is_absolute()) {
+                cu.objFilePath = objFilePath.string();
+            } else {
+                cu.objFilePath = (TeenyPath::path{cu.compilationDirStr} / objFilePath).string();
+            }
 
             cu.compilerPath = parser[0];
             res[cu.sourceFilePath] = cu;
@@ -126,11 +150,70 @@ namespace jet
 
     TeenyPath::path CompileCommandsCompilationUnitsParser::getCompileCommandsPath(const LiveContext* context) const
     {
+        if (!m_compileCommandsPath.string().empty() && m_compileCommandsPath.exists()) {
+            return m_compileCommandsPath;
+        }
+
         // Trying to find `compile_commands.json` in current and parent directories
         auto dbPath = TeenyPath::path{context->thisExecutablePath}.parent_path() / "compile_commands.json";
         while (!dbPath.exists() && !dbPath.is_empty()) {
             dbPath = dbPath.parent_path().parent_path() / "compile_commands.json";
         }
         return dbPath.resolve_absolute();
+    }
+
+    bool CompileCommandsCompilationUnitsParser::isXcodeProject() const { return getCmakeGenerator() == "Xcode"; }
+
+    void CompileCommandsCompilationUnitsParser::createCompileCommandsJsonFromXcodeProject(const LiveContext* context,
+        bool wait)
+    {
+        TeenyPath::path xcodeProjectPath;
+        for (const auto& el : TeenyPath::ls(TeenyPath::path{getCmakeBuildDirectory()})) {
+            auto pathStr = el.string();
+            if (pathStr.substr(pathStr.size() - 9) == "xcodeproj") {
+                xcodeProjectPath = el;
+                break;
+            }
+        }
+        if (!xcodeProjectPath.string().empty() && !xcodeProjectPath.exists()) {
+            context->events->addLog(LogSeverity::kError, "Cannot find Xcode project in " + getCmakeBuildDirectory());
+            return;
+        }
+
+        m_pbxProjPath = xcodeProjectPath / "project.pbxproj";
+        auto xcodeProjectName = xcodeProjectPath.filename();
+        auto xcodeProjectDir = xcodeProjectPath.parent_path().string();
+
+        std::string msg = "Generating compile_commands.json for Xcode project";
+        if (!wait) {
+            msg.append(" async");
+        }
+        context->events->addLog(LogSeverity::kDebug, std::move(msg));
+
+        // clang-format off
+        // A little hack to not "clean" original project
+        const auto fakeXcodeProjectNamePrefix = "ShowMeThatGuyWhoNamesXcodeProjectsLikeThis";
+        const auto fakeXcodeProjectName = fakeXcodeProjectNamePrefix + xcodeProjectName;
+        std::string scriptBody;
+        scriptBody
+            .append("rm -rf ").append(fakeXcodeProjectName).append(" && ")
+            .append("cp -R ").append(xcodeProjectName).append(" ").append(fakeXcodeProjectName).append(" && ")
+            .append("xcodebuild -project ").append(fakeXcodeProjectName).append(" -alltargets -dry-run -UseNewBuildSystem=NO | xcpretty -r json-compilation-database -o temp_cdb.json && ")
+            .append("sed 's/").append(fakeXcodeProjectNamePrefix).append("//g' temp_cdb.json > compile_commands.json && ")
+            .append("rm -rf temp_cdb.json ").append(fakeXcodeProjectName);
+        // clang-format on
+
+        m_runningProcess = jet::make_unique<TinyProcessLib::Process>(
+            scriptBody, xcodeProjectDir, [](const char*, size_t) {}, [](const char*, size_t) {});
+
+        if (wait) {
+            auto exitCode = m_runningProcess->get_exit_status();
+            if (exitCode != 0) {
+                context->events->addLog(LogSeverity::kError, "Something went wrong");
+                return;
+            }
+
+            context->events->addLog(LogSeverity::kDebug, "compile_commands.json created");
+        }
     }
 }

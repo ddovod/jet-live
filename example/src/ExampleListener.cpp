@@ -2,6 +2,9 @@
 #include "ExampleListener.hpp"
 #include <iostream>
 
+#include <chrono>
+#include <ctime>
+
 ExampleListener::ExampleListener(std::function<void()>&& codePreLoadCallback,
     std::function<void()>&& codePostLoadCallback)
     : m_codePreLoadCallback(std::move(codePreLoadCallback))
@@ -13,11 +16,10 @@ void ExampleListener::onLog(jet::LogSeverity severity, const std::string& messag
 {
     std::string severityString;
     switch (severity) {
-        // Skipping debug messages, they are too verbose
-        case jet::LogSeverity::kDebug: return;  // severityString.append("[D]"); break;
         case jet::LogSeverity::kInfo: severityString.append("[I]"); break;
         case jet::LogSeverity::kWarning: severityString.append("[W]"); break;
         case jet::LogSeverity::kError: severityString.append("[E]"); break;
+        default: return;  // Skipping debug messages, they are too verbose
     }
     std::cout << severityString << ": " << message << std::endl;
 }
