@@ -44,7 +44,8 @@ namespace jet
         if (isXcodeProject() && m_pbxProjPath == path.resolve_absolute()) {
             createCompileCommandsJsonFromXcodeProject(context, false);
             return false;
-        } else if (!(m_compileCommandsPath == path.resolve_absolute())) {
+        }
+        if (!(m_compileCommandsPath == path.resolve_absolute())) {
             return false;
         }
 
@@ -89,7 +90,7 @@ namespace jet
         std::unordered_map<std::string, CompilationUnit> res;
 
         // Parsing `compile_commands.json`
-        auto probablyDbPath = filepath;
+        const auto& probablyDbPath = filepath;
         context->events->addLog(LogSeverity::kDebug, "Reading `compile_commands.json` from " + probablyDbPath.string());
         std::ifstream f{probablyDbPath.string()};
         if (!f.is_open()) {

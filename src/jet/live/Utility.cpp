@@ -237,10 +237,11 @@ namespace jet
                 return LinkerType::kLLVM_lld6;
             }
             return LinkerType::kLLVM_lld;
-
-        } else if (procOut.find("GNU") != std::string::npos) {
+        }
+        if (procOut.find("GNU") != std::string::npos) {
             return LinkerType::kGNU_ld;
-        } else if (procError.find("PROGRAM:ld") != std::string::npos) {
+        }
+        if (procError.find("PROGRAM:ld") != std::string::npos) {
             // For some reason apple ld prints this info to stderr
             return LinkerType::kApple_ld;
         }
@@ -295,10 +296,10 @@ namespace jet
 
     void* unprotect(void* address, size_t size)
     {
-        long pagesize;
+        int64_t pagesize;
         pagesize = sysconf(_SC_PAGESIZE);
-        address = (void*)((long)address & ~(pagesize - 1));
-        if (mprotect(address, size, PROT_READ | PROT_WRITE | PROT_EXEC) == 0) {
+        address = reinterpret_cast<void*>(reinterpret_cast<int64_t>(address) & ~(pagesize - 1)); // NOLINT
+        if (mprotect(address, size, PROT_READ | PROT_WRITE | PROT_EXEC) == 0) { // NOLINT
             return address;
         }
         return nullptr;

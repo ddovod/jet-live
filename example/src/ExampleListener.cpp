@@ -2,9 +2,6 @@
 #include "ExampleListener.hpp"
 #include <iostream>
 
-#include <chrono>
-#include <ctime>
-
 ExampleListener::ExampleListener(std::function<void()>&& codePreLoadCallback,
     std::function<void()>&& codePostLoadCallback)
     : m_codePreLoadCallback(std::move(codePreLoadCallback))

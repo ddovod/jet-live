@@ -1,7 +1,7 @@
 
 #include "SignalReloader.hpp"
+#include <csignal>
 #include <iostream>
-#include <signal.h>
 #include "jet/live/Live.hpp"
 
 namespace

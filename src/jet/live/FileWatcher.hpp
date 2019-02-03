@@ -47,8 +47,6 @@ namespace jet
 
         void update();
 
-        void setFileFilter(std::function<bool(const std::string&, const std::string&)>&& filterFunc);
-
     private:
         class EfswListener : public efsw::FileWatchListener
         {
