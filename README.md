@@ -40,6 +40,15 @@ Personally I use it like this. I have a `Ctrl+r` shortcut to which `tryReload` i
 
 **jet-live** will monitor for file changes, recompile changed files and only when `tryReload` is called it will wait for all current compilation processes to finish and reload new code. Please don't call `tryReload` on each update, it will not work as you're expecting, call it only when your source code is ready to be reloaded.
 
+If you don't want to switch back and forth between your code editor and app, you can configure a keyboard shortcut which runs a shell command `kill -s USR1 $(pgrep <your_app_name>)`, the library will trigger code reload when `SIGUSR1` signal is received. It works at least in emacs, Xcode, CLion and VSCode, but I'm sure it is achievable in other editors and IDEs, just google it. If your debugger is lldb and it catches this signal and stops the app, add this commands to the `~/.lldbinit` file:
+```
+breakpoint set --name main
+breakpoint command add
+process handle -n true -p true -s false SIGUSR1
+continue
+DONE
+```
+
 On macOS you can use `cmake -G Xcode` generator apart from make and ninja. In this case please install `xcpretty` gem:
 ```
 gem install xcpretty
