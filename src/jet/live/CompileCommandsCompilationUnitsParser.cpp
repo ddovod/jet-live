@@ -178,10 +178,11 @@ namespace jet
                 break;
             }
         }
-        if (!xcodeProjectPath.string().empty() && !xcodeProjectPath.exists()) {
+        if (xcodeProjectPath.string().empty() || !xcodeProjectPath.exists()) {
             context->events->addLog(LogSeverity::kError, "Cannot find Xcode project in " + getCmakeBuildDirectory());
             return;
         }
+        context->events->addLog(LogSeverity::kDebug, "Found Xcode project: " + xcodeProjectPath.string());
 
         m_pbxProjPath = xcodeProjectPath / "project.pbxproj";
         auto xcodeProjectName = xcodeProjectPath.filename();
@@ -207,15 +208,15 @@ namespace jet
         // clang-format on
 
         m_runningProcess = jet::make_unique<TinyProcessLib::Process>(
-            scriptBody, xcodeProjectDir, [](const char*, size_t) {}, [](const char*, size_t) {});
+            scriptBody, xcodeProjectDir, nullptr, [context](const char* msg, size_t) {
+                context->events->addLog(LogSeverity::kError, std::string{msg});
+            });
 
         if (wait) {
-            auto exitCode = m_runningProcess->get_exit_status();
-            if (exitCode != 0) {
-                context->events->addLog(LogSeverity::kError, "Something went wrong");
+            if (m_runningProcess->get_exit_status() != 0) {
+                context->events->addLog(LogSeverity::kError, "Cannot create compile_commands.json");
                 return;
             }
-
             context->events->addLog(LogSeverity::kDebug, "compile_commands.json created");
         }
     }
