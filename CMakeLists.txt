@@ -10,7 +10,8 @@ option(JET_LIVE_BUILD_TESTS "Compile test applications." OFF)
 # -MD                   - needed to generate depfiles to track dependencies between files.
 # -falign-functions=16  - needed to keep enough space between functions to make each function "patchable", so
 #                         with this flag each function size will be not less than 16 bytes.
-message("Using generator: ${CMAKE_GENERATOR}")
+message("Generator: ${CMAKE_GENERATOR}")
+message("Build dir: ${CMAKE_BINARY_DIR}")
 if (NOT CMAKE_GENERATOR STREQUAL "Xcode")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -MD ")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -MD ")
