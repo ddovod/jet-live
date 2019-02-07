@@ -130,6 +130,7 @@ namespace jet
             if (cu.objFilePath.empty()) {
                 context->events->addLog(
                     LogSeverity::kWarning, "Cannot find object file path, skipping: " + cu.sourceFilePath);
+                wordfree(&result);
                 continue;
             }
             cu.hasColorDiagnosticsFlag = parser[{"-fcolor-diagnostics"}];
@@ -144,6 +145,7 @@ namespace jet
 
             cu.compilerPath = parser[0];
             res[cu.sourceFilePath] = cu;
+            wordfree(&result);
         }
 
         return res;
