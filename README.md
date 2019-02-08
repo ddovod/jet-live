@@ -106,9 +106,9 @@ Apart from that **jet-live** tries to find `compile_commands.json` near your exe
 - working directory - directory from which the compiler was run
 - some compiler flags for further processing.
 
-When all compilation units are parsed, it distinguishes the most common directory for all source files and starts watching it recursively using filesystem watcher. This path can be configured if you want to reduce your filesystem load. If your project is not very big (say less than 2000 files), just do nothing, default behaviour is fine.
+When all compilation units are parsed, it distinguishes the most common directory for all source files and starts watching for all directories with source files, their dependencies and some service files like `compile_commands.json`.
 
-After that the library tries to find all dependencies for each compilation unit. By default it will read depfiles near the object files (see `-MD` compiler option). Suppose the object file is located at:
+Apart from that the library tries to find all dependencies for each compilation unit. By default it will read depfiles near the object files (see `-MD` compiler option). Suppose the object file is located at:
 ```
 /home/coolhazker/projects/some_project/build/main.cpp.o
 ```

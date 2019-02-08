@@ -45,10 +45,11 @@ namespace jet
         // TODO(ddovod): rework this pls
         m_initThread = std::thread([this] {
             loadCompilationUnits();  // 0.070
-            setupFileWatcher();      // 0.150
-            loadSymbols();           // 0.200
-            loadExportedSymbols();   // 1.200
-            loadDependencies();      // 0.600
+            m_context->dirFilters = getDirectoryFilters();
+            loadDependencies();     // 0.600
+            setupFileWatcher();     // 0.150
+            loadSymbols();          // 0.200
+            loadExportedSymbols();  // 1.200
             m_initialized.store(true);
         });
     }
@@ -168,6 +169,7 @@ namespace jet
 
     void Live::updateDependencies(CompilationUnit& cu)
     {
+        // Deps
         for (const auto& oldDep : m_context->dependencies[cu.sourceFilePath]) {
             m_context->inverseDependencies[oldDep].erase(cu.sourceFilePath);
         }
@@ -175,64 +177,64 @@ namespace jet
         for (const auto& el : cuDeps) {
             m_context->inverseDependencies[el].insert(cu.sourceFilePath);
         }
+
+        // File watcher
+        if (m_fileWatcher) {
+            for (const auto& el : cuDeps) {
+                const auto& depDir = TeenyPath::path{el}.parent_path().string();
+                auto found = m_context->dirsToMonitor.find(depDir);
+                if (found == m_context->dirsToMonitor.end()) {
+                    m_fileWatcher->addWatch(depDir);
+                    m_context->dirsToMonitor.insert(depDir);
+                }
+            }
+        }
+
         m_context->dependencies[cu.sourceFilePath] = std::move(cuDeps);
     }
 
-    std::vector<std::string> Live::getDirectoriesToMonitor()
+    std::unordered_set<std::string> Live::getDirectoryFilters()
     {
-        std::vector<std::string> dirs;
-        const auto& configDirs = m_context->liveConfig.directoriesToMonitor;
-        if (!configDirs.empty()) {
-            std::vector<std::string> existingDirs;
-            for (const auto& el : configDirs) {
-                auto p = TeenyPath::path{el};
-                if (p.exists() && p.is_directory()) {
-                    existingDirs.push_back(el);
-                } else {
-                    m_context->events->addLog(
-                        LogSeverity::kWarning, "Directory doesn't exist or is not a directory: " + el);
-                }
-            }
-
-            if (existingDirs.empty()) {
-                m_context->events->addLog(LogSeverity::kError, "Delegate didn't provide any existing directories");
-                return dirs;
-            }
-
-            std::string directoriesStr;
-            for (const auto& el : existingDirs) {
-                directoriesStr.append("  ").append(el).append("\n");
-            }
-            directoriesStr.pop_back();  // last '\n' char
-            m_context->events->addLog(
-                LogSeverity::kDebug, "Watching directories provided by delegate: \n" + directoriesStr);
-            dirs = configDirs;
-        } else {
-            std::string commonDir;
-            for (const auto& cu : m_context->compilationUnits) {
-                const auto& sourceFilePath = cu.second.sourceFilePath;
-                if (commonDir.empty()) {
-                    commonDir = sourceFilePath;
-                } else {
-                    size_t minLength = std::min(commonDir.size(), sourceFilePath.size());
-                    for (size_t i = 0; i < minLength; i++) {
-                        if (commonDir[i] != sourceFilePath[i]) {
-                            commonDir = commonDir.substr(0, i);
-                            break;
-                        }
+        std::unordered_set<std::string> dirs;
+        std::string commonDir;
+        for (const auto& cu : m_context->compilationUnits) {
+            const auto& sourceFilePath = cu.second.sourceFilePath;
+            if (commonDir.empty()) {
+                commonDir = sourceFilePath;
+            } else {
+                size_t minLength = std::min(commonDir.size(), sourceFilePath.size());
+                for (size_t i = 0; i < minLength; i++) {
+                    if (commonDir[i] != sourceFilePath[i]) {
+                        commonDir = commonDir.substr(0, i);
+                        break;
                     }
                 }
-                auto p = TeenyPath::path(commonDir);
-                if (!p.is_directory()) {
-                    commonDir = p.parent_path().string();
-                }
             }
-            m_context->events->addLog(
-                LogSeverity::kDebug, "Watching directory substituted from compilation commands: " + commonDir);
-            dirs.push_back(commonDir);
+            auto p = TeenyPath::path(commonDir);
+            if (!p.is_directory()) {
+                commonDir = p.parent_path().string();
+            }
+        }
+        m_context->events->addLog(LogSeverity::kDebug, "Root directory: " + commonDir);
+        dirs.insert(commonDir);
+        return dirs;
+    }
+
+    std::unordered_set<std::string> Live::getDirectoriesToMonitor()
+    {
+        std::unordered_set<std::string> dirsToMonitorSet;
+
+        // Dependencies
+        for (const auto& el : m_context->inverseDependencies) {
+            dirsToMonitorSet.insert(TeenyPath::path{el.first}.parent_path().string());
         }
 
-        return dirs;
+        // Other files
+        for (const auto& el : m_context->compilationUnitsParser->getFilesToMonitor()) {
+            dirsToMonitorSet.insert(TeenyPath::path{el}.parent_path().string());
+        }
+
+        return dirsToMonitorSet;
     }
 
     void Live::loadCompilationUnits()

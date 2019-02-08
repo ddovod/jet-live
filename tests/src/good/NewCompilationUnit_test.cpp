@@ -17,6 +17,9 @@ TEST_CASE("Adding new compilation unit in runtime", "[common]")
 
     std::cout << "JET_TEST: disable(new_cu:1); enable(new_cu:2)" << std::endl;
     waitForReload(5000);
-
     REQUIRE(newCompilationUnitComputeResult(v1, v2) == mul);
+
+    std::cout << "JET_TEST: disable(new_cu:3); enable(new_cu:4)" << std::endl;
+    waitForReload();
+    REQUIRE(newCompilationUnitComputeResult(v1, v2) == mul + sum);
 }

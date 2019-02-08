@@ -17,6 +17,11 @@ namespace jet
         virtual ~ICompilationUnitsParser() {}
 
         /**
+         * Retrieves a vector of paths to files which should be monitored for changes.
+         */
+        virtual std::vector<std::string> getFilesToMonitor() const = 0;
+
+        /**
          * Parses and returns info about all compilation units used to construct this application.
          * \return "cu source path" -> "compilation unit" map
          */

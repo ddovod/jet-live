@@ -14,6 +14,7 @@ namespace jet
     class CompileCommandsCompilationUnitsParser : public ICompilationUnitsParser
     {
     public:
+        std::vector<std::string> getFilesToMonitor() const override;
         std::unordered_map<std::string, CompilationUnit> parseCompilationUnits(const LiveContext* context) override;
         bool updateCompilationUnits(LiveContext* context,
             const std::string& filepath,

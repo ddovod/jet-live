@@ -46,14 +46,14 @@ namespace jet
         std::getline(f, line);
         while (std::getline(f, line)) {
             line.erase(0, line.find_first_not_of(' '));
-            bool skip = false;
-            for (const auto& dir : context->dirsToMonitor) {
-                if (line.find(dir) == std::string::npos) {
-                    skip = true;
+            bool matches = false;
+            for (const auto& dir : context->dirFilters) {
+                if (line.find(dir) != std::string::npos) {
+                    matches = true;
                     break;
                 }
             }
-            if (skip) {
+            if (!matches) {
                 continue;
             }
 

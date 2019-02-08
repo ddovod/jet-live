@@ -13,6 +13,16 @@
 
 namespace jet
 {
+    std::vector<std::string> CompileCommandsCompilationUnitsParser::getFilesToMonitor() const
+    {
+        std::vector<std::string> res;
+        res.push_back(m_compileCommandsPath.string());
+        if (isXcodeProject()) {
+            res.push_back(m_pbxProjPath.string());
+        }
+        return res;
+    }
+
     std::unordered_map<std::string, CompilationUnit> CompileCommandsCompilationUnitsParser::parseCompilationUnits(
         const LiveContext* context)
     {

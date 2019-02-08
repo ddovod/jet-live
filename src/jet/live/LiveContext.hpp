@@ -57,7 +57,10 @@ namespace jet
         LinkerType linkerType;
 
         /** Directories which are monitored for changes. */
-        std::vector<std::string> dirsToMonitor;
+        std::unordered_set<std::string> dirsToMonitor;
+
+        /** Directories that contains all sources we are interested in. */
+        std::unordered_set<std::string> dirFilters;
 
         /** sourceFilePath -> CompilationUnit map. */
         std::unordered_map<std::string, CompilationUnit> compilationUnits;
