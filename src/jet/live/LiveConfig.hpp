@@ -18,12 +18,6 @@ namespace jet
         size_t workerThreadsCount = 4;
 
         /**
-         * A list of directories to monitor for source file changes.
-         * If empty, the most common directory for all found compilation units will be used.
-         */
-        std::vector<std::string> directoriesToMonitor;
-
-        /**
          * If `true`, also reload code when app receives `SIGUSR1`.
          */
         bool reloadOnSignal = true;
