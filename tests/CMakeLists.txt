@@ -51,7 +51,8 @@ target_sources(tests
   src/utility/ReloadOnSignal.cpp
   src/utility/ModifyFileDuringReload.cpp
   src/utility/NewCompilationUnit.cpp
-#  src/utility/NewCompilationUnit2.cpp # <jet_tag: new_cu:2>
+#  src/utility/NewCompilationUnit/NewCompilationUnit2.cpp # <jet_tag: new_cu:2>
+  src/utility/NewHeaderDependency.cpp
 
   src/good/ClassInstanceMethod_test.cpp
   src/good/CommonSection_test.cpp
@@ -78,6 +79,7 @@ target_sources(tests
   src/good/ReloadOnSignal_test.cpp
   src/good/ModifyFileDuringReload_test.cpp
   src/good/NewCompilationUnit_test.cpp
+  src/good/NewHeaderDependency_test.cpp
 
   src/bad/LambdaFunctionWithCapturesBadCase2_test.cpp
   src/bad/LambdaFunctionWithCapturesBadCase_test.cpp

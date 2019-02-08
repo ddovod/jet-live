@@ -6,7 +6,7 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
-#include <vector>
+#include <unordered_set>
 #include "jet/live/Compiler.hpp"
 #include "jet/live/FileWatcher.hpp"
 #include "jet/live/ILiveListener.hpp"
@@ -63,7 +63,8 @@ namespace jet
         void loadDependencies();
         void setupFileWatcher();
         void updateDependencies(CompilationUnit& cu);
-        std::vector<std::string> getDirectoriesToMonitor();
+        std::unordered_set<std::string> getDirectoriesToMonitor();
+        std::unordered_set<std::string> getDirectoryFilters();
 
         void onFileChanged(const std::string& filepath);
     };

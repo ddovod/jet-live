@@ -7,6 +7,7 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <efsw/efsw.hpp>
 
@@ -40,12 +41,14 @@ namespace jet
          * \param filterFunc Function which is called from the background thread,
          *                   it shoudl check if given file should be processed further.
          */
-        explicit FileWatcher(const std::vector<std::string>& directoriesToWatch,
+        explicit FileWatcher(const std::unordered_set<std::string>& directoriesToWatch,
             std::function<void(const Event&)>&& callback,
             std::function<bool(const std::string&, const std::string&)>&& filterFunc);
         ~FileWatcher();
 
         void update();
+
+        void addWatch(const std::string& dir);
 
     private:
         class EfswListener : public efsw::FileWatchListener

@@ -1,6 +1,6 @@
 
 #include "NewCompilationUnit.hpp"
-//#include "NewCompilationUnit2.hpp" // <jet_tag: new_cu:2>
+//#include "NewCompilationUnit/NewCompilationUnit2.hpp" // <jet_tag: new_cu:2>
 
 int newCompilationUnitComputeResult(int v1, int v2)
 {

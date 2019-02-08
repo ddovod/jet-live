@@ -31,7 +31,7 @@ namespace jet
 
 namespace jet
 {
-    FileWatcher::FileWatcher(const std::vector<std::string>& directoriesToWatch,
+    FileWatcher::FileWatcher(const std::unordered_set<std::string>& directoriesToWatch,
         std::function<void(const Event&)>&& callback,
         std::function<bool(const std::string&, const std::string&)>&& filterFunc)
         : m_callback(std::move(callback))
@@ -127,7 +127,7 @@ namespace jet
         });
 
         for (const auto& el : directoriesToWatch) {
-            m_watchIds.push_back(m_fileWatcher->addWatch(el, m_efswListener.get(), true));
+            addWatch(el);
         }
 
         m_fileWatcher->watch();
@@ -148,5 +148,10 @@ namespace jet
             m_callback(event);
         }
         m_fileEvents.clear();
+    }
+
+    void FileWatcher::addWatch(const std::string& dir)
+    {
+        m_watchIds.push_back(m_fileWatcher->addWatch(dir, m_efswListener.get(), false));
     }
 }
