@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <teenypath.h>
+#include "jet/live/BuildConfig.hpp"
 #include "jet/live/Utility.hpp"
 
 namespace jet
@@ -98,10 +99,6 @@ namespace jet
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         assert(!m_shouldLink && !m_runningLinkTask);
-
-        if (m_workingDirectory.empty()) {
-            m_workingDirectory = cu.compilationDirStr;
-        }
 
         if (m_compilerPath.empty()) {
             m_compilerPath = cu.compilerPath;
@@ -245,11 +242,12 @@ namespace jet
             m_context->linkerType,
             objectFilePaths);
 
+        const auto& buildDir = getCmakeBuildDirectory();
         Task task;
         task.linkFinishCallback = std::move(finishCallback);
-        task.cuOrLibFilepath = m_workingDirectory + "/" + libName;
+        task.cuOrLibFilepath = buildDir + "/" + libName;
         task.process = jet::make_unique<TinyProcessLib::Process>(
-            linkCommand, m_workingDirectory, nullptr, [this](const char* bytes, size_t n) {
+            linkCommand, buildDir, nullptr, [this](const char* bytes, size_t n) {
                 m_runningLinkTask->errMessage += std::string(bytes, n);
             });
         assert(!m_runningLinkTask);

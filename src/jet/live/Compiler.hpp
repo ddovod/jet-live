@@ -90,7 +90,6 @@ namespace jet
         std::unique_ptr<Task> m_runningLinkTask;
         std::unordered_map<std::string, ShortCompilationUnit> m_readyCompilationUnits;
         int m_currentLibIndex = 1;
-        std::string m_workingDirectory;
         std::string m_compilerPath;
 
         bool m_shouldLink = false;
