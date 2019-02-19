@@ -198,17 +198,20 @@ namespace jet
         }
         m_context->events->addLog(LogSeverity::kInfo, "Linking...");
 
-        std::vector<std::string> objectFilePaths;
         std::string libName = "lib_reload" + std::to_string(m_currentLibIndex++) + ".so";
 
         // First, we have to check if there will be unresolved symbols
         std::unordered_set<std::string> undefinedSymbolNames;
+        std::unordered_set<std::string> uniqueObjectFilePaths;
         for (const auto& cu : m_readyCompilationUnits) {
+            uniqueObjectFilePaths.insert(cu.second.objFilepath);
             auto symNames = m_context->programInfoLoader->getUndefinedSymbolNames(m_context, cu.second.objFilepath);
             undefinedSymbolNames.insert(symNames.begin(), symNames.end());
         }
-        std::unordered_set<std::string> additionalObjectFilePaths;
-        for (const auto& undefSymName : undefinedSymbolNames) {
+        while (!undefinedSymbolNames.empty()) {
+            auto undefSymName = *undefinedSymbolNames.begin();
+            undefinedSymbolNames.erase(undefSymName);
+
             // Checking if this symbol can be resolved in load-time
             bool found = false;
             for (const auto& program : m_context->programs) {
@@ -225,22 +228,25 @@ namespace jet
                 if (foundObjectFilepath != m_context->exportedSymbolNamesInObjectFiles.end()) {
                     // If so, adding this object file in linkage list.
                     // Otherwise, lets hope for the best :/
-                    additionalObjectFilePaths.insert(foundObjectFilepath->second);
+                    if (uniqueObjectFilePaths.find(foundObjectFilepath->second) == uniqueObjectFilePaths.end()) {
+                        uniqueObjectFilePaths.insert(foundObjectFilepath->second);
+                        auto symNames = m_context->programInfoLoader->getUndefinedSymbolNames(m_context, foundObjectFilepath->second);
+                        undefinedSymbolNames.insert(symNames.begin(), symNames.end());
+                    }
                 }
             }
         }
-        objectFilePaths.insert(
-            objectFilePaths.end(), additionalObjectFilePaths.begin(), additionalObjectFilePaths.end());
 
-        // Then adding newly compiled object files
-        for (const auto& cu : m_readyCompilationUnits) {
-            objectFilePaths.push_back(cu.second.objFilepath);
-        }
+        // Then linking all collected object files together
+        std::vector<std::string> objectFilePaths;
+        objectFilePaths.insert(
+            objectFilePaths.end(), uniqueObjectFilePaths.begin(), uniqueObjectFilePaths.end());
         auto linkCommand = createLinkCommand(libName,
             m_compilerPath,
             findPrefferedBaseAddressForLibrary(objectFilePaths),
             m_context->linkerType,
             objectFilePaths);
+        m_context->events->addLog(LogSeverity::kDebug, "Link command:\n" + linkCommand);
 
         const auto& buildDir = getCmakeBuildDirectory();
         Task task;
