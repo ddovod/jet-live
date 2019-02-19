@@ -12,7 +12,7 @@ TEST_CASE("Multiple definitions of symbols after reload, circular symbols depend
     REQUIRE(beforeReload == 12);
 
     std::cout << "JET_TEST: disable(mul_def:1); enable(mul_def:2)" << std::endl;
-    waitForReload();
+    waitForReload(5000);
 
     auto afterReload = multipleDefinitionsGetValue();
     REQUIRE(afterReload == 88);
