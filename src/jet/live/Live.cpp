@@ -116,7 +116,7 @@ namespace jet
         m_context->events->addLog(LogSeverity::kInfo, "Trying to reload code...");
         m_compiler->link([this](int status,
                              const std::string& libPath,
-                             const std::vector<std::string>& objFilePaths,
+                             const std::vector<std::string>& sourceFilePaths,
                              const std::string&) {
             m_context->listener->onCodePreLoad();
 
@@ -142,12 +142,20 @@ namespace jet
             m_context->events->addLog(LogSeverity::kDebug, "Loading exported symbols list...");
             size_t totalExportedSymbols = 0;
             int totalFiles = 0;
-            for (const auto& filepath : objFilePaths) {
-                const auto& symNames = m_context->programInfoLoader->getExportedSymbolNames(m_context.get(), filepath);
+            std::vector<std::string> objFilePaths;
+            for (const auto& sourceFilePath : sourceFilePaths) {
+                auto foundCu = m_context->compilationUnits.find(sourceFilePath);
+                assert(foundCu != m_context->compilationUnits.end());
+                if (foundCu == m_context->compilationUnits.end()) {
+                    continue;
+                }
+                objFilePaths.push_back(foundCu->second.objFilePath);
+                const auto& symNames =
+                    m_context->programInfoLoader->getExportedSymbolNames(m_context.get(), foundCu->second.objFilePath);
                 totalExportedSymbols += symNames.size();
                 totalFiles++;
                 for (const auto& el : symNames) {
-                    m_context->exportedSymbolNamesInObjectFiles[el] = filepath;
+                    m_context->exportedSymbolNamesInSourceFiles[el] = sourceFilePath;
                 }
             }
             m_context->events->addLog(LogSeverity::kDebug,
@@ -282,7 +290,7 @@ namespace jet
             totalExportedSymbols += symNames.size();
             totalFiles++;
             for (const auto& el : symNames) {
-                m_context->exportedSymbolNamesInObjectFiles[el] = cu.second.objFilePath;
+                m_context->exportedSymbolNamesInSourceFiles[el] = cu.first;
             }
         }
         m_context->events->addLog(LogSeverity::kDebug,

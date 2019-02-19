@@ -79,12 +79,12 @@ namespace jet
                     m_context->events->addLog(LogSeverity::kInfo, "Linked successfully");
                 }
 
-                std::vector<std::string> objFilePaths;
+                std::vector<std::string> sourceFilePaths;
                 for (const auto& el : m_readyCompilationUnits) {
-                    objFilePaths.push_back(el.second.objFilepath);
+                    sourceFilePaths.push_back(el.second.sourceFilepath);
                 }
                 m_runningLinkTask->linkFinishCallback(
-                    status, m_runningLinkTask->cuOrLibFilepath, objFilePaths, m_runningLinkTask->errMessage);
+                    status, m_runningLinkTask->cuOrLibFilepath, sourceFilePaths, m_runningLinkTask->errMessage);
                 m_runningLinkTask.reset();
 
                 if (status == 0) {
@@ -196,9 +196,6 @@ namespace jet
             m_context->events->addLog(LogSeverity::kInfo, "Nothing to reload.");
             return;
         }
-        m_context->events->addLog(LogSeverity::kInfo, "Linking...");
-
-        std::string libName = "lib_reload" + std::to_string(m_currentLibIndex++) + ".so";
 
         // First, we have to check if there will be unresolved symbols
         std::unordered_set<std::string> undefinedSymbolNames;
@@ -208,6 +205,9 @@ namespace jet
             auto symNames = m_context->programInfoLoader->getUndefinedSymbolNames(m_context, cu.second.objFilepath);
             undefinedSymbolNames.insert(symNames.begin(), symNames.end());
         }
+        bool pendingCompilation = false;
+        auto oldShouldLink = m_shouldLink;
+        m_shouldLink = false;
         while (!undefinedSymbolNames.empty()) {
             auto undefSymName = *undefinedSymbolNames.begin();
             undefinedSymbolNames.erase(undefSymName);
@@ -224,23 +224,41 @@ namespace jet
 
             // If not, trying to find object file which defines this symbol
             if (!found) {
-                auto foundObjectFilepath = m_context->exportedSymbolNamesInObjectFiles.find(undefSymName);
-                if (foundObjectFilepath != m_context->exportedSymbolNamesInObjectFiles.end()) {
+                auto foundSourceFilepath = m_context->exportedSymbolNamesInSourceFiles.find(undefSymName);
+                if (foundSourceFilepath != m_context->exportedSymbolNamesInSourceFiles.end()) {
                     // If so, adding this object file in linkage list.
                     // Otherwise, lets hope for the best :/
-                    if (uniqueObjectFilePaths.find(foundObjectFilepath->second) == uniqueObjectFilePaths.end()) {
-                        uniqueObjectFilePaths.insert(foundObjectFilepath->second);
-                        auto symNames = m_context->programInfoLoader->getUndefinedSymbolNames(
-                            m_context, foundObjectFilepath->second);
-                        undefinedSymbolNames.insert(symNames.begin(), symNames.end());
+                    auto foundCu = m_context->compilationUnits.find(foundSourceFilepath->second);
+                    assert(foundCu != m_context->compilationUnits.end());
+                    if (foundCu != m_context->compilationUnits.end()) {
+                        if (uniqueObjectFilePaths.find(foundCu->second.objFilePath) == uniqueObjectFilePaths.end()) {
+                            // if (foundCu-)
+                            uniqueObjectFilePaths.insert(foundCu->second.objFilePath);
+                            auto symNames = m_context->programInfoLoader->getUndefinedSymbolNames(
+                                m_context, foundCu->second.objFilePath);
+                            undefinedSymbolNames.insert(symNames.begin(), symNames.end());
+                            pendingCompilation = true;
+                            compile(foundCu->second, [](int, const std::string&, const std::string&) {});
+                        }
                     }
                 }
             }
         }
 
+        if (pendingCompilation) {
+            m_shouldLink = true;
+            m_pendingLinkingFinishCallback = std::move(finishCallback);
+            return;
+        }
+
+        m_shouldLink = oldShouldLink;
+
         // Then linking all collected object files together
         std::vector<std::string> objectFilePaths;
         objectFilePaths.insert(objectFilePaths.end(), uniqueObjectFilePaths.begin(), uniqueObjectFilePaths.end());
+
+        m_context->events->addLog(LogSeverity::kInfo, "Linking...");
+        std::string libName = "lib_reload" + std::to_string(m_currentLibIndex++) + ".so";
         auto linkCommand = createLinkCommand(libName,
             m_compilerPath,
             findPrefferedBaseAddressForLibrary(objectFilePaths),

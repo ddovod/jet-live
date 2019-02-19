@@ -1,5 +1,5 @@
 
-#include "utility/MultipleDefinitions.hpp"
+#include "utility/MultipleDefinitions/MultipleDefinitions1.hpp"
 
 int multipleDefinitionsAnotherGetValue()
 {

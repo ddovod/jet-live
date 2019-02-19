@@ -8,7 +8,7 @@ target_sources(undefined_symbols
   src/utility/UndefinedSymbol2.cpp
   src/utility/UndefinedSymbolDeep/UndefinedSymbolDeep1.cpp
   src/utility/UndefinedSymbolDeep/UndefinedSymbolDeep2.cpp
-  src/utility/MultipleDefinitions/MultipleDefinitions1.cpp
+#  src/utility/MultipleDefinitions/MultipleDefinitions1.cpp # <jet_tag: mul_def:2>
   src/utility/MultipleDefinitions/MultipleDefinitions2.cpp
   )
 target_include_directories(undefined_symbols
