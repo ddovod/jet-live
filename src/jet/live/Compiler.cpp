@@ -230,7 +230,8 @@ namespace jet
                     // Otherwise, lets hope for the best :/
                     if (uniqueObjectFilePaths.find(foundObjectFilepath->second) == uniqueObjectFilePaths.end()) {
                         uniqueObjectFilePaths.insert(foundObjectFilepath->second);
-                        auto symNames = m_context->programInfoLoader->getUndefinedSymbolNames(m_context, foundObjectFilepath->second);
+                        auto symNames = m_context->programInfoLoader->getUndefinedSymbolNames(
+                            m_context, foundObjectFilepath->second);
                         undefinedSymbolNames.insert(symNames.begin(), symNames.end());
                     }
                 }
@@ -239,8 +240,7 @@ namespace jet
 
         // Then linking all collected object files together
         std::vector<std::string> objectFilePaths;
-        objectFilePaths.insert(
-            objectFilePaths.end(), uniqueObjectFilePaths.begin(), uniqueObjectFilePaths.end());
+        objectFilePaths.insert(objectFilePaths.end(), uniqueObjectFilePaths.begin(), uniqueObjectFilePaths.end());
         auto linkCommand = createLinkCommand(libName,
             m_compilerPath,
             findPrefferedBaseAddressForLibrary(objectFilePaths),
