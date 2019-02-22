@@ -56,6 +56,10 @@ namespace jet
 
         // Parsing mach-o binary
         auto f = fopen(realFilepath.c_str(), "r");
+        if (!f) {
+            context->events->addLog(LogSeverity::kError, "Cannot open " + filepath);
+            return res;
+        }
         fseek(f, 0, SEEK_END);
         auto length = static_cast<size_t>(ftell(f));
         fseek(f, 0, SEEK_SET);
@@ -275,6 +279,10 @@ namespace jet
 
         for (const auto& filepath : objFilePaths) {
             auto f = fopen(filepath.c_str(), "r");
+            if (!f) {
+                context->events->addLog(LogSeverity::kError, "Cannot open " + filepath);
+                continue;
+            }
             fseek(f, 0, SEEK_END);
             auto length = static_cast<size_t>(ftell(f));
             fseek(f, 0, SEEK_SET);
@@ -587,6 +595,10 @@ namespace jet
 
         // Parsing mach-o binary
         auto f = fopen(filepath.c_str(), "r");
+        if (!f) {
+            context->events->addLog(LogSeverity::kError, "Cannot open " + filepath);
+            return res;
+        }
         fseek(f, 0, SEEK_END);
         auto length = static_cast<size_t>(ftell(f));
         fseek(f, 0, SEEK_SET);
