@@ -71,7 +71,7 @@ namespace jet
         /** dependency file path -> set of sourceFilePaths. */
         std::unordered_map<std::string, std::unordered_set<std::string>> inverseDependencies;
 
-        /** exported symbol name -> object file path. */
-        std::unordered_map<std::string, std::string> exportedSymbolNamesInObjectFiles;
+        /** exported symbol name -> sourceFilePath. */
+        std::unordered_map<std::string, std::string> exportedSymbolNamesInSourceFiles;
     };
 }

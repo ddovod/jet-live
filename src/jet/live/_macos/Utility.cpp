@@ -28,7 +28,7 @@ namespace jet
         while (std::getline(procOutStream, line)) {
             if (line.find("==== regions for process") == 0) {
                 // Skipping one line
-                std::getline(std::stringstream{procOut}, line);
+                std::getline(procOutStream, line);
                 parse = true;
                 continue;
             }

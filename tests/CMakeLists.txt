@@ -6,6 +6,10 @@ add_library(undefined_symbols "")
 target_sources(undefined_symbols
   PRIVATE
   src/utility/UndefinedSymbol2.cpp
+  src/utility/UndefinedSymbolDeep/UndefinedSymbolDeep1.cpp
+  src/utility/UndefinedSymbolDeep/UndefinedSymbolDeep2.cpp
+#  src/utility/MultipleDefinitions/MultipleDefinitions1.cpp # <jet_tag: mul_def:2>
+  src/utility/MultipleDefinitions/MultipleDefinitions2.cpp
   )
 target_include_directories(undefined_symbols
   PRIVATE
@@ -53,6 +57,8 @@ target_sources(tests
   src/utility/NewCompilationUnit.cpp
 #  src/utility/NewCompilationUnit/NewCompilationUnit2.cpp # <jet_tag: new_cu:2>
   src/utility/NewHeaderDependency.cpp
+  src/utility/UndefinedSymbolDeep.cpp
+  src/utility/MultipleDefinitions.cpp
 
   src/good/ClassInstanceMethod_test.cpp
   src/good/CommonSection_test.cpp
@@ -80,6 +86,8 @@ target_sources(tests
   src/good/ModifyFileDuringReload_test.cpp
   src/good/NewCompilationUnit_test.cpp
   src/good/NewHeaderDependency_test.cpp
+  src/good/UndefinedSymbolDeep_test.cpp
+  src/good/MultipleDefinitions_test.cpp
 
   src/bad/LambdaFunctionWithCapturesBadCase2_test.cpp
   src/bad/LambdaFunctionWithCapturesBadCase_test.cpp
