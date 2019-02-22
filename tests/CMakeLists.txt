@@ -59,6 +59,7 @@ target_sources(tests
   src/utility/NewHeaderDependency.cpp
   src/utility/UndefinedSymbolDeep.cpp
   src/utility/MultipleDefinitions.cpp
+  src/utility/FailedCompilationCrash.cpp
 
   src/good/ClassInstanceMethod_test.cpp
   src/good/CommonSection_test.cpp
@@ -88,6 +89,7 @@ target_sources(tests
   src/good/NewHeaderDependency_test.cpp
   src/good/UndefinedSymbolDeep_test.cpp
   src/good/MultipleDefinitions_test.cpp
+  src/good/FailedCompilationCrash_test.cpp
 
   src/bad/LambdaFunctionWithCapturesBadCase2_test.cpp
   src/bad/LambdaFunctionWithCapturesBadCase_test.cpp
