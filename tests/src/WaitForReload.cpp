@@ -18,6 +18,9 @@ void runAfterDelayAndWaitForReload(std::function<void()>&& func, int millisecond
         g_live->update();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         updatesCount++;
+        if (updatesCount > 100) {
+            break;
+        }
     }
     g_testListenerPtr->setCallbacks(nullptr, nullptr);
 }
