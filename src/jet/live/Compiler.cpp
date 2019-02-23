@@ -44,6 +44,11 @@ namespace jet
                     }
                     message += el.second.errMessage;
                     m_context->events->addLog(LogSeverity::kWarning, std::move(message));
+
+                    auto readyFound = m_readyCompilationUnits.find(el.second.cuOrLibFilepath);
+                    if (readyFound != m_readyCompilationUnits.end()) {
+                        m_readyCompilationUnits.erase(readyFound);
+                    }
                 }
 
                 tasksToRemove.push_back(el.first);
