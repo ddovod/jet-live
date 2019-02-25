@@ -61,15 +61,30 @@ namespace jet
 
             auto found = line.find(' ');
             if (found == std::string::npos) {
-                deps.insert(TeenyPath::path{line}.resolve_absolute().string());
+                auto p = TeenyPath::path{line};
+                if (p.exists()) {
+                    deps.insert(p.resolve_absolute().string());
+                } else {
+                    context->events->addLog(LogSeverity::kWarning, "Depfile doesn't exist: " + p.string());
+                }
             } else {
                 std::size_t prev = 0;
                 while (found != std::string::npos) {
-                    deps.insert(TeenyPath::path{line.substr(prev, found - prev)}.resolve_absolute().string());
+                    auto p = TeenyPath::path{line.substr(prev, found - prev)};
+                    if (p.exists()) {
+                        deps.insert(p.resolve_absolute().string());
+                    } else {
+                        context->events->addLog(LogSeverity::kWarning, "Depfile doesn't exist: " + p.string());
+                    }
                     prev = found + 1;
                     found = line.find(' ', prev);
                 }
-                deps.insert(TeenyPath::path{line.substr(prev, found - prev)}.resolve_absolute().string());
+                auto p = TeenyPath::path{line.substr(prev, found - prev)};
+                if (p.exists()) {
+                    deps.insert(p.resolve_absolute().string());
+                } else {
+                    context->events->addLog(LogSeverity::kWarning, "Depfile doesn't exist: " + p.string());
+                }
             }
         }
 

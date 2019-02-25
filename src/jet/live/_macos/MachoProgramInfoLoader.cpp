@@ -20,11 +20,16 @@ namespace jet
         std::vector<std::string> filepaths;
 
         for (uint32_t i = 0; i < _dyld_image_count(); i++) {
-            auto imagePath = TeenyPath::path{_dyld_get_image_name(i)}.resolve_absolute();
-            if (imagePath.string() == context->thisExecutablePath) {
-                filepaths.emplace_back("");
+            auto imagePath = TeenyPath::path{_dyld_get_image_name(i)};
+            if (imagePath.exists()) {
+                imagePath = imagePath.resolve_absolute();
+                if (imagePath.string() == context->thisExecutablePath) {
+                    filepaths.emplace_back("");
+                } else {
+                    filepaths.emplace_back(imagePath.string());
+                }
             } else {
-                filepaths.emplace_back(imagePath.string());
+                context->events->addLog(LogSeverity::kWarning, "Image doesn't exist: " + imagePath.string());
             }
         }
 
@@ -40,11 +45,16 @@ namespace jet
         bool found = false;
         std::string realFilepath = filepath.empty() ? context->thisExecutablePath : filepath;
         for (uint32_t i = 0; i < _dyld_image_count(); i++) {
-            auto imagePath = TeenyPath::path{_dyld_get_image_name(i)}.resolve_absolute();
-            if (imagePath.string() == realFilepath) {
-                imageAddressSlide = _dyld_get_image_vmaddr_slide(i);
-                found = true;
-                break;
+            auto imagePath = TeenyPath::path{_dyld_get_image_name(i)};
+            if (imagePath.exists()) {
+                imagePath = imagePath.resolve_absolute();
+                if (imagePath.string() == realFilepath) {
+                    imageAddressSlide = _dyld_get_image_vmaddr_slide(i);
+                    found = true;
+                    break;
+                }
+            } else {
+                context->events->addLog(LogSeverity::kWarning, "Image doesn't exist: " + imagePath.string());
             }
         }
         if (!found) {
