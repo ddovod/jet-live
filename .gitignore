@@ -1,3 +1,4 @@
+.DS_Store
 tidy_report
 build
 compile_commands.json

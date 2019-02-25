@@ -126,14 +126,13 @@ namespace jet
             cu.compilationDirStr = dirPath.string();
             cu.sourceFilePath = cmdJson["file"];
             TeenyPath::path sourceFilePath{cu.sourceFilePath};
-            if (sourceFilePath.exists()) {
-                if (sourceFilePath.is_absolute()) {
-                    cu.sourceFilePath = TeenyPath::path(cu.sourceFilePath).resolve_absolute().string();
-                } else {
-                    sourceFilePath = TeenyPath::path{cu.compilationDirStr} / sourceFilePath;
-                    cu.sourceFilePath = sourceFilePath.resolve_absolute().string();
-                }
+            if (sourceFilePath.is_absolute()) {
+                cu.sourceFilePath = TeenyPath::path(cu.sourceFilePath).resolve_absolute().string();
             } else {
+                sourceFilePath = TeenyPath::path{cu.compilationDirStr} / sourceFilePath;
+                cu.sourceFilePath = sourceFilePath.resolve_absolute().string();
+            }
+            if (!TeenyPath::path{cu.sourceFilePath}.exists()) {
                 context->events->addLog(LogSeverity::kWarning, "Source file doesn't exist: " + sourceFilePath.string());
                 continue;
             }
