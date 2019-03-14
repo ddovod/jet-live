@@ -8,6 +8,7 @@ namespace jet
         kUnknown,
         kLog,
         kFileChanged,
+        kTryReload,
     };
 
     class IEvent

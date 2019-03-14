@@ -1,7 +1,6 @@
 
 #include "AsyncEventQueue.hpp"
 #include "jet/live/Utility.hpp"
-#include "jet/live/events/FileChangedEvent.hpp"
 
 namespace jet
 {
@@ -25,10 +24,10 @@ namespace jet
         }
     }
 
-    void AsyncEventQueue::addFileChanged(const std::string& filepath)
+    void AsyncEventQueue::addEvent(std::unique_ptr<IEvent>&& event)
     {
         std::lock_guard<std::mutex> lock(m_queueMutex);
-        m_queue.push(jet::make_unique<FileChangedEvent>(filepath));
+        m_queue.push(std::move(event));
     }
 
     IEvent* AsyncEventQueue::getEvent()
