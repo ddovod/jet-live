@@ -68,5 +68,6 @@ namespace jet
         std::unordered_set<std::string> getDirectoryFilters();
 
         void onFileChanged(const std::string& filepath);
+        void tryReloadInternal();
     };
 }

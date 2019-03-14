@@ -17,7 +17,7 @@ namespace jet
         LogEvent* getLogEvent();
         void popLogEvent();
 
-        void addFileChanged(const std::string& filepath);
+        void addEvent(std::unique_ptr<IEvent>&& event);
         IEvent* getEvent();
         void popEvent();
 

@@ -13,6 +13,7 @@
 #include "jet/live/StaticsCopyStep.hpp"
 #include "jet/live/Utility.hpp"
 #include "jet/live/events/FileChangedEvent.hpp"
+#include "jet/live/events/TryReloadEvent.hpp"
 
 namespace jet
 {
@@ -102,7 +103,8 @@ namespace jet
         m_compiler->update();
 
         if (m_compiler->isLinking()) {
-            // We should not perform any new compilation tasks if link task is running
+            // We should not perform any new compilation or
+            // link tasks if link task is already running
             return;
         }
 
@@ -112,7 +114,11 @@ namespace jet
                     onFileChanged(static_cast<FileChangedEvent*>(event)->getFilepath());
                     break;
                 }
-                case EventType::kLog: break;    // already handled
+                case EventType::kLog: break;  // already handled
+                case EventType::kTryReload: {
+                    tryReloadInternal();
+                    break;
+                }
                 default: assert(false); break;  // smth went wrong
             }
             m_context->events->popEvent();
@@ -121,7 +127,9 @@ namespace jet
 
     bool Live::isInitialized() const { return m_initialized; }
 
-    void Live::tryReload()
+    void Live::tryReload() { m_context->events->addEvent(jet::make_unique<TryReloadEvent>()); }
+
+    void Live::tryReloadInternal()
     {
         if (!isInitialized()) {
             m_context->events->addLog(
@@ -330,7 +338,7 @@ namespace jet
         m_context->dirsToMonitor = getDirectoriesToMonitor();
         m_fileWatcher = jet::make_unique<FileWatcher>(m_context->dirsToMonitor,
             [this](const FileWatcher::Event& event) {
-                m_context->events->addFileChanged(event.directory + event.filename);
+                m_context->events->addEvent(jet::make_unique<FileChangedEvent>(event.directory + event.filename));
             },
             [](const std::string&, const std::string& f) {
                 const auto s = f.size();
