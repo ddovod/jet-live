@@ -127,17 +127,15 @@ namespace jet
 
     bool Live::isInitialized() const { return m_initialized; }
 
-    void Live::tryReload() { m_context->events->addEvent(jet::make_unique<TryReloadEvent>()); }
+    void Live::tryReload()
+    {
+        m_context->events->addLog(LogSeverity::kInfo, "Trying to reload code...");
+        m_context->events->addEvent(jet::make_unique<TryReloadEvent>());
+    }
 
     void Live::tryReloadInternal()
     {
-        if (!isInitialized()) {
-            m_context->events->addLog(
-                LogSeverity::kWarning, "Initialization is not completed yet, wait for a few seconds");
-            return;
-        }
-
-        m_context->events->addLog(LogSeverity::kInfo, "Trying to reload code...");
+        assert(isInitialized());
         m_compiler->link([this](int status,
                              const std::string& libPath,
                              const std::vector<std::string>& sourceFilePaths,
