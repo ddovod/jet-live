@@ -56,6 +56,7 @@ namespace jet
         int m_recreateFileWatcherAfterTicks = 0;
         std::thread m_initThread;
         std::atomic_bool m_initialized{false};
+        std::atomic_bool m_earlyExit{false};
 
         void loadCompilationUnits();
         void loadSymbols();

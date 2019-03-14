@@ -16,7 +16,14 @@
 
 namespace jet
 {
-    Live::~Live() { onLiveDestroyed(); }
+    Live::~Live()
+    {
+        if (m_initThread.joinable()) {
+            m_earlyExit = true;
+            m_initThread.join();
+        }
+        onLiveDestroyed();
+    }
 
     Live::Live(std::unique_ptr<ILiveListener>&& listener, const LiveConfig& config)
         : m_context(jet::make_unique<LiveContext>())
@@ -44,13 +51,22 @@ namespace jet
         // The most dumb way to perform initialization in background thread.
         // TODO(ddovod): rework this pls
         m_initThread = std::thread([this] {
-            loadCompilationUnits();  // 0.070
-            m_context->dirFilters = getDirectoryFilters();
-            loadDependencies();     // 0.600
-            setupFileWatcher();     // 0.150
-            loadSymbols();          // 0.200
-            loadExportedSymbols();  // 1.200
-            m_initialized.store(true);
+            std::vector<std::function<void()>> initializationFunctions = {
+                [this] { loadCompilationUnits(); },
+                [this] { m_context->dirFilters = getDirectoryFilters(); },
+                [this] { loadDependencies(); },
+                [this] { setupFileWatcher(); },
+                [this] { loadSymbols(); },
+                [this] { loadExportedSymbols(); },
+                [this] { m_initialized.store(true); },
+            };
+
+            for (auto& f : initializationFunctions) {
+                f();
+                if (m_earlyExit) {
+                    break;
+                }
+            }
         });
     }
 
