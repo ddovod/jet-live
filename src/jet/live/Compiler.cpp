@@ -102,7 +102,7 @@ namespace jet
     void Compiler::compile(const CompilationUnit& cu,
         std::function<void(int, const std::string&, const std::string&)>&& finishCallback)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::unique_lock<std::mutex> lock(m_mutex);
         assert(!m_shouldLink && !m_runningLinkTask);
 
         if (m_compilerPath.empty()) {
@@ -111,8 +111,11 @@ namespace jet
 
         auto found = m_runningCompilationTasks.find(cu.sourceFilePath);
         if (found != m_runningCompilationTasks.end()) {
+            // Process joins the out and err threads -> (dead)locks the mutex
+            lock.unlock();
             found->second.process->kill();
             m_runningCompilationTasks.erase(found);
+            lock.lock();
         }
 
         PendingCompilationTask pendingTask;
@@ -141,12 +144,15 @@ namespace jet
 
     void Compiler::remove(const std::string& compilationUnitPath)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::unique_lock<std::mutex> lock(m_mutex);
 
         auto found = m_runningCompilationTasks.find(compilationUnitPath);
         if (found != m_runningCompilationTasks.end()) {
+            // Process joins the out and err threads -> (dead)locks the mutex
+            lock.unlock();
             found->second.process->kill();
             m_runningCompilationTasks.erase(found);
+            lock.lock();
         }
 
         auto newEnd = std::remove_if(m_pendingCompilationTasks.begin(),
