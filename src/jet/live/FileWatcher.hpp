@@ -78,5 +78,6 @@ namespace jet
         std::mutex m_fileEventsMutex;
         std::vector<FileWatcher::Event> m_fileEvents;
         std::vector<efsw::WatchID> m_watchIds;
+        const std::chrono::milliseconds m_fileModificationWindowMsec = std::chrono::milliseconds(100);
     };
 }

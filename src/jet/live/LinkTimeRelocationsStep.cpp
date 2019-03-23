@@ -1,5 +1,6 @@
 
 #include "LinkTimeRelocationsStep.hpp"
+#include <cstdint>
 #include <limits>
 #include "jet/live/DataTypes.hpp"
 #include "jet/live/LiveContext.hpp"
@@ -48,9 +49,9 @@ namespace jet
             auto relocAddressVal = targetSymbol->runtimeAddress + reloc.relocationOffsetRelativeTargetSymbolAddress;
             auto distance = std::abs(static_cast<intptr_t>(oldVar->runtimeAddress - relocSymbol->runtimeAddress));
             int64_t maxAllowedDistance = 0;
-            if (reloc.size == 4) {
+            if (reloc.size == sizeof(int32_t)) {
                 maxAllowedDistance = std::numeric_limits<int32_t>::max();
-            } else if (reloc.size == 8) {
+            } else if (reloc.size == sizeof(int64_t)) {
                 maxAllowedDistance = std::numeric_limits<int64_t>::max();
             } else {
                 context->events->addLog(LogSeverity::kError, "LinkTimeRelocationsStep: WTF");
@@ -68,9 +69,9 @@ namespace jet
                 context->events->addLog(LogSeverity::kError, "'unprotect' failed");
                 continue;
             }
-            if (reloc.size == 4) {
+            if (reloc.size == sizeof(int32_t)) {
                 *reinterpret_cast<int32_t*>(relocAddress) += oldVar->runtimeAddress - relocSymbol->runtimeAddress;
-            } else if (reloc.size == 8) {
+            } else if (reloc.size == sizeof(int64_t)) {
                 *reinterpret_cast<int64_t*>(relocAddress) += oldVar->runtimeAddress - relocSymbol->runtimeAddress;
             }
             context->events->addLog(LogSeverity::kDebug, relocSymbol->name + " was relocated");

@@ -193,7 +193,8 @@ namespace jet
         TeenyPath::path xcodeProjectPath;
         for (const auto& el : TeenyPath::ls(TeenyPath::path{getCmakeBuildDirectory()})) {
             auto pathStr = el.string();
-            if (pathStr.substr(pathStr.size() - 9) == "xcodeproj") {
+            const auto xcodeprojExtension = std::string("xcodeproj");
+            if (pathStr.substr(pathStr.size() - xcodeprojExtension.size()) == xcodeprojExtension) {
                 xcodeProjectPath = el;
                 break;
             }

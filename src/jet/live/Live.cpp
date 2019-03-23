@@ -86,7 +86,7 @@ namespace jet
             m_context->events->addLog(LogSeverity::kInfo, "Ready");
         }
 
-        if (m_recreateFileWatcherAfterTicks == 10) {
+        if (m_recreateFileWatcherAfterTicks == m_recreateFileWatcherMaxTicks) {
             m_fileWatcher.reset();
         }
         if (m_recreateFileWatcherAfterTicks > 0) {
@@ -334,7 +334,8 @@ namespace jet
     void Live::setupFileWatcher()
     {
         m_context->dirsToMonitor = getDirectoriesToMonitor();
-        m_fileWatcher = jet::make_unique<FileWatcher>(m_context->dirsToMonitor,
+        m_fileWatcher = jet::make_unique<FileWatcher>(
+            m_context->dirsToMonitor,
             [this](const FileWatcher::Event& event) {
                 m_context->events->addEvent(jet::make_unique<FileChangedEvent>(event.directory + event.filename));
             },
@@ -404,7 +405,7 @@ namespace jet
                 // We should do it after some time to let current file watcher
                 // to release its' stuff
                 // TODO(ddovod): need better runloop
-                m_recreateFileWatcherAfterTicks = 10;
+                m_recreateFileWatcherAfterTicks = m_recreateFileWatcherMaxTicks;
             }
         }
     }
