@@ -40,8 +40,8 @@ namespace jet
             }
 
             MemoryRegion region;
-            auto addrBeginStr = "0x" + line.substr(23, 16);
-            auto addrEndStr = "0x" + line.substr(40, 16);
+            auto addrBeginStr = "0x" + line.substr(23, 16);  // NOLINT
+            auto addrEndStr = "0x" + line.substr(40, 16);    // NOLINT
             ss << std::hex << addrBeginStr;
             ss >> region.regionBegin;
             ss.clear();

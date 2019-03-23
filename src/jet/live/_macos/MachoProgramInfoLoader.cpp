@@ -13,6 +13,17 @@
 #include "jet/live/LiveContext.hpp"
 #include "jet/live/Utility.hpp"
 
+#define N_TYPE_GET_STAB(nType) static_cast<uint8_t>((nType)&N_STAB)  // NOLINT
+#define N_TYPE_GET_PEXT(nType) static_cast<bool>((nType)&N_PEXT)     // NOLINT
+#define N_TYPE_GET_TYPE(nType) static_cast<uint8_t>((nType)&N_TYPE)  // NOLINT
+#define N_TYPE_GET_EXT(nType) static_cast<bool>((nType)&N_EXT)       // NOLINT
+
+#define N_DESC_GET_REFERENCE_TYPE(nDesc) static_cast<uint16_t>((nDesc)&REFERENCE_TYPE)              // NOLINT
+#define N_DESC_GET_REFERENCED_DYNAMICALLY(nDesc) static_cast<bool>((nDesc)&REFERENCED_DYNAMICALLY)  // NOLINT
+#define N_DESC_GET_DISCARDED(nDesc) static_cast<bool>((nDesc)&N_DESC_DISCARDED)                     // NOLINT
+#define N_DESC_GET_WEAK_DEF(nDesc) static_cast<bool>((nDesc)&N_WEAK_DEF)                            // NOLINT
+#define N_DESC_GET_WEAK_REF(nDesc) static_cast<bool>((nDesc)&N_WEAK_REF)                            // NOLINT
+
 namespace jet
 {
     std::vector<std::string> MachoProgramInfoLoader::getAllLoadedProgramsPaths(const LiveContext* context) const
@@ -122,7 +133,7 @@ namespace jet
                     auto table = reinterpret_cast<symtab_command*>(machoPtr + commandOffset);
                     auto symbolsPtr = reinterpret_cast<nlist_64*>(machoPtr + table->symoff);
                     for (uint32_t i = 0; i < table->nsyms; i++) {
-                        if ((symbolsPtr[i].n_type & N_TYPE) == N_SECT) {
+                        if (N_TYPE_GET_TYPE(symbolsPtr[i].n_type) == N_SECT) {
                             symbolsBounds[symbolsPtr[i].n_sect].insert(symbolsPtr[i].n_value);
                         }
                     }
@@ -151,12 +162,12 @@ namespace jet
                     for (uint32_t i = 0; i < table->nsyms; i++) {
                         auto& symbol = symbolsPtr[i];
 
-                        if ((symbol.n_type & N_EXT) && symbol.n_sect != NO_SECT) {
+                        if (N_TYPE_GET_EXT(symbol.n_type) && symbol.n_sect != NO_SECT) {
                             res.exportedSymbolNames.insert(std::string(stringTable + symbol.n_un.n_strx + 1));
                         }
 
                         MachoSymbol machoSymbol;
-                        if (symbol.n_type & N_STAB) {
+                        if (N_TYPE_GET_STAB(symbol.n_type) != 0) {
                             switch (symbol.n_type) {
                                 case N_GSYM: machoSymbol.type = MachoSymbolType::kGSYM; break;
                                 case N_FNAME: machoSymbol.type = MachoSymbolType::kFNAME; break;
@@ -192,7 +203,7 @@ namespace jet
                                 default: continue;  // Some symbol we're not interested in
                             }
                         } else {
-                            switch (symbol.n_type & N_TYPE) {
+                            switch (N_TYPE_GET_TYPE(symbol.n_type)) {
                                 case N_UNDF: machoSymbol.type = MachoSymbolType::kUndefined; break;
                                 case N_ABS: machoSymbol.type = MachoSymbolType::kAbsolute; break;
                                 case N_SECT: machoSymbol.type = MachoSymbolType::kSection; break;
@@ -202,7 +213,7 @@ namespace jet
                             }
                         }
 
-                        switch (symbol.n_desc & REFERENCE_TYPE) {
+                        switch (N_DESC_GET_REFERENCE_TYPE(symbol.n_desc)) {
                             case REFERENCE_FLAG_UNDEFINED_NON_LAZY:
                                 machoSymbol.referenceType = MachoSymbolReferenceType::kUndefinedNonLazy;
                                 break;
@@ -223,12 +234,12 @@ namespace jet
                                 break;
                         }
 
-                        machoSymbol.referencedDynamically = symbol.n_desc & REFERENCED_DYNAMICALLY;
-                        machoSymbol.descDiscarded = symbol.n_desc & N_DESC_DISCARDED;
-                        machoSymbol.weakRef = symbol.n_desc & N_WEAK_REF;
-                        machoSymbol.weakDef = symbol.n_desc & N_WEAK_DEF;
-                        machoSymbol.privateExternal = symbol.n_type & N_PEXT;
-                        machoSymbol.external = symbol.n_type & N_EXT;
+                        machoSymbol.referencedDynamically = N_DESC_GET_REFERENCED_DYNAMICALLY(symbol.n_desc);
+                        machoSymbol.descDiscarded = N_DESC_GET_DISCARDED(symbol.n_desc);
+                        machoSymbol.weakRef = N_DESC_GET_WEAK_REF(symbol.n_desc);
+                        machoSymbol.weakDef = N_DESC_GET_WEAK_DEF(symbol.n_desc);
+                        machoSymbol.privateExternal = N_TYPE_GET_PEXT(symbol.n_type);
+                        machoSymbol.external = N_TYPE_GET_EXT(symbol.n_type);
                         machoSymbol.sectionIndex = symbol.n_sect;
                         machoSymbol.virtualAddress = symbol.n_value;
                         // All symbol names starts with '_', so just skipping 1 char
@@ -373,7 +384,7 @@ namespace jet
                         auto table = reinterpret_cast<symtab_command*>(machoPtr + commandOffset);
                         auto symbolsPtr = reinterpret_cast<nlist_64*>(machoPtr + table->symoff);
                         for (uint32_t i = 0; i < table->nsyms; i++) {
-                            if ((symbolsPtr[i].n_type & N_TYPE) == N_SECT) {
+                            if (N_TYPE_GET_TYPE(symbolsPtr[i].n_type) == N_SECT) {
                                 symbolsBounds[symbolsPtr[i].n_sect].insert(symbolsPtr[i].n_value);
                             }
                         }
@@ -404,7 +415,7 @@ namespace jet
                             orderedSymbols.push_back(shortSym);
 
                             MachoSymbol machoSymbol;
-                            if (symbol.n_type & N_STAB) {
+                            if (N_TYPE_GET_STAB(symbol.n_type) != 0) {
                                 switch (symbol.n_type) {
                                     case N_GSYM: machoSymbol.type = MachoSymbolType::kGSYM; break;
                                     case N_FNAME: machoSymbol.type = MachoSymbolType::kFNAME; break;
@@ -440,7 +451,7 @@ namespace jet
                                     default: continue;  // Some symbol we're not interested in
                                 }
                             } else {
-                                switch (symbol.n_type & N_TYPE) {
+                                switch (N_TYPE_GET_TYPE(symbol.n_type)) {
                                     case N_UNDF: machoSymbol.type = MachoSymbolType::kUndefined; break;
                                     case N_ABS: machoSymbol.type = MachoSymbolType::kAbsolute; break;
                                     case N_SECT: machoSymbol.type = MachoSymbolType::kSection; break;
@@ -450,7 +461,7 @@ namespace jet
                                 }
                             }
 
-                            switch (symbol.n_desc & REFERENCE_TYPE) {
+                            switch (N_DESC_GET_REFERENCE_TYPE(symbol.n_desc)) {
                                 case REFERENCE_FLAG_UNDEFINED_NON_LAZY:
                                     machoSymbol.referenceType = MachoSymbolReferenceType::kUndefinedNonLazy;
                                     break;
@@ -471,12 +482,12 @@ namespace jet
                                     break;
                             }
 
-                            machoSymbol.referencedDynamically = symbol.n_desc & REFERENCED_DYNAMICALLY;
-                            machoSymbol.descDiscarded = symbol.n_desc & N_DESC_DISCARDED;
-                            machoSymbol.weakRef = symbol.n_desc & N_WEAK_REF;
-                            machoSymbol.weakDef = symbol.n_desc & N_WEAK_DEF;
-                            machoSymbol.privateExternal = symbol.n_type & N_PEXT;
-                            machoSymbol.external = symbol.n_type & N_EXT;
+                            machoSymbol.referencedDynamically = N_DESC_GET_REFERENCED_DYNAMICALLY(symbol.n_desc);
+                            machoSymbol.descDiscarded = N_DESC_GET_DISCARDED(symbol.n_desc);
+                            machoSymbol.weakRef = N_DESC_GET_WEAK_REF(symbol.n_desc);
+                            machoSymbol.weakDef = N_DESC_GET_WEAK_DEF(symbol.n_desc);
+                            machoSymbol.privateExternal = N_TYPE_GET_PEXT(symbol.n_type);
+                            machoSymbol.external = N_TYPE_GET_EXT(symbol.n_type);
                             machoSymbol.sectionIndex = symbol.n_sect;
                             machoSymbol.virtualAddress = symbol.n_value;
                             // All symbol names starts with '_', so just skipping 1 char
@@ -520,7 +531,7 @@ namespace jet
                                 continue;
                             }
 
-                            relocation_info* relocs = reinterpret_cast<relocation_info*>(machoPtr + section.reloff);
+                            auto* relocs = reinterpret_cast<relocation_info*>(machoPtr + section.reloff);
                             for (uint32_t j = 0; j < section.nreloc; j++) {
                                 const auto& reloc = relocs[j];
                                 const auto& shortSymbol = orderedSymbols[reloc.r_symbolnum];
@@ -533,8 +544,8 @@ namespace jet
                                 Relocation rel;
 
                                 switch (reloc.r_length) {
-                                    case 2: rel.size = 4; break;
-                                    case 3: rel.size = 8; break;
+                                    case 2: rel.size = sizeof(uint32_t); break;
+                                    case 3: rel.size = sizeof(uint64_t); break;
                                     default:
                                         context->events->addLog(LogSeverity::kError,
                                             "Unsupported relocation length: " + std::to_string(reloc.r_length));
@@ -563,6 +574,10 @@ namespace jet
                                     case X86_64_RELOC_TLV:         // for thread local variables
                                         context->events->addLog(LogSeverity::kError,
                                             "Unsupported relocation type: " + relToString(reloc.r_type));
+                                        continue;
+                                    default:
+                                        context->events->addLog(LogSeverity::kError,
+                                            "Unknown relocation type: " + std::to_string(reloc.r_type));
                                         continue;
                                 }
 
@@ -635,8 +650,9 @@ namespace jet
                     res.reserve(table->nsyms);
                     for (uint32_t i = 0; i < table->nsyms; i++) {
                         auto& symbol = symbolsPtr[i];
-                        if ((symbol.n_type & N_EXT) && symbol.n_sect == NO_SECT && (symbol.n_type & N_TYPE) == N_UNDF) {
-                            res.push_back(std::string(stringTable + symbol.n_un.n_strx + 1));
+                        if (N_TYPE_GET_EXT(symbol.n_type) && symbol.n_sect == NO_SECT
+                            && N_TYPE_GET_TYPE(symbol.n_type) == N_UNDF) {
+                            res.emplace_back(stringTable + symbol.n_un.n_strx + 1);
                         }
                     }
                     break;
@@ -686,8 +702,8 @@ namespace jet
                     res.reserve(table->nsyms);
                     for (uint32_t i = 0; i < table->nsyms; i++) {
                         auto& symbol = symbolsPtr[i];
-                        if ((symbol.n_type & N_EXT) && symbol.n_sect != NO_SECT) {
-                            res.push_back(std::string(stringTable + symbol.n_un.n_strx + 1));
+                        if (N_TYPE_GET_EXT(symbol.n_type) && symbol.n_sect != NO_SECT) {
+                            res.emplace_back(stringTable + symbol.n_un.n_strx + 1);
                         }
                     }
                     break;
