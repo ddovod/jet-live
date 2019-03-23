@@ -1,9 +1,6 @@
+;;; Directory Local Variables
+;;; For more information see (info "(emacs) Directory Variables")
 
-((nil . ((eval . (progn
-                   (defun reload-code-in-app ()
-                     (interactive)
-                     (progn
-                       (save-some-buffers)
-                       (async-shell-command "pkill -SIGUSR1 example")))
-                   (global-set-key (kbd "C-c c r") 'reload-code-in-app))))))
+((nil
+  (my/project-app-name . "example")))
 
