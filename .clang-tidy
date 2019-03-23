@@ -177,7 +177,7 @@ Checks: >
   clang-analyzer-valist.Unterminated,
   cppcoreguidelines-avoid-c-arrays,
   cppcoreguidelines-avoid-goto,
-  cppcoreguidelines-avoid-magic-numbers,
+  # cppcoreguidelines-avoid-magic-numbers,
   cppcoreguidelines-c-copy-assignment-signature,
   cppcoreguidelines-interfaces-global-init,
   cppcoreguidelines-macro-usage,
@@ -243,7 +243,7 @@ Checks: >
   hicpp-special-member-functions,
   hicpp-static-assert,
   hicpp-undelegated-constructor,
-  hicpp-uppercase-literal-suffix,
+  # hicpp-uppercase-literal-suffix,
   hicpp-use-auto,
   hicpp-use-emplace,
   hicpp-use-equals-default,
@@ -329,7 +329,7 @@ Checks: >
   readability-implicit-bool-conversion,
   readability-inconsistent-declaration-parameter-name,
   readability-isolate-declaration,
-  readability-magic-numbers,
+  # readability-magic-numbers,
   readability-misleading-indentation,
   readability-misplaced-array-index,
   # readability-named-parameter,
@@ -348,7 +348,7 @@ Checks: >
   readability-static-definition-in-anonymous-namespace,
   readability-string-compare,
   readability-uniqueptr-delete-release,
-  readability-uppercase-literal-suffix,
+  # readability-uppercase-literal-suffix,
   zircon-temporary-objects
 
 CheckOptions:
