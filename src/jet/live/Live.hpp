@@ -54,6 +54,7 @@ namespace jet
         std::unique_ptr<FileWatcher> m_fileWatcher;
         std::unique_ptr<Compiler> m_compiler;
         int m_recreateFileWatcherAfterTicks = 0;
+        const int m_recreateFileWatcherMaxTicks = 10;
         std::thread m_initThread;
         std::atomic_bool m_initialized{false};
         std::atomic_bool m_earlyExit{false};

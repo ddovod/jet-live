@@ -1,7 +1,9 @@
 
 #include "ElfProgramInfoLoader.hpp"
+#include <elfio/elf_types.hpp>
 #include "jet/live/LiveContext.hpp"
 // clang-format off
+#include <cstdint>
 #include <elfio/elfio.hpp>
 #include <link.h>
 // clang-format on
@@ -84,13 +86,13 @@ namespace jet
         std::hash<std::string> stringHasher;
         uint64_t currentHash = 0;
         elfContext.sectionNames.resize(elfFile.sections.size());
-        for (uint32_t i = 0; i < elfFile.sections.size(); i++) {
+        for (ElfW(Half) i = 0; i < elfFile.sections.size(); i++) {
             const auto& section = elfFile.sections[i];
             elfContext.sectionNames[i] = section->get_name();
 
             if (section->get_type() == SHT_SYMTAB) {
                 const ELFIO::symbol_section_accessor symbols{elfFile, section};
-                for (uint32_t j = 0; j < symbols.get_symbols_num(); j++) {
+                for (ElfW(Xword) j = 0; j < symbols.get_symbols_num(); j++) {
                     std::string name;
                     ElfW(Addr) value = 0;
                     ElfW(Xword) size = 0;
@@ -177,7 +179,7 @@ namespace jet
                 continue;
             }
 
-            std::unordered_map<ElfW(Word), ElfW(Half)> symbolsSectionIndexes;
+            std::unordered_map<ElfW(Xword), ElfW(Half)> symbolsSectionIndexes;
             std::vector<std::map<uintptr_t, ElfSymbol>> symbolsInSections;
             int textSectionIndex = -1;
             int bssSectionIndex = -1;
@@ -198,7 +200,7 @@ namespace jet
 
                 if (section->get_type() == SHT_SYMTAB) {
                     const ELFIO::symbol_section_accessor symbols{elfFile, section};
-                    for (uint32_t j = 0; j < symbols.get_symbols_num(); j++) {
+                    for (ElfW(Xword) j = 0; j < symbols.get_symbols_num(); j++) {
                         std::string name;
                         ElfW(Addr) value = 0;
                         ElfW(Xword) size = 0;
@@ -271,7 +273,7 @@ namespace jet
                     }
 
                     const ELFIO::relocation_section_accessor relocs{elfFile, section};
-                    for (uint32_t j = 0; j < relocs.get_entries_num(); j++) {
+                    for (ElfW(Xword) j = 0; j < relocs.get_entries_num(); j++) {
                         Relocation reloc;
 
                         ElfW(Addr) offset;
@@ -299,11 +301,11 @@ namespace jet
                         switch (type) {
                             // Link-time relocation, we should fix it by ourself
                             case R_X86_64_PC32:  // 32,      S + A – P
-                                reloc.size = 4;
+                                reloc.size = sizeof(int32_t);
                                 symRelAddr = static_cast<uintptr_t>(addend + 4);
                                 break;
                             case R_X86_64_PC64:  // 64,      S + A – P
-                                reloc.size = 8;
+                                reloc.size = sizeof(int64_t);
                                 symRelAddr = static_cast<uintptr_t>(addend + 4);
                                 break;
 
@@ -388,7 +390,7 @@ namespace jet
             if (section->get_type() == SHT_SYMTAB) {
                 const ELFIO::symbol_section_accessor symbols{elfFile, section};
                 res.reserve(symbols.get_symbols_num());
-                for (uint32_t j = 0; j < symbols.get_symbols_num(); j++) {
+                for (ElfW(Xword) j = 0; j < symbols.get_symbols_num(); j++) {
                     std::string name;
                     ElfW(Addr) value = 0;
                     ElfW(Xword) size = 0;
@@ -426,7 +428,7 @@ namespace jet
             if (section->get_type() == SHT_SYMTAB) {
                 const ELFIO::symbol_section_accessor symbols{elfFile, section};
                 res.reserve(symbols.get_symbols_num());
-                for (uint32_t j = 0; j < symbols.get_symbols_num(); j++) {
+                for (ElfW(Xword) j = 0; j < symbols.get_symbols_num(); j++) {
                     std::string name;
                     ElfW(Addr) value = 0;
                     ElfW(Xword) size = 0;

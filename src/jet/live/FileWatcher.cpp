@@ -6,6 +6,7 @@
 #include <memory>
 #include <teenypath.h>
 #include <unistd.h>
+#include <utility>
 #include <xxhash.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -75,7 +76,7 @@ namespace jet
             // Remove obsolete time points
             std::vector<std::string> timePointsToRemove;
             for (const auto& tp : m_modificationTimePoints) {
-                if (now - tp.second > milliseconds(100)) {
+                if (now - tp.second > m_fileModificationWindowMsec) {
                     timePointsToRemove.push_back(tp.first);
                 }
             }
@@ -123,7 +124,7 @@ namespace jet
 
             m_modificationTimePoints[fullFilepath] = now;
             std::lock_guard<std::mutex> lock(m_fileEventsMutex);
-            m_fileEvents.push_back({foundAction->second, dir, filename, oldFilename});
+            m_fileEvents.push_back({foundAction->second, dir, filename, std::move(oldFilename)});
         });
 
         for (const auto& el : directoriesToWatch) {
