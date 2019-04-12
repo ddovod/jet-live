@@ -223,7 +223,7 @@ namespace jet
         scriptBody
             .append("rm -rf ").append(fakeXcodeProjectName).append(" && ")
             .append("cp -R ").append(xcodeProjectName).append(" ").append(fakeXcodeProjectName).append(" && ")
-            .append("xcodebuild -project ").append(fakeXcodeProjectName).append(" -alltargets -dry-run -UseNewBuildSystem=NO | xcpretty -r json-compilation-database -o temp_cdb.json && ")
+            .append("xcodebuild -project ").append(fakeXcodeProjectName).append(" -alltargets -dry-run -UseNewBuildSystem=NO | xcpretty -r json-compilation-database -o temp_cdb.json &> /dev/null && ")
             .append("sed 's/").append(fakeXcodeProjectNamePrefix).append("//g' temp_cdb.json > compile_commands.json && ")
             .append("rm -rf temp_cdb.json ").append(fakeXcodeProjectName);
         // clang-format on
