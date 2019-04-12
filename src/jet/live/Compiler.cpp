@@ -2,6 +2,7 @@
 #include "Compiler.hpp"
 #include <algorithm>
 #include <cassert>
+#include <dlfcn.h>
 #include <teenypath.h>
 #include "jet/live/BuildConfig.hpp"
 #include "jet/live/Utility.hpp"
@@ -82,6 +83,21 @@ namespace jet
                         "Link failed: " + m_runningLinkTask->cuOrLibFilepath + "\n" + m_runningLinkTask->errMessage);
                 } else {
                     m_context->events->addLog(LogSeverity::kInfo, "Linked successfully");
+                }
+
+                // Also loading library since we should not clear ready CUs
+                // if we get load time errors (like missing symbols)
+                if (status == 0) {
+                    const auto& libPath = m_runningLinkTask->cuOrLibFilepath;
+                    m_context->events->addLog(LogSeverity::kDebug, "Opening " + libPath + "...");
+                    auto libHandle = dlopen(libPath.c_str(), RTLD_NOW | RTLD_GLOBAL);  // NOLINT
+                    if (libHandle) {
+                        m_context->events->addLog(LogSeverity::kDebug, "Library opened successfully");
+                    } else {
+                        m_context->events->addLog(
+                            LogSeverity::kError, "Cannot open library " + libPath + "\n" + std::string(dlerror()));
+                        status = 123;
+                    }
                 }
 
                 std::vector<std::string> sourceFilePaths;
