@@ -3,6 +3,7 @@
 
 #include <mutex>
 #include <process.hpp>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -56,6 +57,21 @@ namespace jet
          */
         bool isLinking() const;
 
+        /**
+         * Retrieves filenames that are being compiled now.
+         */
+        std::set<std::string> getFilesBeingCompiled() const;
+
+        /**
+         * Retrieves filenames that was successfully compiled.
+         */
+        std::set<std::string> getSuccessfullyCompiledFiles() const;
+
+        /**
+         * Retrieves filenames that was failed to compile.
+         */
+        std::set<std::string> getFailedToCompileFiles() const;
+
     private:
         const LiveContext* m_context;
         struct Task
@@ -89,7 +105,7 @@ namespace jet
         std::vector<PendingCompilationTask> m_pendingCompilationTasks;
         std::unique_ptr<Task> m_runningLinkTask;
         std::unordered_map<std::string, ShortCompilationUnit> m_readyCompilationUnits;
-        std::unordered_set<std::string> m_failedCompilationUnits;
+        std::set<std::string> m_failedCompilationUnits;
         int m_currentLibIndex = 1;
         std::string m_compilerPath;
 

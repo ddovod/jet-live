@@ -126,6 +126,19 @@ namespace jet
 
     bool Live::isInitialized() const { return m_initialized; }
 
+    Status Live::getStatus() const
+    {
+        Status res;
+        res.compilingFiles = m_compiler->getFilesBeingCompiled();
+        res.successfulFiles = m_compiler->getSuccessfullyCompiledFiles();
+        res.failedFiles = m_compiler->getFailedToCompileFiles();
+        for (const auto& el : res.compilingFiles) {
+            res.successfulFiles.erase(el);
+            res.failedFiles.erase(el);
+        }
+        return res;
+    }
+
     void Live::tryReload()
     {
         m_context->events->addLog(LogSeverity::kInfo, "Trying to reload code...");

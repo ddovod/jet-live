@@ -313,4 +313,27 @@ namespace jet
     }
 
     bool Compiler::isLinking() const { return static_cast<bool>(m_runningLinkTask); }
+
+    std::set<std::string> Compiler::getFilesBeingCompiled() const
+    {
+        std::set<std::string> res;
+        for (const auto& el : m_pendingCompilationTasks) {
+            res.insert(TeenyPath::path{el.cu.sourceFilePath}.filename());
+        }
+        for (const auto& el : m_runningCompilationTasks) {
+            res.insert(el.second.filename);
+        }
+        return res;
+    }
+
+    std::set<std::string> Compiler::getSuccessfullyCompiledFiles() const
+    {
+        std::set<std::string> res;
+        for (const auto& el : m_readyCompilationUnits) {
+            res.insert(TeenyPath::path{el.second.sourceFilepath}.filename());
+        }
+        return res;
+    }
+
+    std::set<std::string> Compiler::getFailedToCompileFiles() const { return m_failedCompilationUnits; }
 }
