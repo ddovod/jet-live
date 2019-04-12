@@ -15,7 +15,7 @@ TEST_CASE("Lost modifications when adding new file", "[common]")
     REQUIRE(afterReload1 == 12);
 
     std::cout << "JET_TEST: enable(lost_mod:3)" << std::endl;
-    waitForReload(); // 2 files should be reloaded
+    waitForReload(5000); // 2 files should be reloaded
     auto afterReload2 = lostModificationGetValue();
     REQUIRE(afterReload2 == 34);
 }
