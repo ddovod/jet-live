@@ -35,6 +35,7 @@ namespace jet
                     m_readyCompilationUnits[el.second.cuOrLibFilepath] = {
                         el.second.cuOrLibFilepath, el.second.objFilepath};
                     m_context->events->addLog(LogSeverity::kInfo, "Success: " + el.second.filename);
+                    m_failedCompilationUnits.erase(el.second.filename);
                 } else {
                     std::string message = "Failed: " + el.second.filename;
                     if (el.second.hasColorDiagnosticsFlag) {
@@ -50,6 +51,7 @@ namespace jet
                     if (readyFound != m_readyCompilationUnits.end()) {
                         m_readyCompilationUnits.erase(readyFound);
                     }
+                    m_failedCompilationUnits.insert(el.second.filename);
                 }
 
                 tasksToRemove.push_back(el.first);
@@ -72,7 +74,16 @@ namespace jet
 
         if (m_runningCompilationTasks.empty() && m_shouldLink) {
             m_shouldLink = false;
-            doLink(std::move(m_pendingLinkingFinishCallback));
+            if (m_failedCompilationUnits.empty()) {
+                doLink(std::move(m_pendingLinkingFinishCallback));
+            } else {
+                m_context->events->addLog(LogSeverity::kWarning, "There're files that failed to compile:");
+                for (const auto& el : m_failedCompilationUnits) {
+                    m_context->events->addLog(LogSeverity::kWarning, "* " + el);
+                }
+                m_context->events->addLog(LogSeverity::kWarning, "Please fix it and try again");
+                m_pendingLinkingFinishCallback(125, {}, {}, {});
+            }
         }
 
         if (m_runningLinkTask) {
@@ -150,12 +161,8 @@ namespace jet
         std::function<void(int, const std::string&, const std::vector<std::string>&, const std::string&)>&&
             finishCallback)
     {
-        if (!m_runningCompilationTasks.empty() || m_runningLinkTask) {
-            m_shouldLink = true;
-            m_pendingLinkingFinishCallback = std::move(finishCallback);
-        } else {
-            doLink(std::move(finishCallback));
-        }
+        m_shouldLink = true;
+        m_pendingLinkingFinishCallback = std::move(finishCallback);
     }
 
     void Compiler::remove(const std::string& compilationUnitPath)

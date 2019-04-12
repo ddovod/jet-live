@@ -89,6 +89,7 @@ namespace jet
         std::vector<PendingCompilationTask> m_pendingCompilationTasks;
         std::unique_ptr<Task> m_runningLinkTask;
         std::unordered_map<std::string, ShortCompilationUnit> m_readyCompilationUnits;
+        std::unordered_set<std::string> m_failedCompilationUnits;
         int m_currentLibIndex = 1;
         std::string m_compilerPath;
 
