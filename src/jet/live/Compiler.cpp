@@ -148,7 +148,7 @@ namespace jet
         PendingCompilationTask pendingTask;
         pendingTask.cu = cu;
         pendingTask.finishCallback = std::move(finishCallback);
-        m_pendingCompilationTasks.erase(std::find_if(m_pendingCompilationTasks.begin(),
+        m_pendingCompilationTasks.erase(std::remove_if(m_pendingCompilationTasks.begin(),
                                             m_pendingCompilationTasks.end(),
                                             [&pendingTask](const PendingCompilationTask& task) {
                                                 return task.cu.sourceFilePath == pendingTask.cu.sourceFilePath;
