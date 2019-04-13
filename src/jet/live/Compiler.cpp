@@ -281,7 +281,7 @@ namespace jet
 
         if (pendingCompilation) {
             m_shouldLink = true;
-            m_pendingLinkingFinishCallback = std::move(finishCallback);
+            m_pendingLinkingFinishCallback = finishCallback;
             return;
         }
 
