@@ -26,6 +26,7 @@ target_sources(tests
   src/main.cpp
   src/TestListener.cpp
   src/WaitForReload.cpp
+  src/Stacktrace.cpp
 
   src/utility/LambdaFunctionWithCapturesBadCase2.cpp
   src/utility/LambdaFunctionWithCapturesGoodCase.cpp
