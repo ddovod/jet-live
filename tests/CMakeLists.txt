@@ -26,6 +26,7 @@ target_sources(tests
   src/main.cpp
   src/TestListener.cpp
   src/WaitForReload.cpp
+  src/Stacktrace.cpp
 
   src/utility/LambdaFunctionWithCapturesBadCase2.cpp
   src/utility/LambdaFunctionWithCapturesGoodCase.cpp
@@ -60,6 +61,10 @@ target_sources(tests
   src/utility/UndefinedSymbolDeep.cpp
   src/utility/MultipleDefinitions.cpp
   src/utility/FailedCompilationCrash.cpp
+  src/utility/LostModification.cpp
+#  src/utility/LostModification2.cpp # <jet_tag: lost_mod:3>
+  src/utility/ReloadAfterFailedCompilation1.cpp
+  src/utility/ReloadAfterFailedCompilation2.cpp
 
   src/good/ClassInstanceMethod_test.cpp
   src/good/CommonSection_test.cpp
@@ -90,6 +95,8 @@ target_sources(tests
   src/good/UndefinedSymbolDeep_test.cpp
   src/good/MultipleDefinitions_test.cpp
   src/good/FailedCompilationCrash_test.cpp
+  src/good/LostModification_test.cpp
+  src/good/ReloadAfterFailedCompilation_test.cpp
 
   src/bad/LambdaFunctionWithCapturesBadCase2_test.cpp
   src/bad/LambdaFunctionWithCapturesBadCase_test.cpp

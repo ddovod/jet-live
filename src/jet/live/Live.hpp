@@ -12,6 +12,7 @@
 #include "jet/live/ILiveListener.hpp"
 #include "jet/live/LiveConfig.hpp"
 #include "jet/live/LiveContext.hpp"
+#include "jet/live/Status.hpp"
 
 namespace jet
 {
@@ -48,6 +49,11 @@ namespace jet
          * Checks if initialization is finished.
          */
         bool isInitialized() const;
+
+        /**
+         * Retrieves status of the library.
+         */
+        Status getStatus() const;
 
     private:
         std::unique_ptr<LiveContext> m_context;

@@ -1,6 +1,5 @@
 
 #include "Live.hpp"
-#include <dlfcn.h>
 #include <teenypath.h>
 #include "jet/live/CodeReloadPipeline.hpp"
 #include "jet/live/CompileCommandsCompilationUnitsParser.hpp"
@@ -127,6 +126,19 @@ namespace jet
 
     bool Live::isInitialized() const { return m_initialized; }
 
+    Status Live::getStatus() const
+    {
+        Status res;
+        res.compilingFiles = m_compiler->getFilesBeingCompiled();
+        res.successfulFiles = m_compiler->getSuccessfullyCompiledFiles();
+        res.failedFiles = m_compiler->getFailedToCompileFiles();
+        for (const auto& el : res.compilingFiles) {
+            res.successfulFiles.erase(el);
+            res.failedFiles.erase(el);
+        }
+        return res;
+    }
+
     void Live::tryReload()
     {
         m_context->events->addLog(LogSeverity::kInfo, "Trying to reload code...");
@@ -146,16 +158,6 @@ namespace jet
                 m_context->listener->onCodePostLoad();
                 return;
             }
-
-            m_context->events->addLog(LogSeverity::kDebug, "Opening " + libPath + "...");
-            auto libHandle = dlopen(libPath.c_str(), RTLD_NOW | RTLD_GLOBAL);  // NOLINT
-            if (!libHandle) {
-                m_context->events->addLog(
-                    LogSeverity::kError, "Cannot open library " + libPath + "\n" + std::string(dlerror()));
-                m_context->listener->onCodePostLoad();
-                return;
-            }
-            m_context->events->addLog(LogSeverity::kDebug, "Library opened successfully");
 
             m_context->events->addLog(LogSeverity::kDebug, "Loading symbols from " + libPath + "...");
             auto libSymbols = m_context->programInfoLoader->getProgramSymbols(m_context.get(), libPath);

@@ -2,6 +2,7 @@
 #include "Compiler.hpp"
 #include <algorithm>
 #include <cassert>
+#include <dlfcn.h>
 #include <teenypath.h>
 #include "jet/live/BuildConfig.hpp"
 #include "jet/live/Utility.hpp"
@@ -34,6 +35,7 @@ namespace jet
                     m_readyCompilationUnits[el.second.cuOrLibFilepath] = {
                         el.second.cuOrLibFilepath, el.second.objFilepath};
                     m_context->events->addLog(LogSeverity::kInfo, "Success: " + el.second.filename);
+                    m_failedCompilationUnits.erase(el.second.filename);
                 } else {
                     std::string message = "Failed: " + el.second.filename;
                     if (el.second.hasColorDiagnosticsFlag) {
@@ -49,6 +51,7 @@ namespace jet
                     if (readyFound != m_readyCompilationUnits.end()) {
                         m_readyCompilationUnits.erase(readyFound);
                     }
+                    m_failedCompilationUnits.insert(el.second.filename);
                 }
 
                 tasksToRemove.push_back(el.first);
@@ -71,7 +74,16 @@ namespace jet
 
         if (m_runningCompilationTasks.empty() && m_shouldLink) {
             m_shouldLink = false;
-            doLink(std::move(m_pendingLinkingFinishCallback));
+            if (m_failedCompilationUnits.empty()) {
+                doLink(std::move(m_pendingLinkingFinishCallback));
+            } else {
+                m_context->events->addLog(LogSeverity::kWarning, "There're files that failed to compile:");
+                for (const auto& el : m_failedCompilationUnits) {
+                    m_context->events->addLog(LogSeverity::kWarning, "* " + el);
+                }
+                m_context->events->addLog(LogSeverity::kWarning, "Please fix it and try again");
+                m_pendingLinkingFinishCallback(125, {}, {}, {});
+            }
         }
 
         if (m_runningLinkTask) {
@@ -82,6 +94,21 @@ namespace jet
                         "Link failed: " + m_runningLinkTask->cuOrLibFilepath + "\n" + m_runningLinkTask->errMessage);
                 } else {
                     m_context->events->addLog(LogSeverity::kInfo, "Linked successfully");
+                }
+
+                // Also loading library since we should not clear ready CUs
+                // if we get load time errors (like missing symbols)
+                if (status == 0) {
+                    const auto& libPath = m_runningLinkTask->cuOrLibFilepath;
+                    m_context->events->addLog(LogSeverity::kDebug, "Opening " + libPath + "...");
+                    auto libHandle = dlopen(libPath.c_str(), RTLD_NOW | RTLD_GLOBAL);  // NOLINT
+                    if (libHandle) {
+                        m_context->events->addLog(LogSeverity::kDebug, "Library opened successfully");
+                    } else {
+                        m_context->events->addLog(
+                            LogSeverity::kError, "Cannot open library " + libPath + "\n" + std::string(dlerror()));
+                        status = 123;
+                    }
                 }
 
                 std::vector<std::string> sourceFilePaths;
@@ -121,7 +148,7 @@ namespace jet
         PendingCompilationTask pendingTask;
         pendingTask.cu = cu;
         pendingTask.finishCallback = std::move(finishCallback);
-        m_pendingCompilationTasks.erase(std::find_if(m_pendingCompilationTasks.begin(),
+        m_pendingCompilationTasks.erase(std::remove_if(m_pendingCompilationTasks.begin(),
                                             m_pendingCompilationTasks.end(),
                                             [&pendingTask](const PendingCompilationTask& task) {
                                                 return task.cu.sourceFilePath == pendingTask.cu.sourceFilePath;
@@ -134,12 +161,8 @@ namespace jet
         std::function<void(int, const std::string&, const std::vector<std::string>&, const std::string&)>&&
             finishCallback)
     {
-        if (!m_runningCompilationTasks.empty() || m_runningLinkTask) {
-            m_shouldLink = true;
-            m_pendingLinkingFinishCallback = std::move(finishCallback);
-        } else {
-            doLink(std::move(finishCallback));
-        }
+        m_shouldLink = true;
+        m_pendingLinkingFinishCallback = std::move(finishCallback);
     }
 
     void Compiler::remove(const std::string& compilationUnitPath)
@@ -258,7 +281,7 @@ namespace jet
 
         if (pendingCompilation) {
             m_shouldLink = true;
-            m_pendingLinkingFinishCallback = std::move(finishCallback);
+            m_pendingLinkingFinishCallback = finishCallback;
             return;
         }
 
@@ -290,4 +313,27 @@ namespace jet
     }
 
     bool Compiler::isLinking() const { return static_cast<bool>(m_runningLinkTask); }
+
+    std::set<std::string> Compiler::getFilesBeingCompiled() const
+    {
+        std::set<std::string> res;
+        for (const auto& el : m_pendingCompilationTasks) {
+            res.insert(TeenyPath::path{el.cu.sourceFilePath}.filename());
+        }
+        for (const auto& el : m_runningCompilationTasks) {
+            res.insert(el.second.filename);
+        }
+        return res;
+    }
+
+    std::set<std::string> Compiler::getSuccessfullyCompiledFiles() const
+    {
+        std::set<std::string> res;
+        for (const auto& el : m_readyCompilationUnits) {
+            res.insert(TeenyPath::path{el.second.sourceFilepath}.filename());
+        }
+        return res;
+    }
+
+    std::set<std::string> Compiler::getFailedToCompileFiles() const { return m_failedCompilationUnits; }
 }

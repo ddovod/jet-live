@@ -7,12 +7,15 @@
 #include <jet/live/Utility.hpp>
 #include "TestListener.hpp"
 #include <thread>
+#include "Stacktrace.hpp"
 
 TestListener* g_testListenerPtr = nullptr;
 jet::Live* g_live = nullptr;
 
 int main(int argc, char* argv[])
 {
+    setupSignalHandlers();
+
     std::cout.setf(std::ios::unitbuf);
     std::cout << "Running tests" << std::endl;
 
