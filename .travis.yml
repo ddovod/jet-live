@@ -25,13 +25,20 @@ matrix:
 
 
     - os: linux
-      compiler: gcc
       dist: xenial
+      compiler: gcc-8
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-8
+            - g++-8
       env:
-        - CC=gcc
-        - CXX=g++
-        - CC_FOR_BUILD=gcc
-        - CXX_FOR_BUILD=g++
+        - CC=gcc-8
+        - CXX=g++-8
+        - CC_FOR_BUILD=gcc-8
+        - CXX_FOR_BUILD=g++-8
         - LD=ld
       script:
         - mkdir build && cd build
