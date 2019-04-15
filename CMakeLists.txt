@@ -36,6 +36,17 @@ else()
   message(FATAL_ERROR "Platform is not supported")
 endif()
 
+# We now export these variables to the parent scope in case the library user added us via `add_subdirectory()`
+get_directory_property(JET_LIVE_HAS_PARENT_DIR PARENT_DIRECTORY)
+if(JET_LIVE_HAS_PARENT_DIR)
+    message(STATUS "jet-live detected parent scope. Exporting build configuration.")
+    set(CMAKE_EXPORT_COMPILE_COMMANDS "${CMAKE_EXPORT_COMPILE_COMMANDS}" PARENT_SCOPE)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}" PARENT_SCOPE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" PARENT_SCOPE)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}" PARENT_SCOPE)
+endif()
+
+
 ########## lib_subhook
 add_library(lib_subhook STATIC "")
 target_sources(lib_subhook
