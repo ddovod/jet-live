@@ -21,5 +21,12 @@ namespace jet
          * If `true`, also reload code when app receives `SIGUSR1`.
          */
         bool reloadOnSignal = true;
+
+        /*
+         * If `true`, disables odr violation detector in address sanitizer.
+         * This is needed because each code reload violates odr rule.
+         * But since we are here, we need exactly this, right?
+         */
+        bool disableAsanOdrViolationDetector = true;
     };
 }

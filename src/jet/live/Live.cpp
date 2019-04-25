@@ -1,5 +1,6 @@
 
 #include "Live.hpp"
+#include <cstdlib>
 #include <teenypath.h>
 #include "jet/live/CodeReloadPipeline.hpp"
 #include "jet/live/CompileCommandsCompilationUnitsParser.hpp"
@@ -29,6 +30,16 @@ namespace jet
         : m_context(jet::make_unique<LiveContext>())
     {
         onLiveCreated(this, config.reloadOnSignal);
+
+        if (config.disableAsanOdrViolationDetector) {
+            const char* asanOptionsKey = "ASAN_OPTIONS";
+            auto asanOptions = getenv(asanOptionsKey);
+            std::string newAsanOptions{"detect_odr_violation=0"};
+            if (asanOptions) {
+                newAsanOptions.append(":").append(asanOptions);
+            }
+            setenv(asanOptionsKey, newAsanOptions.c_str(), 1);
+        }
 
         m_context->liveConfig = config;
         m_context->listener = listener ? std::move(listener) : jet::make_unique<ILiveListener>();
