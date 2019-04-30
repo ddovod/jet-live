@@ -22,3 +22,11 @@ namespace jet
 {
     using namespace chobo;
 }
+
+#define nssv_NO_EXCEPTIONS
+#include "string_view/string_view.hpp"
+
+namespace jet
+{
+    using namespace nonstd;
+}
