@@ -245,7 +245,7 @@ class section_impl : public section
         Elf_Xword size = get_size();
         if ( 0 == data && SHT_NULL != get_type() && SHT_NOBITS != get_type() && size < get_stream_size()) {
             // try {
-            //     data = new char[size + 1];
+                data = new char[size + 1];
             // } catch (const std::bad_alloc&) {
             //     data      = 0;
             //     data_size = 0;

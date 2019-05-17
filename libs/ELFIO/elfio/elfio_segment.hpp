@@ -207,7 +207,7 @@ class segment_impl : public segment
             }
             else {
                 // try {
-                //     data = new char[size + 1];
+                    data = new char[size + 1];
                 // } catch (const std::bad_alloc&) {
                 //     data = 0;
                 // }
