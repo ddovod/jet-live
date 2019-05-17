@@ -1,5 +1,8 @@
 #include "process.hpp"
+#include <bitset>
 #include <cstdlib>
+#include <fcntl.h>
+#include <poll.h>
 #include <signal.h>
 #include <stdexcept>
 #include <unistd.h>
@@ -178,25 +181,51 @@ Process::id_type Process::open(const std::string &command, const std::string &pa
 }
 
 void Process::async_read() noexcept {
-  if(data.id <= 0)
+  if(data.id <= 0 || (!stdout_fd && !stderr_fd))
     return;
 
-  if(stdout_fd) {
-    stdout_thread = std::thread([this]() {
-      auto buffer = std::unique_ptr<char[]>(new char[buffer_size]);
-      ssize_t n;
-      while((n = read(*stdout_fd, buffer.get(), buffer_size)) > 0)
-        read_stdout(buffer.get(), static_cast<size_t>(n));
-    });
-  }
-  if(stderr_fd) {
-    stderr_thread = std::thread([this]() {
-      auto buffer = std::unique_ptr<char[]>(new char[buffer_size]);
-      ssize_t n;
-      while((n = read(*stderr_fd, buffer.get(), buffer_size)) > 0)
-        read_stderr(buffer.get(), static_cast<size_t>(n));
-    });
-  }
+  stdout_stderr_thread = std::thread([this] {
+    std::vector<pollfd> pollfds;
+    std::bitset<2> fd_is_stdout;
+    if(stdout_fd) {
+      fd_is_stdout.set(pollfds.size());
+      pollfds.emplace_back();
+      pollfds.back().fd = fcntl(*stdout_fd, F_SETFL, fcntl(*stdout_fd, F_GETFL) | O_NONBLOCK) == 0 ? *stdout_fd : -1;
+      pollfds.back().events = POLLIN;
+    }
+    if(stderr_fd) {
+      pollfds.emplace_back();
+      pollfds.back().fd = fcntl(*stderr_fd, F_SETFL, fcntl(*stderr_fd, F_GETFL) | O_NONBLOCK) == 0 ? *stderr_fd : -1;
+      pollfds.back().events = POLLIN;
+    }
+    auto buffer = std::unique_ptr<char[]>(new char[buffer_size]);
+    bool any_open = !pollfds.empty();
+    while(any_open && (poll(pollfds.data(), pollfds.size(), -1) > 0 || errno == EINTR)) {
+      any_open = false;
+      for(size_t i = 0; i < pollfds.size(); ++i) {
+        if(pollfds[i].fd >= 0) {
+          if(pollfds[i].revents & POLLIN) {
+            const ssize_t n = read(pollfds[i].fd, buffer.get(), buffer_size);
+            if(n > 0) {
+              if(fd_is_stdout[i])
+                read_stdout(buffer.get(), static_cast<size_t>(n));
+              else
+                read_stderr(buffer.get(), static_cast<size_t>(n));
+            }
+            else if(n < 0 && errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK) {
+              pollfds[i].fd = -1;
+              continue;
+            }
+          }
+          if(pollfds[i].revents & (POLLERR | POLLHUP | POLLNVAL)) {
+            pollfds[i].fd = -1;
+            continue;
+          }
+          any_open = true;
+        }
+      }
+    }
+  });
 }
 
 int Process::get_exit_status() noexcept {
@@ -204,15 +233,30 @@ int Process::get_exit_status() noexcept {
     return -1;
 
   int exit_status;
-  waitpid(data.id, &exit_status, 0);
+  id_type p;
+  do
+  {
+    p = waitpid(data.id, &exit_status, 0);
+  }
+  while(p < 0 && errno == EINTR);
+
+  if(p < 0 && errno == ECHILD) {
+    // PID doesn't exist anymore, return previously sampled exit status (or -1)
+    return data.exit_status;
+  }
+  else {
+    // store exit status for future calls
+    if(exit_status >= 256)
+      exit_status = exit_status >> 8;
+    data.exit_status = exit_status;
+  }
+
   {
     std::lock_guard<std::mutex> lock(close_mutex);
     closed = true;
   }
   close_fds();
 
-  if(exit_status >= 256)
-    exit_status = exit_status >> 8;
   return exit_status;
 }
 
@@ -220,9 +264,22 @@ bool Process::try_get_exit_status(int &exit_status) noexcept {
   if(data.id <= 0)
     return false;
 
-  id_type p = waitpid(data.id, &exit_status, WNOHANG);
-  if(p == 0)
+  const id_type p = waitpid(data.id, &exit_status, WNOHANG);
+  if(p < 0 && errno == ECHILD) {
+    // PID doesn't exist anymore, set previously sampled exit status (or -1)
+    exit_status = data.exit_status;
+    return true;
+  }
+  else if(p <= 0) {
+    // Process still running (p==0) or error
     return false;
+  }
+  else {
+    // store exit status for future calls
+    if(exit_status >= 256)
+      exit_status = exit_status >> 8;
+    data.exit_status = exit_status;
+  }
 
   {
     std::lock_guard<std::mutex> lock(close_mutex);
@@ -230,17 +287,12 @@ bool Process::try_get_exit_status(int &exit_status) noexcept {
   }
   close_fds();
 
-  if(exit_status >= 256)
-    exit_status = exit_status >> 8;
-
   return true;
 }
 
 void Process::close_fds() noexcept {
-  if(stdout_thread.joinable())
-    stdout_thread.join();
-  if(stderr_thread.joinable())
-    stderr_thread.join();
+  if(stdout_stderr_thread.joinable())
+    stdout_stderr_thread.join();
 
   if(stdin_fd)
     close_stdin();

@@ -39,7 +39,11 @@ std::mutex create_process_mutex;
 Process::id_type Process::open(const std::vector<string_type> &arguments, const string_type &path, const environment_type *environment) noexcept {
   string_type command;
   for(auto &argument : arguments)
+#ifdef UNICODE
+    command += (command.empty() ? L"" : L" ") + argument;
+#else
     command += (command.empty() ? "" : " ") + argument;
+#endif
   return open(command, path, environment);
 }
 
