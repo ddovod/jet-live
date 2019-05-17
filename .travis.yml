@@ -58,7 +58,7 @@ matrix:
 
     - os: osx
       compiler: clang
-      osx_image: xcode10
+      osx_image: xcode10.2
       env:
         - BUILD_TOOL=xcodebuild
       before_script:

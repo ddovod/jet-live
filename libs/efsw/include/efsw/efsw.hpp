@@ -121,7 +121,7 @@ class EFSW_API FileWatcher
 		FileWatcher();
 
 		/// Constructor that lets you force the use of the Generic File Watcher
-		FileWatcher( bool useGenericFileWatcher );
+		explicit FileWatcher( bool useGenericFileWatcher );
 
 		virtual ~FileWatcher();
 
@@ -178,8 +178,6 @@ class EFSW_API FileWatcher
 class FileWatchListener
 {
 	public:
-		FileWatchListener() {}
-
 		virtual ~FileWatchListener() {}
 
 		/// Handles the action file action

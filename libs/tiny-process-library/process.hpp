@@ -41,6 +41,8 @@ private:
     id_type id;
 #ifdef _WIN32
     void *handle;
+#else
+    int exit_status{-1};
 #endif
   };
 
@@ -109,7 +111,11 @@ private:
   std::mutex close_mutex;
   std::function<void(const char *bytes, size_t n)> read_stdout;
   std::function<void(const char *bytes, size_t n)> read_stderr;
+#ifndef _WIN32
+  std::thread stdout_stderr_thread;
+#else
   std::thread stdout_thread, stderr_thread;
+#endif
   bool open_stdin;
   std::mutex stdin_mutex;
   size_t buffer_size;

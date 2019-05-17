@@ -3,6 +3,7 @@
 #include <windows.h>
 // clang-format on
 #include <TlHelp32.h>
+#include <cassert>
 #include <cstring>
 #include <stdexcept>
 
@@ -39,7 +40,11 @@ std::mutex create_process_mutex;
 Process::id_type Process::open(const std::vector<string_type> &arguments, const string_type &path, const environment_type *environment) noexcept {
   string_type command;
   for(auto &argument : arguments)
+#ifdef UNICODE
+    command += (command.empty() ? L"" : L" ") + argument;
+#else
     command += (command.empty() ? "" : " ") + argument;
+#endif
   return open(command, path, environment);
 }
 
@@ -238,8 +243,10 @@ void Process::close_fds() noexcept {
 }
 
 bool Process::write(const char *bytes, size_t n) {
-  if(!open_stdin)
-    throw std::invalid_argument("Can't write to an unopened stdin pipe. Please set open_stdin=true when constructing the process.");
+  if(!open_stdin) {
+    assert(false && "Can't write to an unopened stdin pipe. Please set open_stdin=true when constructing the process.");
+    return false;
+  }
 
   std::lock_guard<std::mutex> lock(stdin_mutex);
   if(stdin_fd) {
