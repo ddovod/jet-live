@@ -199,7 +199,7 @@ namespace TeenyPath {
 
     bool
     path::exists() const {
-        const path absp = this->is_absolute() ? path(*this) : resolve_absolute();
+        const path absp = resolve_absolute();
 #if defined(_POSIX_VERSION)
         return access(absp.string().c_str(), F_OK) != -1;
 #elif defined(_WIN32)
@@ -460,6 +460,9 @@ namespace TeenyPath {
      */
     path
     path::resolve_absolute() const {
+        if (is_absolute()) {
+            return path(*this);
+        }
 #if defined(_POSIX_VERSION)
         std::unique_ptr<char, decltype(&std::free)> rpath(realpath(m_path.c_str(), NULL), std::free);
         if (!rpath) {
