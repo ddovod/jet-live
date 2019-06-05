@@ -15,6 +15,7 @@ namespace jet
         {
         }
         const std::string& getFilepath() const { return m_filepath; }
+        int getPriority() const override { return 20; }
 
     private:
         std::string m_filepath;

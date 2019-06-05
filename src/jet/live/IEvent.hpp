@@ -20,6 +20,7 @@ namespace jet
         }
         virtual ~IEvent() {}
         EventType getType() const { return m_type; }
+        virtual int getPriority() const = 0;
 
     private:
         EventType m_type = EventType::kUnknown;
