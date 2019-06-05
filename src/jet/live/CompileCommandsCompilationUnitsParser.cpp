@@ -180,6 +180,11 @@ namespace jet
         // Trying to find `compile_commands.json` in current and parent directories
         auto dbPath = TeenyPath::path{context->thisExecutablePath}.parent_path() / "compile_commands.json";
         while (!dbPath.exists() && !dbPath.is_empty()) {
+            auto parentPath = dbPath.parent_path().parent_path();
+            if (parentPath.is_root()) {
+                dbPath = {};
+                break;
+            }
             dbPath = dbPath.parent_path().parent_path() / "compile_commands.json";
         }
         return dbPath.resolve_absolute();
