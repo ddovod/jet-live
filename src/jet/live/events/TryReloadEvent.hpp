@@ -12,5 +12,7 @@ namespace jet
             : IEvent(EventType::kTryReload)
         {
         }
+
+        int getPriority() const override { return 10; }
     };
 }

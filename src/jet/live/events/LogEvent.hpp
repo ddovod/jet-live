@@ -18,6 +18,7 @@ namespace jet
 
         LogSeverity getSeverity() const { return m_severity; }
         const std::string& getMessage() const { return m_message; }
+        int getPriority() const override { return 0; }
 
     private:
         LogSeverity m_severity;

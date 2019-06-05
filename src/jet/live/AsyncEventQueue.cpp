@@ -33,7 +33,7 @@ namespace jet
     IEvent* AsyncEventQueue::getEvent()
     {
         std::lock_guard<std::mutex> lock(m_queueMutex);
-        return m_queue.empty() ? nullptr : m_queue.front().get();
+        return m_queue.empty() ? nullptr : m_queue.top().get();
     }
 
     void AsyncEventQueue::popEvent()
