@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <sstream>
 #include <unistd.h>
+#include <iterator>
 
 namespace jet
 {
@@ -28,18 +29,12 @@ namespace jet
             if (addrDelim == std::string::npos || addrEnd == std::string::npos) {
                 continue;
             }
-            size_t nameBegin = addrEnd;
-            for (int i = 0; i < 4; i++) {
-                nameBegin = line.find(' ', nameBegin + 1);
-            }
-            while (line[nameBegin] == ' ') {
-                if (nameBegin == line.size() - 1) {
-                    break;
-                }
-                nameBegin++;
-            }
-            if (nameBegin != line.size() - 1) {
-                region.name = line.substr(nameBegin);
+
+            std::istringstream ssline{line};
+            const std::vector<std::string> v{
+                std::istream_iterator<std::string>(ssline), std::istream_iterator<std::string>()};
+            if (v.size() >= 6) {
+                region.name = v[5];
             }
 
             auto addrBeginStr = "0x" + std::string(line, 0, addrDelim);
