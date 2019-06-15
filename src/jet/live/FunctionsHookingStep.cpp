@@ -34,6 +34,7 @@ namespace jet
                 } else {
                     hookedFunctions++;
                 }
+                subhook_free(hook);
             }
         }
 
