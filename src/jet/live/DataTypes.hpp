@@ -101,8 +101,6 @@ namespace jet
         uint64_t relocationSymbolHash = 0; /** Relocation symbol hash. */
 
         uint8_t size = 0; /** Size of relocation entry, in bytes (4, 8). */
-
-        void apply(const LiveContext* context); /** Applies relocation. */
     };
 
     // Mach-O specific structures
