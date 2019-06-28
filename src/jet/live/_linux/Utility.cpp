@@ -3,9 +3,9 @@
 #include <elf.h>
 #include <fstream>
 #include <iomanip>
+#include <iterator>
 #include <sstream>
 #include <unistd.h>
-#include <iterator>
 
 namespace jet
 {
