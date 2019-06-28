@@ -24,7 +24,7 @@ namespace jet
                         break;
                     }
                 }
-                if (!oldVarPtr) {
+                if (!oldVarPtr || oldVarSize == 0) {
                     continue;
                 }
 

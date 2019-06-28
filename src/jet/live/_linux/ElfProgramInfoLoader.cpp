@@ -90,6 +90,14 @@ namespace jet
             const auto& section = elfFile.sections[i];
             elfContext.sectionNames[i] = section->get_name();
 
+            // This one is needed to apply relocations of STT_SECTION symbols
+            Symbol sectionSymbol;
+            sectionSymbol.checkHash = false;
+            sectionSymbol.name = section->get_name();
+            sectionSymbol.runtimeAddress = baseAddress + section->get_offset();
+            sectionSymbol.size = 0;
+            res.variables[sectionSymbol.name].push_back(sectionSymbol);
+
             if (section->get_type() == SHT_SYMTAB) {
                 const ELFIO::symbol_section_accessor symbols{elfFile, section};
                 for (ElfW(Xword) j = 0; j < symbols.get_symbols_num(); j++) {
@@ -297,16 +305,16 @@ namespace jet
                          *    Retrieved via r_offset.
                          * S: Relocation entry’s correspondent symbol value. Z: Size of relocations entry’s symbol.
                          */
-                        uintptr_t symRelAddr = 0;
+                        intptr_t symRelAddr = 0;
                         switch (type) {
                             // Link-time relocation, we should fix it by ourself
                             case R_X86_64_PC32:  // 32,      S + A – P
                                 reloc.size = sizeof(int32_t);
-                                symRelAddr = static_cast<uintptr_t>(addend + 4);
+                                symRelAddr = static_cast<intptr_t>(addend + 4);
                                 break;
                             case R_X86_64_PC64:  // 64,      S + A – P
                                 reloc.size = sizeof(int64_t);
-                                symRelAddr = static_cast<uintptr_t>(addend + 4);
+                                symRelAddr = static_cast<intptr_t>(addend + 4);
                                 break;
 
                             // Load time relocations, will be fixed by dynamic linker
@@ -343,9 +351,26 @@ namespace jet
                                 continue;
                         }
 
-                        auto symFound = symbolsInSections[sectionIndex].find(symRelAddr);
-                        if (symFound == symbolsInSections[sectionIndex].end()) {
-                            context->events->addLog(LogSeverity::kError, "WTF");
+                        const auto& symsInSection = symbolsInSections[sectionIndex];
+                        auto symFound = symsInSection.find(static_cast<uintptr_t>(symRelAddr));
+                        if (symRelAddr < 0) {
+                            symFound = symsInSection.begin();
+                        }
+                        if (symFound == symsInSection.end()) {
+                            symFound = symsInSection.upper_bound(static_cast<uintptr_t>(symRelAddr));
+                            if (symFound != symsInSection.begin()) {
+                                symFound--;
+                            }
+                        }
+                        if (symFound == symsInSection.end()) {
+                            context->events->addLog(LogSeverity::kError,
+                                                    "WTF: file " + el + ", " + 
+                                                    "section " + section->get_name() + ", " +
+                                                    "target section index " + std::to_string(sectionIndex) + ", " +
+                                                    "offset " + std::to_string(offset) + ", " +
+                                                    "symbol " + std::to_string(symbol) + ", " +
+                                                    "type " + std::to_string(type) + ", "
+                                                    "addend " + std::to_string(addend));
                             continue;
                         }
 
