@@ -28,19 +28,19 @@ matrix:
     - name: "Linux gcc"
       os: linux
       dist: bionic
-      compiler: gcc-9
+      compiler: gcc-8
       addons:
         apt:
           sources:
             - sourceline: "ppa:ubuntu-toolchain-r/test"
           packages:
-            - gcc-9
-            - g++-9
+            - gcc-8
+            - g++-8
       env:
-        - CC=gcc-9
-        - CXX=g++-9
-        - CC_FOR_BUILD=gcc-9
-        - CXX_FOR_BUILD=g++-9
+        - CC=gcc-8
+        - CXX=g++-8
+        - CC_FOR_BUILD=gcc-8
+        - CXX_FOR_BUILD=g++-8
         - LD=ld
       script:
         - ld --version
