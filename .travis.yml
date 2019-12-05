@@ -49,6 +49,7 @@ matrix:
 
     - os: osx
       compiler: clang
+      osx_image: xcode11.2
       script:
         - mkdir build && cd build
         - cmake -DCMAKE_BUILD_TYPE=Debug -DJET_LIVE_BUILD_TESTS=ON ..
@@ -58,7 +59,7 @@ matrix:
 
     - os: osx
       compiler: clang
-      osx_image: xcode10.2
+      osx_image: xcode11.2
       env:
         - BUILD_TOOL=xcodebuild
       before_script:
