@@ -43,6 +43,7 @@ matrix:
         - CXX_FOR_BUILD=g++-9
         - LD=ld
       script:
+        - ld --version
         - mkdir build && cd build
         - cmake -DCMAKE_BUILD_TYPE=Debug -DJET_LIVE_BUILD_TESTS=ON ..
         - make -j4
