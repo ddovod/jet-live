@@ -5,20 +5,20 @@ matrix:
     - name: "Linux clang"
       os: linux
       compiler: clang
-      dist: xenial
+      dist: bionic
       env:
-        - CC=clang-7
-        - CXX=clang++-7
-        - CC_FOR_BUILD=clang-7
-        - CXX_FOR_BUILD=clang++-7
-        - LD=lld-7
+        - CC=clang-9
+        - CXX=clang++-9
+        - CC_FOR_BUILD=clang-9
+        - CXX_FOR_BUILD=clang++-9
+        - LD=lld-9
       before_script:
         - curl https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-        - echo "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main" | sudo tee -a /etc/apt/sources.list
+        - echo "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main" | sudo tee -a /etc/apt/sources.list
         - sudo apt-get update -qq
-        - sudo apt-get install clang-7 lld-7 -y
+        - sudo apt-get install clang-9 lld-9 -y
       script:
-        - sudo mv /usr/bin/ld /usr/bin/ld.old && sudo ln -s /usr/bin/lld-7 /usr/bin/ld
+        - sudo mv /usr/bin/ld /usr/bin/ld.old && sudo ln -s /usr/bin/lld-9 /usr/bin/ld
         - mkdir build && cd build
         - cmake -DCMAKE_BUILD_TYPE=Debug -DJET_LIVE_BUILD_TESTS=ON ..
         - make -j4
@@ -27,20 +27,20 @@ matrix:
 
     - name: "Linux gcc"
       os: linux
-      dist: xenial
-      compiler: gcc-8
+      dist: bionic
+      compiler: gcc-9
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-8
-            - g++-8
+            - gcc-9
+            - g++-9
       env:
-        - CC=gcc-8
-        - CXX=g++-8
-        - CC_FOR_BUILD=gcc-8
-        - CXX_FOR_BUILD=g++-8
+        - CC=gcc-9
+        - CXX=g++-9
+        - CC_FOR_BUILD=gcc-9
+        - CXX_FOR_BUILD=g++-9
         - LD=ld
       script:
         - mkdir build && cd build
