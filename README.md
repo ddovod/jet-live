@@ -16,7 +16,7 @@ You need `c++11` compliant compiler. Also there're several dependencies which ar
 
 ### Getting started
 This library is best suited for projects based on cmake and make or ninja build systems, defaults are fine-tuned for these tools. The CMakeLists.txt will add `set(CMAKE_EXPORT_COMPILE_COMMANDS ON)` option for `compile_commands.json` and alter compiler and linker flags. This is important and not avoidable. For details please see CMakeLists.txt. if you use ninja, add `-d keepdepfile` ninja flag when running ninja, this is needed to track dependencies between source and header files
-1. In your project CMakeLists.txt file:
+1. In your project CMakeLists.txt file (THE FIRST LINE IS THE MOST IMPORTANT ONE):
 ```cmake
 include(path/to/jet-live/cmake/jet_live_setup.cmake) # setup needed compiler and linker flags, include this file in your root CMakeLists.txt
 set(JET_LIVE_BUILD_EXAMPLE OFF)
