@@ -24,7 +24,7 @@ endif()
 # -Wl,-export_dynamic   - same semantics, but for macos.
 # -Wl,-flat_namespace   - disables "Two-Level Namespace" feature
 if (UNIX AND NOT APPLE)
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export-dynamic ")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export-dynamic -Wl,-segprot,__TEXT,rwx,rwx ")
 elseif (UNIX AND APPLE)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export_dynamic -Wl,-flat_namespace ")
 else()
