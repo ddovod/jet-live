@@ -339,7 +339,8 @@ namespace jet
                             case R_X86_64_SIZE64:     // 64,      Z + A
                             default:
                                 context->events->addLog(LogSeverity::kError,
-                                    "Relocation " + relToString(type) + " is not possible in PIC code");
+                                    "Relocation " + relToString(type) + " (" + std::to_string(type)
+                                        + ") is not possible in PIC code");
                                 continue;
                         }
 
