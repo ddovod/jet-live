@@ -311,6 +311,8 @@ namespace jet
 
                             // Load time relocations, will be fixed by dynamic linker
                             case R_X86_64_GOTPCREL:  // 32,      G + GOT + A – P
+                            case R_X86_64_GOTPCRELX:
+                            case R_X86_64_REX_GOTPCRELX:
                                 continue;
 
                             // Not yet supported relocations
