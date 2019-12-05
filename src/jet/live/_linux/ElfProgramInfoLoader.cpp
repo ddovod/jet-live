@@ -312,8 +312,7 @@ namespace jet
                             // Load time relocations, will be fixed by dynamic linker
                             case R_X86_64_GOTPCREL:  // 32,      G + GOT + A – P
                             case R_X86_64_GOTPCRELX:
-                            case R_X86_64_REX_GOTPCRELX:
-                                continue;
+                            case R_X86_64_REX_GOTPCRELX: continue;
 
                             // Not yet supported relocations
                             case R_X86_64_PC8:      // 8,       S + A – P
@@ -345,6 +344,8 @@ namespace jet
                                         + ") is not possible in PIC code");
                                 continue;
                         }
+                        context->events->addLog(LogSeverity::kDebug,
+                            "Relocation: " + relToString(type) + " (" + std::to_string(type) + ")");
 
                         auto symFound = symbolsInSections[sectionIndex].find(symRelAddr);
                         if (symFound == symbolsInSections[sectionIndex].end()) {
