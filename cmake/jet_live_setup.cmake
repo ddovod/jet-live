@@ -24,9 +24,9 @@ endif()
 # -Wl,-export_dynamic   - same semantics, but for macos.
 # -Wl,-flat_namespace   - disables "Two-Level Namespace" feature
 if (UNIX AND NOT APPLE)
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export-dynamic -Wl,-segprot,__TEXT,rwx,rwx ")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export-dynamic ")
 elseif (UNIX AND APPLE)
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export_dynamic -Wl,-flat_namespace ")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export_dynamic -Wl,-flat_namespace -Wl,-segprot,__TEXT,rwx,rwx ")
 else()
   message(FATAL_ERROR "Platform is not supported")
 endif()
