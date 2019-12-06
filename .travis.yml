@@ -27,7 +27,7 @@ matrix:
 
     - name: "Linux gcc"
       os: linux
-      dist: bionic
+      dist: xenial
       compiler: gcc-8
       addons:
         apt:
