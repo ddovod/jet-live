@@ -23,10 +23,11 @@ endif()
 #                         with new code will be loaded into the process' address space.
 # -Wl,-export_dynamic   - same semantics, but for macos.
 # -Wl,-flat_namespace   - disables "Two-Level Namespace" feature
+# -Wl,-segprot,__TEXT,rwx,rwx - minimum and maximum access rights for the __TEXT segment
 if (UNIX AND NOT APPLE)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export-dynamic ")
 elseif (UNIX AND APPLE)
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export_dynamic -Wl,-flat_namespace ")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export_dynamic -Wl,-flat_namespace -Wl,-segprot,__TEXT,rwx,rwx ")
 else()
   message(FATAL_ERROR "Platform is not supported")
 endif()

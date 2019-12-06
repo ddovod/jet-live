@@ -2,7 +2,8 @@ language: cpp
 
 matrix:
   include:
-    - os: linux
+    - name: "Linux clang"
+      os: linux
       compiler: clang
       dist: xenial
       env:
@@ -24,7 +25,8 @@ matrix:
         - ../tools/tests/test_runner.py -b . -d tests -s ../tests
 
 
-    - os: linux
+    - name: "Linux gcc"
+      os: linux
       dist: xenial
       compiler: gcc-8
       addons:
@@ -47,7 +49,9 @@ matrix:
         - ../tools/tests/test_runner.py -b . -d tests -s ../tests
 
 
-    - os: osx
+    - name: "macOS make"
+      os: osx
+      osx_image: xcode11.2
       compiler: clang
       script:
         - mkdir build && cd build
@@ -56,9 +60,10 @@ matrix:
         - ../tools/tests/test_runner.py -b . -d tests -s ../tests
 
 
-    - os: osx
+    - name: "macOS xcodebuild"
+      os: osx
+      osx_image: xcode11.2
       compiler: clang
-      osx_image: xcode10.2
       env:
         - BUILD_TOOL=xcodebuild
       before_script:
