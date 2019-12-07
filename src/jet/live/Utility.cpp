@@ -183,6 +183,8 @@ namespace jet
                     .append(" -Wl,-install_name,")
                     .append(libName)
                     .append(" -Wl,-flat_namespace")
+                    .append(" -Wl,-rename_section,__TEXT,__text,__JET_TEXT,__text")
+                    .append(" -Wl,-segprot,__JET_TEXT,rwx,rwx")
                     .append(" -undefined dynamic_lookup");
                 break;
             }

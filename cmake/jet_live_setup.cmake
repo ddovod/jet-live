@@ -1,6 +1,9 @@
 
 set(JET_LIVE_CONFIGURED ON)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)   # enables compile_commands.json generation
+if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+  message(FATAL_ERROR "jet-live works correctly only on Debug configuration")
+endif()
 
 # -MD                   - needed to generate depfiles to track dependencies between files.
 # -falign-functions=16  - needed to keep enough space between functions to make each function "patchable", so
@@ -23,11 +26,17 @@ endif()
 #                         with new code will be loaded into the process' address space.
 # -Wl,-export_dynamic   - same semantics, but for macos.
 # -Wl,-flat_namespace   - disables "Two-Level Namespace" feature
-# -Wl,-segprot,__TEXT,rwx,rwx - minimum and maximum access rights for the __TEXT segment
+# -Wl,-rename_section,__TEXT,__text,__JET_TEXT,__text
+#                       - moves __TEXT.__text section to the new section __JET_TEXT,__text.
+#                         With this flag __JET_TEXT.__text will contain executable code.
+#                         This is a workaround to overcome macOS 10.15 strictness to
+#                         the __TEXT segment access rights.
+# -Wl,-segprot,__JET_TEXT,rwx,rwx
+#                       - sets minimum and maximum access rights for the __JET_TEXT segment.
 if (UNIX AND NOT APPLE)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export-dynamic ")
 elseif (UNIX AND APPLE)
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export_dynamic -Wl,-flat_namespace -Wl,-segprot,__TEXT,rwx,rwx ")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export_dynamic -Wl,-flat_namespace -Wl,-rename_section,__TEXT,__text,__JET_TEXT,__text -Wl,-segprot,__JET_TEXT,rwx,rwx ")
 else()
   message(FATAL_ERROR "Platform is not supported")
 endif()
