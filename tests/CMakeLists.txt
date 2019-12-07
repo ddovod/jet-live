@@ -66,6 +66,7 @@ target_sources(tests
   src/utility/ReloadAfterFailedCompilation1.cpp
   src/utility/ReloadAfterFailedCompilation2.cpp
   src/utility/OneFrameCompileReload.cpp
+  src/utility/MacosFunctionOutOfScope.cpp
 
   src/good/ClassInstanceMethod_test.cpp
   src/good/CommonSection_test.cpp
@@ -99,6 +100,7 @@ target_sources(tests
   src/good/LostModification_test.cpp
   src/good/ReloadAfterFailedCompilation_test.cpp
   src/good/OneFrameCompileReload_test.cpp
+  src/good/MacosFunctionOutOfScope_test.cpp
 
   src/bad/LambdaFunctionWithCapturesBadCase2_test.cpp
   src/bad/LambdaFunctionWithCapturesBadCase_test.cpp
