@@ -24,6 +24,11 @@
 #define N_DESC_GET_WEAK_DEF(nDesc) static_cast<bool>((nDesc)&N_WEAK_DEF)                            // NOLINT
 #define N_DESC_GET_WEAK_REF(nDesc) static_cast<bool>((nDesc)&N_WEAK_REF)                            // NOLINT
 
+namespace
+{
+    uintptr_t thisExecutableLoadAddress = 0;
+}
+
 namespace jet
 {
     std::vector<std::string> MachoProgramInfoLoader::getAllLoadedProgramsPaths(const LiveContext* context) const
@@ -275,7 +280,13 @@ namespace jet
                             sym.checkHash = true;
                         }
 
-                        if (context->symbolsFilter->shouldReloadMachoSymbol(machoContext, machoSymbol)) {
+                        if (::thisExecutableLoadAddress == 0 &&
+                            filepath.empty()) {
+                            // Trying to distinguish real address of the executable (macOS 10.15, __JET_TEXT)
+                            ::thisExecutableLoadAddress = sym.runtimeAddress;
+                        }
+                        if (sym.runtimeAddress >= ::thisExecutableLoadAddress &&
+                            context->symbolsFilter->shouldReloadMachoSymbol(machoContext, machoSymbol)) {
                             res.functions[sym.name].push_back(sym);
                         }
 
