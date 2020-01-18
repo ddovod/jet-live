@@ -1,12 +1,14 @@
 #include "process.hpp"
+#include <algorithm>
 #include <bitset>
-#include <cassert>
 #include <cstdlib>
 #include <fcntl.h>
 #include <poll.h>
+#include <set>
 #include <signal.h>
 #include <stdexcept>
 #include <unistd.h>
+#include <cassert>
 
 namespace TinyProcessLib {
 
@@ -15,8 +17,8 @@ Process::Data::Data() noexcept : id(-1) {}
 Process::Process(const std::function<void()> &function,
                  std::function<void(const char *, size_t)> read_stdout,
                  std::function<void(const char *, size_t)> read_stderr,
-                 bool open_stdin, size_t buffer_size) noexcept
-    : closed(true), read_stdout(std::move(read_stdout)), read_stderr(std::move(read_stderr)), open_stdin(open_stdin), buffer_size(buffer_size) {
+                 bool open_stdin, const Config &config) noexcept
+    : closed(true), read_stdout(std::move(read_stdout)), read_stderr(std::move(read_stderr)), open_stdin(open_stdin), config(config) {
   open(function);
   async_read();
 }
@@ -89,10 +91,14 @@ Process::id_type Process::open(const std::function<void()> &function) noexcept {
       close(stderr_p[1]);
     }
 
-    //Based on http://stackoverflow.com/a/899533/3808293
-    int fd_max = static_cast<int>(sysconf(_SC_OPEN_MAX)); // truncation is safe
-    for(int fd = 3; fd < fd_max; fd++)
-      close(fd);
+    if(!config.inherit_file_descriptors) {
+      // Optimization on some systems: using 8 * 1024 (Debian's default _SC_OPEN_MAX) as fd_max limit
+      int fd_max = std::min(8192, static_cast<int>(sysconf(_SC_OPEN_MAX))); // Truncation is safe
+      if(fd_max < 0)
+        fd_max = 8192;
+      for(int fd = 3; fd < fd_max; fd++)
+        close(fd);
+    }
 
     setpgid(0, 0);
     //TODO: See here on how to emulate tty for colors: http://stackoverflow.com/questions/1401002/trick-an-application-into-thinking-its-stdin-is-interactive-not-a-pipe
@@ -199,14 +205,14 @@ void Process::async_read() noexcept {
       pollfds.back().fd = fcntl(*stderr_fd, F_SETFL, fcntl(*stderr_fd, F_GETFL) | O_NONBLOCK) == 0 ? *stderr_fd : -1;
       pollfds.back().events = POLLIN;
     }
-    auto buffer = std::unique_ptr<char[]>(new char[buffer_size]);
+    auto buffer = std::unique_ptr<char[]>(new char[config.buffer_size]);
     bool any_open = !pollfds.empty();
     while(any_open && (poll(pollfds.data(), pollfds.size(), -1) > 0 || errno == EINTR)) {
       any_open = false;
       for(size_t i = 0; i < pollfds.size(); ++i) {
         if(pollfds[i].fd >= 0) {
           if(pollfds[i].revents & POLLIN) {
-            const ssize_t n = read(pollfds[i].fd, buffer.get(), buffer_size);
+            const ssize_t n = read(pollfds[i].fd, buffer.get(), config.buffer_size);
             if(n > 0) {
               if(fd_is_stdout[i])
                 read_stdout(buffer.get(), static_cast<size_t>(n));
@@ -235,11 +241,9 @@ int Process::get_exit_status() noexcept {
 
   int exit_status;
   id_type p;
-  do
-  {
+  do {
     p = waitpid(data.id, &exit_status, 0);
-  }
-  while(p < 0 && errno == EINTR);
+  } while(p < 0 && errno == EINTR);
 
   if(p < 0 && errno == ECHILD) {
     // PID doesn't exist anymore, return previously sampled exit status (or -1)
