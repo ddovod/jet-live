@@ -8,6 +8,7 @@
 #include <signal.h>
 #include <stdexcept>
 #include <unistd.h>
+#include <cassert>
 
 namespace TinyProcessLib {
 
