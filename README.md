@@ -4,6 +4,8 @@
 
 # [jet-live](https://github.com/ddovod/jet-live)
 
+Important: starting from macOS 10.14 the approach used in the library doesn't work anymore, looks like Apple have restricted some of the low level routines. On Linux at least on Ubuntu 20.04 it still works fine.
+
 **jet-live** is a library for c++ "hot code reloading". It works on linux and modern macOS (10.12+ I guess) on 64 bit systems powered by cpu with x86-64 instruction set. Apart from reloading of functions it is able to keep apps' static and global state unchanged after code was reload (please refer to "How it works" for what is it and why it is important).
 Tested on Ubuntu 18.04 with clang 6.0.1/7.0.1, lld-7, gcc 6.4.0/7.3.0, GNU ld 2.30, cmake 3.10.2, ninja 1.8.2, make 4.1 and macOS 10.13.6 with Xcode 8.3.3, cmake 3.8.2, make 3.81.
 
