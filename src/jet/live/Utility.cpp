@@ -298,10 +298,13 @@ namespace jet
 
     void* unprotect(void* address, size_t size)
     {
-        int64_t pagesize;
-        pagesize = sysconf(_SC_PAGESIZE);
-        address = reinterpret_cast<void*>(reinterpret_cast<int64_t>(address) & ~(pagesize - 1));  // NOLINT
-        if (mprotect(address, size, PROT_READ | PROT_WRITE | PROT_EXEC) == 0) {                   // NOLINT
+        const size_t pagesize = static_cast<size_t>(sysconf(_SC_PAGESIZE));
+        const size_t pagestart = reinterpret_cast<size_t>(address) & ~(pagesize - 1);
+        const bool secondPageRequired = (reinterpret_cast<size_t>(address) + size) > (pagestart + pagesize);
+        const size_t protectsize = pagesize * (1u + static_cast<size_t>(secondPageRequired));
+
+        address = reinterpret_cast<void*>(pagestart);  // NOLINT
+        if (mprotect(address, protectsize, PROT_READ | PROT_WRITE | PROT_EXEC) == 0) {                   // NOLINT
             return address;
         }
         return nullptr;
