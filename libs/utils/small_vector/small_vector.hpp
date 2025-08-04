@@ -140,6 +140,7 @@
 #include <type_traits>
 #include <cstddef>
 #include <memory>
+#include <cstdint>
 
 #define CHOBO_SMALL_VECTOR_ERROR_HANDLING_NONE  0
 #define CHOBO_SMALL_VECTOR_ERROR_HANDLING_THROW 1
