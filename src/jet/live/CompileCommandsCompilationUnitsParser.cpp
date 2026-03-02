@@ -171,7 +171,11 @@ namespace jet
             }
 
             cu.compilerPath = parser[0];
-            res[cu.sourceFilePath] = cu;
+
+            if (context->listener->filterCompilationUnit(cu)) {
+                res[cu.sourceFilePath] = cu;
+            }
+
             wordfree(&result);
         }
 

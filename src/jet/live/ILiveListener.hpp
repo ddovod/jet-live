@@ -5,6 +5,8 @@
 
 namespace jet
 {
+    struct CompilationUnit;
+
     enum class LogSeverity
     {
         kDebug,
@@ -35,5 +37,11 @@ namespace jet
          * Called right after all functions are hooked and state is transferred.
          */
         virtual void onCodePostLoad() {}
+
+        /**
+         * Allows the application to select which compilation unit to consider when parsing compile_commands.json.
+         * Return true if the compilation unit should be considered (default), or false if it should be discarded.
+         */
+        virtual bool filterCompilationUnit(const CompilationUnit&) { return true; }
     };
 }
