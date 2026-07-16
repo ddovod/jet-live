@@ -5,7 +5,6 @@
 #include <json.hpp>
 #include <process.hpp>
 #include <teenypath.h>
-#include <wordexp.h>
 #include "jet/live/BuildConfig.hpp"
 #include "jet/live/DataTypes.hpp"
 #include "jet/live/LiveContext.hpp"
@@ -13,6 +12,52 @@
 
 namespace jet
 {
+    namespace
+    {
+        // Split a shell-escaped compile command (the compile_commands.json "command" field) into argv.
+        // Replaces wordexp(), which fork+exec'd /bin/sh for every compilation unit — dominating init
+        // time on large projects — and additionally performed command substitution ($(...)). The
+        // command is a resolved, shell-escaped string, so a quote/escape-aware split yields the same
+        // tokens without a shell. Honors '...', "..." and backslash escapes (POSIX sh rules).
+        std::vector<std::string> tokenizeCommand(const std::string& cmd)
+        {
+            std::vector<std::string> tokens;
+            std::string cur;
+            bool inToken = false;
+            char quote = 0;  // 0 = none, or '\'' / '"'
+            for (size_t i = 0; i < cmd.size(); ++i) {
+                const char c = cmd[i];
+                if (quote == '\'') {
+                    if (c == '\'') { quote = 0; } else { cur += c; }
+                    inToken = true;
+                } else if (quote == '"') {
+                    if (c == '"') {
+                        quote = 0;
+                    } else if (c == '\\' && i + 1 < cmd.size()
+                        && (cmd[i + 1] == '"' || cmd[i + 1] == '\\' || cmd[i + 1] == '$' || cmd[i + 1] == '`')) {
+                        cur += cmd[++i];
+                    } else {
+                        cur += c;
+                    }
+                    inToken = true;
+                } else if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+                    if (inToken) { tokens.push_back(cur); cur.clear(); inToken = false; }
+                } else if (c == '\'' || c == '"') {
+                    quote = c;
+                    inToken = true;
+                } else if (c == '\\' && i + 1 < cmd.size()) {
+                    cur += cmd[++i];
+                    inToken = true;
+                } else {
+                    cur += c;
+                    inToken = true;
+                }
+            }
+            if (inToken) { tokens.push_back(cur); }
+            return tokens;
+        }
+    }  // namespace
+
     std::vector<std::string> CompileCommandsCompilationUnitsParser::getFilesToMonitor() const
     {
         std::vector<std::string> res;
@@ -144,20 +189,17 @@ namespace jet
                 continue;
             }
 
-            wordexp_t result;
-            switch (wordexp(cu.compilationCommandStr.c_str(), &result, 0)) {
-                case 0: break;
-                case WRDE_NOSPACE: wordfree(&result); continue;
-                default: continue;
-            }
+            std::vector<std::string> tokens = tokenizeCommand(cu.compilationCommandStr);
+            std::vector<char*> argv;
+            argv.reserve(tokens.size());
+            for (auto& tok : tokens) { argv.push_back(tok.data()); }
 
             argh::parser parser(
-                static_cast<int>(result.we_wordc), result.we_wordv, argh::parser::PREFER_PARAM_FOR_UNREG_OPTION);
+                static_cast<int>(argv.size()), argv.data(), argh::parser::PREFER_PARAM_FOR_UNREG_OPTION);
             cu.objFilePath = parser({"-o", "--output"}).str();
             if (cu.objFilePath.empty()) {
                 context->events->addLog(
                     LogSeverity::kWarning, "Cannot find object file path, skipping: " + cu.sourceFilePath);
-                wordfree(&result);
                 continue;
             }
             cu.hasColorDiagnosticsFlag = parser[{"-fcolor-diagnostics"}];
@@ -175,8 +217,6 @@ namespace jet
             if (context->listener->filterCompilationUnit(cu)) {
                 res[cu.sourceFilePath] = cu;
             }
-
-            wordfree(&result);
         }
 
         return res;
