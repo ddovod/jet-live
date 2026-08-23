@@ -33,6 +33,8 @@ target_link_libraries(your-app-target jet-live)
 
 Also I use this library only with debug builds (`-O0`, not stripped, without `-fvisibility=hidden` and things like that) to not deal with optimized and inlined functions and variables. I don't know how it works on highly optimized stripped builds, most likely it will not work at all.
 
+If you get "Cannot hook function" error with status code -22 when attempting to reload the code, it is likely that your system prevents you from mapping heap memory that is both writable and executable. For example, SELinux Linux Security Module can be configured to allow it like this: "sudo setsebool -P selinuxuser_execheap 1".
+
 Personally I use it like this. I have a `Ctrl+r` shortcut to which `tryReload` is assigned in my application. Also my app app calls `update` in the main runloop and listens for `onCodePreLoad` and `onCodePostLoad` events to recreate some objects or re-evaluate some functions:
 1. I start my application
 2. I edit some files, save it, and now I know that I'm ready to reload new code (here previously I recompiled application)
