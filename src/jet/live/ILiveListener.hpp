@@ -29,12 +29,15 @@ namespace jet
         virtual void onLog(LogSeverity, const std::string&) {}
 
         /**
-         * Called right before shared library with new code is loaded into the process address space.
+         * Called before symbol relocation, function hooking and static-state copying.
+         * On success, the shared library has already been opened with dlopen.
+         * Also called when linking or loading fails.
          */
         virtual void onCodePreLoad() {}
 
         /**
-         * Called right after all functions are hooked and state is transferred.
+         * Called after function hooking and state transfer have been attempted.
+         * Also called when linking or loading fails; this is not a success notification.
          */
         virtual void onCodePostLoad() {}
 

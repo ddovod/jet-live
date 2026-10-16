@@ -128,10 +128,10 @@ When you call `Live::tryReload`, the library will wait for unfinished compilatio
 - For all link-time relocations it fixes new shared library in a way where new code is pointing to old already living static/global variables
 - For all local static variables that were not relocated it just `memcpy` memory from old location to new one
 
-**Important:** `ILiveListener::onCodePreLoad` event is fired right before `lib_reloadXXX.so` is loaded into the process memory. `ILiveListener::onCodePostLoad` event is fired right after all code-reloading-machinery is finished.
+**Important:** On a successful reload, `ILiveListener::onCodePreLoad` is called after `lib_reloadXXX.so` has been opened with `dlopen`, but before symbol relocation, function hooking and static-state copying. `ILiveListener::onCodePostLoad` is called after those steps finish. Both callbacks are also called when linking or loading fails; they do not by themselves indicate a successful reload.
 
 ##### About functions hooking
-You can read more about function hooking [here](https://jbremer.org/x86-api-hooking-demystified/). This library uses awesome [subhook](https://github.com/Zeex/subhook) library to redirect function flow from old to new ones. You can see that on 32 bit platforms your functions should be at least 5 bytes long to be hookable. On 64 bit you need at least 14 bytes which is a lot, and for example empty stub function will probably not fit into 14 bytes. From my observations, clang by default produces code with 16-byte functions alignment. GCC don't do this by default, so for GCC the `-falign-functions=16` flag is used. That means the spacing between begins of any 2 functions is not less that 16 bytes, which makes possible to hook any function.
+You can read more about function hooking [here](https://jbremer.org/x86-api-hooking-demystified/). This library uses the bundled [Dobby](https://github.com/jmpews/Dobby) library to redirect function flow from old to new versions. The trampoline implementation depends on the architecture; the bundled x86-64 implementation uses a 6-byte indirect jump through a nearby pointer slot. The CMake setup uses `-falign-functions=16` to leave space for patching small functions. Alignment alone does not guarantee that a hook will succeed; check the listener logs for hook errors.
 
 ##### About state transfer
 New versions of functions should use statics and globals which are already living in the application. Why is it important?
